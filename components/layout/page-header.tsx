@@ -21,25 +21,23 @@ export function PageHeader({
 
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg px-4 pt-2 pb-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {showBack && (
-            <button
-              onClick={() => router.back()}
-              className="flex items-center text-sm text-orange-500"
-            >
-              <ChevronLeft className="h-5 w-5" />
-              <span>返回</span>
-            </button>
+      <div className="relative flex items-center justify-center min-h-[40px]">
+        {showBack && (
+          <button
+            onClick={() => router.back()}
+            className="absolute left-0 flex items-center text-sm text-orange-500"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            <span>返回</span>
+          </button>
+        )}
+        <div className="text-center">
+          <h1 className="text-lg font-bold">{title}</h1>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
           )}
-          <div>
-            <h1 className="text-xl font-bold">{title}</h1>
-            {subtitle && (
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
-            )}
-          </div>
         </div>
-        {right && <div>{right}</div>}
+        {right && <div className="absolute right-0">{right}</div>}
       </div>
     </header>
   );

@@ -4,14 +4,15 @@ import { useState } from "react";
 import { useApp } from "@/lib/context";
 import { useExpenses } from "@/hooks/use-expenses";
 import { ExpenseList } from "@/components/expense/expense-list";
+import { MemberSummary } from "@/components/expense/member-summary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 
 export default function RecordsPage() {
-  const { currentTrip, loading: ctxLoading } = useApp();
+  const { currentTrip, tripMembers, loading: ctxLoading } = useApp();
   const { expenses, loading } = useExpenses();
-  const [groupBy, setGroupBy] = useState<"date" | "category">("date");
+  const [groupBy, setGroupBy] = useState<"date" | "category" | "member">("date");
 
   if (loading || ctxLoading) {
     return (
@@ -37,7 +38,7 @@ export default function RecordsPage() {
       <div className="px-4 mb-4">
         <Tabs
           value={groupBy}
-          onValueChange={(v) => setGroupBy(v as "date" | "category")}
+          onValueChange={(v) => setGroupBy(v as "date" | "category" | "member")}
         >
           <TabsList className="w-full">
             <TabsTrigger value="date" className="flex-1">
@@ -46,11 +47,18 @@ export default function RecordsPage() {
             <TabsTrigger value="category" className="flex-1">
               按類別
             </TabsTrigger>
+            <TabsTrigger value="member" className="flex-1">
+              按成員
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      <ExpenseList expenses={expenses} groupBy={groupBy} />
+      {groupBy === "member" ? (
+        <MemberSummary expenses={expenses} tripMembers={tripMembers} />
+      ) : (
+        <ExpenseList expenses={expenses} groupBy={groupBy} />
+      )}
 
       <div className="fixed bottom-20 right-4 z-40">
         <Link

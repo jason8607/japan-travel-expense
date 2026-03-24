@@ -9,6 +9,8 @@ export type Category =
 
 export type PaymentMethod = "現金" | "信用卡" | "PayPay" | "Suica" | "其他";
 
+export type SplitType = "personal" | "split";
+
 export type MemberRole = "owner" | "member";
 
 export interface Profile {
@@ -62,6 +64,7 @@ export interface Expense {
   store_name: string | null;
   store_name_ja: string | null;
   expense_date: string;
+  split_type: SplitType;
   receipt_image_url: string | null;
   notion_page_id: string | null;
   created_at: string;

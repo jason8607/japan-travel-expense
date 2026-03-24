@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { OCRResult, Category, PaymentMethod } from "@/types";
+import type { Category, OCRResult, PaymentMethod, SplitType } from "@/types";
 import { CATEGORIES, PAYMENT_METHODS } from "@/types";
+import { Plus, Trash2, User, Users } from "lucide-react";
+import { useState } from "react";
+import { useApp } from "@/lib/context";
+import { cn } from "@/lib/utils";
 
 interface ReceiptConfirmProps {
   result: OCRResult;
-  onConfirm: (result: OCRResult, category: Category, paymentMethod: PaymentMethod) => void;
+  onConfirm: (result: OCRResult, category: Category, paymentMethod: PaymentMethod, splitType: SplitType) => void;
   onCancel: () => void;
   saving: boolean;
 }
@@ -20,8 +22,10 @@ export function ReceiptConfirm({
   onCancel,
   saving,
 }: ReceiptConfirmProps) {
+  const { tripMembers } = useApp();
   const [result, setResult] = useState<OCRResult>(initialResult);
   const [category, setCategory] = useState<Category>("餐飲");
+  const [splitType, setSplitType] = useState<SplitType>("personal");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     initialResult.payment_method === "cash" ? "現金"
     : initialResult.payment_method === "credit_card" ? "信用卡"
@@ -91,7 +95,7 @@ export function ReceiptConfirm({
               key={index}
               className="flex items-start gap-3 p-3 rounded-xl bg-gray-50"
             >
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">
+              <div className="shrink-0 w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">
                 {index + 1}
               </div>
               <div className="flex-1 min-w-0 space-y-1">
@@ -164,8 +168,43 @@ export function ReceiptConfirm({
         </div>
       </div>
 
+      {/* Split type */}
+      {tripMembers.length > 1 && (
+        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+          <h4 className="font-bold mb-3 text-sm">分帳方式</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setSplitType("personal")}
+              className={cn(
+                "flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all text-sm font-medium",
+                splitType === "personal"
+                  ? "border-orange-400 bg-orange-50 text-orange-700"
+                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <User className="h-4 w-4" />
+              只記自己
+            </button>
+            <button
+              type="button"
+              onClick={() => setSplitType("split")}
+              className={cn(
+                "flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all text-sm font-medium",
+                splitType === "split"
+                  ? "border-blue-400 bg-blue-50 text-blue-700"
+                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <Users className="h-4 w-4" />
+              均分 ({tripMembers.length} 人)
+            </button>
+          </div>
+        </div>
+      )}
+
       <Button
-        onClick={() => onConfirm(result, category, paymentMethod)}
+        onClick={() => onConfirm(result, category, paymentMethod, splitType)}
         className="w-full h-12 text-base bg-orange-500 hover:bg-orange-600"
         disabled={saving}
       >

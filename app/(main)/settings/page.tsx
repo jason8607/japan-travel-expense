@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useApp } from "@/lib/context";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -16,11 +15,30 @@ import {
   User,
   Plane,
   Link2,
-  Users,
+  Check,
+  ChevronRight,
+  UserPlus,
+  Copy,
+  Pencil,
+  X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { AvatarPicker } from "@/components/ui/avatar-picker";
+import type { Trip, TripMember, Profile } from "@/types";
 
 export default function SettingsPage() {
-  const { user, profile, currentTrip, refreshProfile, loading: ctxLoading } = useApp();
+  const {
+    user,
+    profile,
+    trips,
+    currentTrip,
+    tripMembers,
+    setCurrentTrip,
+    refreshProfile,
+    refreshTrips,
+    refreshTrip,
+    loading: ctxLoading,
+  } = useApp();
   const router = useRouter();
   const supabase = createClient();
 
@@ -29,6 +47,56 @@ export default function SettingsPage() {
   const [notionToken, setNotionToken] = useState("");
   const [notionDbId, setNotionDbId] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Trip editing
+  const [editingTrip, setEditingTrip] = useState(false);
+  const [tripName, setTripName] = useState("");
+  const [tripStart, setTripStart] = useState("");
+  const [tripEnd, setTripEnd] = useState("");
+  const [tripBudget, setTripBudget] = useState("");
+
+  // Member invite
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [members, setMembers] = useState<(TripMember & { profile?: Profile })[]>([]);
+
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.display_name || "");
+      setAvatarEmoji(profile.avatar_emoji || "🧑");
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (currentTrip) {
+      setTripName(currentTrip.name);
+      setTripStart(currentTrip.start_date);
+      setTripEnd(currentTrip.end_date);
+      setTripBudget(currentTrip.cash_budget?.toString() || "");
+      loadMembers();
+    }
+  }, [currentTrip?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadMembers = async () => {
+    if (!currentTrip) return;
+    try {
+      const res = await fetch(`/api/trip-members?trip_id=${currentTrip.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.members) setMembers(data.members);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleSwitchTrip = (trip: Trip) => {
+    setCurrentTrip(trip);
+    setEditingTrip(false);
+    setShowInvite(false);
+    toast.success(`已切換至「${trip.name}」`);
+  };
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -43,8 +111,40 @@ export default function SettingsPage() {
     } else {
       toast.success("個人資料已更新");
       await refreshProfile();
+      await refreshTrip();
+      loadMembers();
     }
     setSaving(false);
+  };
+
+  const handleSaveTrip = async () => {
+    if (!currentTrip) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/trips", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: currentTrip.id,
+          name: tripName,
+          start_date: tripStart,
+          end_date: tripEnd,
+          cash_budget: tripBudget ? Number(tripBudget) : null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "更新失敗");
+
+      setCurrentTrip(data.trip);
+      await refreshTrips();
+      setEditingTrip(false);
+      toast.success("旅程已更新");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "更新失敗";
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSaveNotion = async () => {
@@ -64,6 +164,60 @@ export default function SettingsPage() {
       toast.success("Notion 設定已更新");
     }
     setSaving(false);
+  };
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail || !currentTrip) return;
+    setInviting(true);
+
+    try {
+      const { data: authUsers } = await supabase.rpc("find_user_by_email", {
+        target_email: inviteEmail,
+      });
+
+      let userId: string | null = null;
+      if (authUsers && authUsers.length > 0) {
+        userId = authUsers[0].id;
+      }
+
+      if (!userId) {
+        toast.error("找不到此 Email 的使用者，請確認對方已註冊");
+        setInviting(false);
+        return;
+      }
+
+      const { error } = await supabase.from("trip_members").insert({
+        trip_id: currentTrip.id,
+        user_id: userId,
+        role: "member",
+      });
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("此成員已在旅程中");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("已邀請成員加入");
+        setInviteEmail("");
+        loadMembers();
+        await refreshTrip();
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "邀請失敗";
+      toast.error(message);
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!currentTrip) return;
+    const link = `${window.location.origin}/trip/${currentTrip.id}/join`;
+    navigator.clipboard.writeText(link);
+    toast.success("邀請連結已複製");
   };
 
   const handleLogout = async () => {
@@ -97,128 +251,277 @@ export default function SettingsPage() {
     <div className="space-y-4 p-4 pb-4">
       <h1 className="text-xl font-bold">設定</h1>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <User className="h-4 w-4" />
+      {/* ===== 旅程切換 ===== */}
+      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100">
+          <h2 className="text-sm font-bold flex items-center gap-2">
+            <Plane className="h-4 w-4 text-orange-500" />
+            我的旅程
+          </h2>
+        </div>
+        <div className="divide-y divide-slate-50">
+          {trips.map((trip) => {
+            const isActive = trip.id === currentTrip?.id;
+            return (
+              <button
+                key={trip.id}
+                onClick={() => handleSwitchTrip(trip)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
+                  isActive ? "bg-orange-50" : "hover:bg-slate-50"
+                )}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className={cn(
+                    "text-sm font-medium truncate",
+                    isActive ? "text-orange-700" : "text-slate-700"
+                  )}>
+                    {trip.name}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {trip.start_date} ~ {trip.end_date}
+                  </p>
+                </div>
+                {isActive && (
+                  <Check className="h-4 w-4 text-orange-500 shrink-0" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className="px-4 py-3 border-t border-slate-100">
+          <Link href="/trip/new">
+            <Button variant="outline" size="sm" className="w-full text-sm rounded-lg">
+              + 建立新旅程
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* ===== 當前旅程編輯 + 成員 ===== */}
+      {currentTrip && (
+        <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-sm font-bold">旅程設定</h2>
+            {!editingTrip ? (
+              <button
+                onClick={() => setEditingTrip(true)}
+                className="text-xs text-orange-500 flex items-center gap-1"
+              >
+                <Pencil className="h-3 w-3" />
+                編輯
+              </button>
+            ) : (
+              <button
+                onClick={() => setEditingTrip(false)}
+                className="text-xs text-muted-foreground flex items-center gap-1"
+              >
+                <X className="h-3 w-3" />
+                取消
+              </button>
+            )}
+          </div>
+
+          {editingTrip ? (
+            <div className="p-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-slate-500">旅程名稱</Label>
+                <Input
+                  value={tripName}
+                  onChange={(e) => setTripName(e.target.value)}
+                  className="h-10 rounded-lg text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">開始日期</Label>
+                  <Input
+                    type="date"
+                    value={tripStart}
+                    onChange={(e) => setTripStart(e.target.value)}
+                    className="h-10 rounded-lg text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">結束日期</Label>
+                  <Input
+                    type="date"
+                    value={tripEnd}
+                    onChange={(e) => setTripEnd(e.target.value)}
+                    className="h-10 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-slate-500">現金預算 (¥)</Label>
+                <Input
+                  type="number"
+                  value={tripBudget}
+                  onChange={(e) => setTripBudget(e.target.value)}
+                  placeholder="選填"
+                  className="h-10 rounded-lg text-sm"
+                />
+              </div>
+              <Button
+                onClick={handleSaveTrip}
+                className="w-full h-10 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm"
+                disabled={saving}
+              >
+                {saving ? "儲存中..." : "儲存變更"}
+              </Button>
+            </div>
+          ) : (
+            <div className="px-4 py-3">
+              <p className="font-medium text-sm">{currentTrip.name}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {currentTrip.start_date} ~ {currentTrip.end_date}
+                {currentTrip.cash_budget && (
+                  <> · 預算 ¥{currentTrip.cash_budget.toLocaleString()}</>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* 成員列表 */}
+          <div className="border-t border-slate-100">
+            <div className="px-4 py-3 flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-500">
+                成員 ({members.length || tripMembers.length})
+              </span>
+              <button
+                onClick={() => setShowInvite(!showInvite)}
+                className="text-xs text-orange-500 flex items-center gap-1"
+              >
+                <UserPlus className="h-3 w-3" />
+                {showInvite ? "收起" : "邀請"}
+              </button>
+            </div>
+            <div className="px-4 pb-3 space-y-2">
+              {(members.length > 0 ? members : tripMembers).map((m) => (
+                <div key={m.user_id} className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-sm">
+                    {m.profile?.avatar_emoji || "🧑"}
+                  </div>
+                  <span className="text-sm flex-1">
+                    {m.profile?.display_name || "成員"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {m.role === "owner" ? "建立者" : "成員"}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {showInvite && (
+              <div className="px-4 pb-4 space-y-2 border-t border-slate-50 pt-3">
+                <form onSubmit={handleInvite} className="flex gap-2">
+                  <Input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="對方的 Email"
+                    className="flex-1 h-9 text-sm rounded-lg"
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="bg-orange-500 hover:bg-orange-600 rounded-lg h-9 px-3"
+                    disabled={inviting}
+                  >
+                    {inviting ? "..." : "邀請"}
+                  </Button>
+                </form>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="w-full text-xs rounded-lg h-8"
+                >
+                  <Copy className="h-3 w-3 mr-1.5" />
+                  複製邀請連結
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== 個人資料 ===== */}
+      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100">
+          <h2 className="text-sm font-bold flex items-center gap-2">
+            <User className="h-4 w-4 text-blue-500" />
             個人資料
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+          </h2>
+        </div>
+        <div className="p-4 space-y-3">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                const emojis = ["👨", "👩", "🧑", "👦", "👧", "🧔", "👱", "👲", "🦊", "🐱"];
-                const idx = emojis.indexOf(avatarEmoji);
-                setAvatarEmoji(emojis[(idx + 1) % emojis.length]);
-              }}
-              className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-2xl hover:bg-gray-200 transition"
-            >
-              {avatarEmoji}
-            </button>
-            <div className="flex-1 space-y-2">
+            <AvatarPicker value={avatarEmoji} onChange={setAvatarEmoji} />
+            <div className="flex-1 space-y-1.5">
+              <Label className="text-xs text-slate-500">暱稱</Label>
               <Input
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="暱稱"
+                placeholder="你的暱稱"
+                className="h-10 rounded-lg text-sm"
               />
             </div>
           </div>
           <Button
             onClick={handleSaveProfile}
-            className="w-full bg-orange-500 hover:bg-orange-600"
+            className="w-full h-10 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm"
             disabled={saving}
           >
             儲存個人資料
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Plane className="h-4 w-4" />
-            旅程管理
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {currentTrip ? (
-            <>
-              <div>
-                <p className="font-medium">{currentTrip.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {currentTrip.start_date} ~ {currentTrip.end_date}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Link href={`/trip/${currentTrip.id}/schedule`}>
-                  <Button variant="outline" className="w-full text-sm">
-                    📅 編輯日程
-                  </Button>
-                </Link>
-                <Link href={`/trip/${currentTrip.id}/invite`}>
-                  <Button variant="outline" className="w-full text-sm">
-                    <Users className="h-3.5 w-3.5 mr-1" />
-                    成員管理
-                  </Button>
-                </Link>
-              </div>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">尚未建立旅程</p>
-          )}
-          <Link href="/trip/new">
-            <Button variant="outline" className="w-full">
-              建立新旅程
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Link2 className="h-4 w-4" />
+      {/* ===== Notion 同步 ===== */}
+      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100">
+          <h2 className="text-sm font-bold flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-slate-500" />
             Notion 同步
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="notion-token">Integration Token</Label>
+          </h2>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-slate-500">Integration Token</Label>
             <Input
-              id="notion-token"
               type="password"
               value={notionToken}
               onChange={(e) => setNotionToken(e.target.value)}
               placeholder="secret_..."
+              className="h-10 rounded-lg text-sm"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="notion-db">Database ID</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-slate-500">Database ID</Label>
             <Input
-              id="notion-db"
               value={notionDbId}
               onChange={(e) => setNotionDbId(e.target.value)}
               placeholder="從 Notion URL 取得"
+              className="h-10 rounded-lg text-sm"
             />
           </div>
           <Button
             onClick={handleSaveNotion}
             variant="outline"
-            className="w-full"
+            className="w-full h-10 rounded-lg text-sm"
             disabled={saving || !currentTrip}
           >
             儲存 Notion 設定
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <Separator />
 
       <Button
         variant="ghost"
         onClick={handleLogout}
-        className="w-full text-red-500 hover:text-red-600 hover:bg-red-50"
+        className="w-full text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl"
       >
         <LogOut className="h-4 w-4 mr-2" />
         登出

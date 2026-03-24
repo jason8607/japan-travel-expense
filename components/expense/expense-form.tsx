@@ -16,8 +16,8 @@ import {
 import { toast } from "sonner";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
 import { CATEGORIES, PAYMENT_METHODS } from "@/types";
-import type { Category, PaymentMethod, Expense } from "@/types";
-import { Trash2, MapPin, Store } from "lucide-react";
+import type { Category, PaymentMethod, SplitType, Expense } from "@/types";
+import { Trash2, MapPin, Store, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ExpenseFormProps {
@@ -45,6 +45,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
     editExpense?.expense_date || new Date().toISOString().split("T")[0]
   );
   const [paidBy, setPaidBy] = useState(editExpense?.paid_by || user?.id || "");
+  const [splitType, setSplitType] = useState<SplitType>(
+    editExpense?.split_type || "personal"
+  );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -77,6 +80,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             store_name: storeName || null,
             location: location || null,
             expense_date: expenseDate,
+            split_type: splitType,
           }),
         });
 
@@ -99,6 +103,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             store_name: storeName || null,
             location: location || null,
             expense_date: expenseDate,
+            split_type: splitType,
           }),
         });
 
@@ -263,18 +268,73 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         </div>
       </div>
 
+      {/* 分帳方式 */}
+      {tripMembers.length > 1 && (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-slate-600">分帳方式</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setSplitType("personal")}
+              className={cn(
+                "flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium",
+                splitType === "personal"
+                  ? "border-orange-400 bg-orange-50 text-orange-700"
+                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <User className="h-4 w-4" />
+              只記自己
+            </button>
+            <button
+              type="button"
+              onClick={() => setSplitType("split")}
+              className={cn(
+                "flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium",
+                splitType === "split"
+                  ? "border-blue-400 bg-blue-50 text-blue-700"
+                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <Users className="h-4 w-4" />
+              均分 ({tripMembers.length} 人)
+            </button>
+          </div>
+          {splitType === "split" && (
+            <p className="text-xs text-blue-500 bg-blue-50 rounded-lg px-3 py-2">
+              💡 每人 ¥{amountJpy ? Math.round(Number(amountJpy) / tripMembers.length).toLocaleString() : 0}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* 誰付的 */}
       {tripMembers.length > 1 && (
         <div className="space-y-1.5">
           <Label className="text-sm font-medium text-slate-600">誰付的</Label>
           <Select value={paidBy} onValueChange={(v) => { if (v) setPaidBy(v); }}>
             <SelectTrigger className="h-11 rounded-xl border-slate-200 focus:ring-orange-500">
-              <SelectValue />
+              <SelectValue>
+                {(value: string) => {
+                  const member = tripMembers.find((m) => m.user_id === value);
+                  if (!member) return "選擇成員";
+                  return (
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-lg leading-none">{member.profile?.avatar_emoji || "🧑"}</span>
+                      {member.profile?.display_name || "成員"}
+                    </span>
+                  );
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {tripMembers.map((m) => (
-                <SelectItem key={m.user_id} value={m.user_id}>
-                  <span className="text-lg mr-1.5">{m.profile?.avatar_emoji || "🧑"}</span>
+                <SelectItem
+                  key={m.user_id}
+                  value={m.user_id}
+                  label={`${m.profile?.avatar_emoji || "🧑"} ${m.profile?.display_name || "成員"}`}
+                >
+                  <span className="text-lg leading-none">{m.profile?.avatar_emoji || "🧑"}</span>
                   {m.profile?.display_name || "成員"}
                 </SelectItem>
               ))}

@@ -8,7 +8,7 @@ import { ReceiptUpload } from "@/components/scan/receipt-upload";
 import { ReceiptConfirm } from "@/components/scan/receipt-confirm";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
 import { toast } from "sonner";
-import type { OCRResult, Category, PaymentMethod } from "@/types";
+import type { OCRResult, Category, PaymentMethod, SplitType } from "@/types";
 
 export default function ScanPage() {
   const { user, currentTrip } = useApp();
@@ -47,7 +47,7 @@ export default function ScanPage() {
     }
   };
 
-  const handleConfirm = async (result: OCRResult, category: Category, paymentMethod: PaymentMethod) => {
+  const handleConfirm = async (result: OCRResult, category: Category, paymentMethod: PaymentMethod, splitType: SplitType) => {
     if (!currentTrip || !user) return;
     setSaving(true);
 
@@ -75,6 +75,7 @@ export default function ScanPage() {
           store_name_ja: result.store_name_ja,
           expense_date:
             result.date || new Date().toISOString().split("T")[0],
+          split_type: splitType,
         }),
       });
 

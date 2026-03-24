@@ -2,19 +2,23 @@
 
 import { useApp } from "@/lib/context";
 import { useExpenses } from "@/hooks/use-expenses";
-import { TripSummary } from "@/components/dashboard/trip-summary";
-import { BudgetProgress } from "@/components/dashboard/budget-progress";
 import { ExpenseCard } from "@/components/expense/expense-card";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
-import { Plus } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import {
+  Plus,
+  Receipt,
+  TrendingUp,
+  Target,
+  CalendarDays,
+} from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { differenceInDays, parseISO } from "date-fns";
 
 export default function HomePage() {
   const { user, profile, currentTrip, loading: appLoading } = useApp();
   const { expenses, loading, todayTotal, totalJpy, totalTwd, cashTotal, count } =
     useExpenses();
-  const router = useRouter();
 
   if (appLoading || loading) {
     return (
@@ -65,53 +69,121 @@ export default function HomePage() {
     );
   }
 
-  const todayExpenses = expenses.filter(
-    (e) => e.expense_date === new Date().toISOString().split("T")[0]
+  const today = new Date().toISOString().split("T")[0];
+  const todayExpenses = expenses.filter((e) => e.expense_date === today);
+  const todayTwd = todayExpenses.reduce((s, e) => s + e.amount_twd, 0);
+
+  const tripStart = parseISO(currentTrip.start_date);
+  const tripEnd = parseISO(currentTrip.end_date);
+  const totalDays = differenceInDays(tripEnd, tripStart) + 1;
+  const currentDay = Math.min(
+    Math.max(differenceInDays(new Date(), tripStart) + 1, 1),
+    totalDays
   );
 
+  const cashBudget = currentTrip.cash_budget || 0;
+  const suicaTotal = expenses
+    .filter((e) => e.payment_method === "Suica")
+    .reduce((s, e) => s + e.amount_jpy, 0);
+  const budgetSpent = cashTotal + suicaTotal;
+  const budgetPercentage = cashBudget
+    ? Math.min(Math.round((budgetSpent / cashBudget) * 100), 100)
+    : 0;
+
   return (
-    <div className="space-y-4 pb-4">
-      <div className="px-4 pt-4">
-        <p className="text-sm text-muted-foreground">
-          {profile?.avatar_emoji} {profile?.display_name}，{currentTrip.name}
+    <div className="pb-4">
+      {/* Trip Name Header */}
+      <div className="text-center pt-6 pb-4 px-4">
+        <h1 className="text-xl font-bold text-slate-800">
+          {currentTrip.name}
+        </h1>
+        <p className="text-xs text-muted-foreground mt-1">
+          {profile?.avatar_emoji} {profile?.display_name}
         </p>
       </div>
 
-      <TripSummary
-        totalJpy={totalJpy}
-        totalTwd={totalTwd}
-        count={count}
-        tripName={currentTrip.name}
-      />
+      {/* 2x2 Stats Grid */}
+      <div className="grid grid-cols-2 gap-3 px-4">
+        {/* 今日支出 */}
+        <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center">
+              <Receipt className="h-3.5 w-3.5 text-orange-500" />
+            </div>
+            <span className="text-xs text-muted-foreground font-medium">今日支出</span>
+          </div>
+          <p className="text-xl font-bold text-slate-800 tracking-tight">
+            {formatJPY(todayTotal)}
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            ≈ {formatTWD(todayTwd)}
+          </p>
+        </div>
 
-      <BudgetProgress
-        cashSpent={cashTotal}
-        cashBudget={currentTrip.cash_budget || 0}
-      />
+        {/* 旅程累計 */}
+        <Link href="/records" className="block">
+          <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm h-full">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                <TrendingUp className="h-3.5 w-3.5 text-blue-500" />
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">旅程累計</span>
+            </div>
+            <p className="text-xl font-bold text-slate-800 tracking-tight">
+              {formatJPY(totalJpy)}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              ≈ {formatTWD(totalTwd)}
+            </p>
+          </div>
+        </Link>
 
-      {todayTotal > 0 && (
-        <div className="mx-4 rounded-2xl bg-orange-50 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">今日花費</span>
-            <div className="text-right">
-              <span className="font-bold">{formatJPY(todayTotal)}</span>
-              <span className="text-xs text-muted-foreground ml-1">
-                ({todayExpenses.length} 筆)
+        {/* 預算進度 */}
+        {cashBudget > 0 && (
+          <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <Target className="h-3.5 w-3.5 text-emerald-500" />
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">
+                預算進度（現金 + Suica）
               </span>
             </div>
+            <p className="text-xl font-bold text-slate-800 tracking-tight">
+              {budgetPercentage}%
+            </p>
+            <Progress value={budgetPercentage} className="h-1.5 mt-2" />
           </div>
-        </div>
-      )}
+        )}
 
+        {/* 旅程天數 */}
+        <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center">
+              <CalendarDays className="h-3.5 w-3.5 text-violet-500" />
+            </div>
+            <span className="text-xs text-muted-foreground font-medium">旅程天數</span>
+          </div>
+          <p className="text-xl font-bold text-slate-800 tracking-tight">
+            Day {currentDay}
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            共 {totalDays} 天
+          </p>
+        </div>
+      </div>
+
+      {/* 今日花費 */}
       {todayExpenses.length > 0 && (
-        <div className="px-4 space-y-2">
-          <h3 className="text-sm font-medium">今日消費</h3>
+        <div className="mt-6 px-4 space-y-2">
+          <h3 className="text-sm font-semibold text-slate-700">今日花費</h3>
           {todayExpenses.slice(0, 5).map((expense) => (
             <ExpenseCard key={expense.id} expense={expense} />
           ))}
         </div>
       )}
 
+      {/* FAB */}
       <div className="fixed bottom-20 right-4 z-40">
         <Link
           href="/records/new"

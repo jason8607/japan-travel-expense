@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
 
     const { data: expenses, error } = await admin
       .from("expenses")
-      .select("*")
+      .select("*, profile:profiles!paid_by(*)")
       .eq("trip_id", tripId)
       .order("expense_date", { ascending: false })
       .order("created_at", { ascending: false });

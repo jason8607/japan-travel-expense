@@ -35,6 +35,57 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function PUT(req: NextRequest) {
+  try {
+    const user = await getRequestUser(req);
+    if (!user) {
+      return NextResponse.json({ error: "未登入" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { id, name, start_date, end_date, cash_budget } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "缺少旅程 ID" }, { status: 400 });
+    }
+
+    const admin = createAdminClient();
+
+    const { data: member } = await admin
+      .from("trip_members")
+      .select("role")
+      .eq("trip_id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!member) {
+      return NextResponse.json({ error: "無權限" }, { status: 403 });
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (name !== undefined) updates.name = name;
+    if (start_date !== undefined) updates.start_date = start_date;
+    if (end_date !== undefined) updates.end_date = end_date;
+    if (cash_budget !== undefined) updates.cash_budget = cash_budget || null;
+
+    const { data: trip, error } = await admin
+      .from("trips")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ trip });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req);

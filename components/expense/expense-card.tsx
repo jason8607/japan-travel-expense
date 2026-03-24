@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { Pencil, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
 import { CATEGORIES, PAYMENT_METHODS } from "@/types";
@@ -39,6 +39,11 @@ export function ExpenseCard({ expense }: ExpenseCardProps) {
           <span className="text-[10px] text-muted-foreground">
             {paymentInfo?.icon} {expense.payment_method}
           </span>
+          {expense.split_type === "split" && (
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0 rounded-full font-medium">
+              <Users className="h-2.5 w-2.5" />均分
+            </span>
+          )}
           {expense.store_name && (
             <>
               <span className="text-[10px] text-muted-foreground">·</span>

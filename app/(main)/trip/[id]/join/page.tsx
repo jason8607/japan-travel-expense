@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useApp } from "@/lib/context";
 import { toast } from "sonner";
 import type { Trip } from "@/types";
@@ -11,17 +10,30 @@ export default function JoinTripPage() {
   const params = useParams();
   const tripId = params.id as string;
   const router = useRouter();
-  const { user, loading: appLoading } = useApp();
-  const supabase = createClient();
+  const { user, loading: appLoading, refreshTrips, setCurrentTrip } = useApp();
 
-  const [trip, setTrip] = useState<Trip | null>(null);
+  const [trip, setTrip] = useState<Pick<Trip, "id" | "name" | "start_date" | "end_date"> | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
-  const [alreadyMember, setAlreadyMember] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
+    const loadTrip = async () => {
+      try {
+        const res = await fetch(`/api/trips/${tripId}/public`);
+        if (res.ok) {
+          const data = await res.json();
+          setTrip(data.trip);
+        } else {
+          setError(true);
+        }
+      } catch {
+        setError(true);
+      }
+      setLoading(false);
+    };
     loadTrip();
-  }, [tripId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tripId]);
 
   useEffect(() => {
     if (!appLoading && user && trip) {
@@ -29,28 +41,22 @@ export default function JoinTripPage() {
     }
   }, [appLoading, user, trip]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadTrip = async () => {
-    const { data } = await supabase
-      .from("trips")
-      .select("*")
-      .eq("id", tripId)
-      .single();
-    setTrip(data);
-    setLoading(false);
-  };
-
   const checkMembership = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("trip_members")
-      .select("user_id")
-      .eq("trip_id", tripId)
-      .eq("user_id", user.id)
-      .single();
-    if (data) {
-      setAlreadyMember(true);
-      toast.success("你已是此旅程的成員");
-      router.push("/");
+    try {
+      const res = await fetch(`/api/trip-members?trip_id=${tripId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const isMember = data.members?.some(
+          (m: { user_id: string }) => m.user_id === user.id
+        );
+        if (isMember) {
+          toast.success("你已是此旅程的成員");
+          router.push("/");
+        }
+      }
+    } catch {
+      // ignore
     }
   };
 
@@ -61,16 +67,23 @@ export default function JoinTripPage() {
     }
     setJoining(true);
     try {
-      const { error } = await supabase.from("trip_members").insert({
-        trip_id: tripId,
-        user_id: user.id,
-        role: "member",
+      const res = await fetch("/api/trips/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trip_id: tripId }),
       });
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "加入失敗");
+
       toast.success(`已加入「${trip?.name}」`);
+      const updatedTrips = await refreshTrips();
+      const joinedTrip = updatedTrips.find((t) => t.id === tripId);
+      if (joinedTrip) setCurrentTrip(joinedTrip);
       router.push("/");
-    } catch {
-      toast.error("加入失敗，請重試");
+      router.refresh();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "加入失敗";
+      toast.error(message);
     } finally {
       setJoining(false);
     }
@@ -84,17 +97,15 @@ export default function JoinTripPage() {
     );
   }
 
-  if (!trip) {
+  if (error || !trip) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center">
         <div className="text-5xl mb-4">❌</div>
         <h2 className="text-xl font-bold mb-2">找不到旅程</h2>
-        <p className="text-sm text-muted-foreground">邀請連結可能已失效</p>
+        <p className="text-sm text-muted-foreground">邀請連結可能已失效或旅程不存在</p>
       </div>
     );
   }
-
-  if (alreadyMember) return null;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4">
@@ -116,7 +127,7 @@ export default function JoinTripPage() {
             onClick={handleJoin}
             className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium"
           >
-            Google 登入後加入
+            登入後加入旅程
           </button>
         ) : (
           <button
