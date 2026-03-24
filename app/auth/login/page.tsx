@@ -40,14 +40,18 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { display_name: displayName || "旅人", avatar_emoji: "🧑" },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
         if (error) throw error;
+        if (!data.user?.identities?.length) {
+          throw new Error("此 Email 已被註冊，請直接登入");
+        }
         toast.success("註冊成功！請查看信箱驗證郵件");
       } else {
         const { error } = await supabase.auth.signInWithPassword({

@@ -9,7 +9,7 @@ import { ReceiptConfirm } from "@/components/scan/receipt-confirm";
 import type { ReceiptItemWithOwner } from "@/components/scan/receipt-confirm";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
 import { toast } from "sonner";
-import type { OCRResult, Category, PaymentMethod } from "@/types";
+import type { OCRResult, PaymentMethod } from "@/types";
 
 export default function ScanPage() {
   const { user, currentTrip } = useApp();
@@ -50,7 +50,6 @@ export default function ScanPage() {
 
   const handleConfirm = async (data: {
     items: ReceiptItemWithOwner[];
-    category: Category;
     paymentMethod: PaymentMethod;
     storeName: string;
     storeNameJa: string;
@@ -82,7 +81,7 @@ export default function ScanPage() {
               amount_jpy: jpy,
               amount_twd: twd,
               exchange_rate: rate,
-              category: data.category,
+              category: item.category,
               payment_method: data.paymentMethod,
               store_name: data.storeName,
               store_name_ja: data.storeNameJa || null,
