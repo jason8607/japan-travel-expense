@@ -1,0 +1,22 @@
+{
+  "name": "旅帳 — 日本旅遊記帳",
+  "short_name": "旅帳",
+  "description": "AI 收據辨識、即時統計、多人記帳的日本旅遊記帳 App",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
