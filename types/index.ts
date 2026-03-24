@@ -5,6 +5,8 @@ export type Category =
   | "住宿"
   | "門票"
   | "藥品"
+  | "美妝"
+  | "衣服"
   | "其他";
 
 export type PaymentMethod = "現金" | "信用卡" | "PayPay" | "Suica" | "其他";
@@ -107,6 +109,8 @@ export const CATEGORIES: { value: Category; label: string; icon: string; color: 
   { value: "住宿", label: "住宿", icon: "🏨", color: "#10B981" },
   { value: "門票", label: "門票", icon: "🎫", color: "#8B5CF6" },
   { value: "藥品", label: "藥品", icon: "💊", color: "#EF4444" },
+  { value: "美妝", label: "美妝", icon: "💄", color: "#F472B6" },
+  { value: "衣服", label: "衣服", icon: "👕", color: "#A78BFA" },
   { value: "其他", label: "其他", icon: "📦", color: "#6B7280" },
 ];
 
