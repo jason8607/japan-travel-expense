@@ -63,7 +63,7 @@ export function InstallPrompt() {
           <Download className="h-3.5 w-3.5 mr-1" />
           安裝
         </Button>
-        <button onClick={handleDismiss} className="text-muted-foreground">
+        <button onClick={handleDismiss} aria-label="關閉" className="text-muted-foreground">
           <X className="h-4 w-4" />
         </button>
       </div>

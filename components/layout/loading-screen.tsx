@@ -2,7 +2,7 @@
 
 export function LoadingScreen() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-white">
+    <div className="flex items-center justify-center min-h-screen bg-white" role="status" aria-busy="true">
       <div className="text-center">
         <div className="relative">
           <div className="text-5xl animate-bounce">🗾</div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ExpenseCard } from "./expense-card";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
@@ -35,37 +35,40 @@ function getExpenseOwner(expense: Expense): string | "split" {
 
 export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummaryProps) {
   const [expandedMember, setExpandedMember] = useState<string | null>(null);
-  const memberCount = tripMembers.length || 1;
 
-  const splitExpenses = expenses.filter((e) => e.split_type === "split");
-  const totalSplitJpy = splitExpenses.reduce((s, e) => s + e.amount_jpy, 0);
-  const totalSplitTwd = splitExpenses.reduce((s, e) => s + e.amount_twd, 0);
-  const perPersonSplitJpy = Math.round(totalSplitJpy / memberCount);
-  const perPersonSplitTwd = Math.round(totalSplitTwd / memberCount);
+  const { breakdowns, totalSplitJpy, perPersonSplitJpy, perPersonSplitTwd } = useMemo(() => {
+    const memberCount = tripMembers.length || 1;
+    const splitExps = expenses.filter((e) => e.split_type === "split");
+    const splitJpy = splitExps.reduce((s, e) => s + e.amount_jpy, 0);
+    const splitTwd = splitExps.reduce((s, e) => s + e.amount_twd, 0);
+    const perJpy = Math.round(splitJpy / memberCount);
+    const perTwd = Math.round(splitTwd / memberCount);
 
-  const breakdowns: MemberBreakdown[] = tripMembers.map((member) => {
-    const ownedExpenses = expenses.filter(
-      (e) => getExpenseOwner(e) === member.user_id
-    );
-    const personalJpy = ownedExpenses.reduce((s, e) => s + e.amount_jpy, 0);
-    const personalTwd = ownedExpenses.reduce((s, e) => s + e.amount_twd, 0);
+    const result: MemberBreakdown[] = tripMembers.map((member) => {
+      const ownedExpenses = expenses.filter(
+        (e) => getExpenseOwner(e) === member.user_id
+      );
+      const personalJpy = ownedExpenses.reduce((s, e) => s + e.amount_jpy, 0);
+      const personalTwd = ownedExpenses.reduce((s, e) => s + e.amount_twd, 0);
 
-    return {
-      userId: member.user_id,
-      name: member.profile?.display_name || "成員",
-      avatar: member.profile?.avatar_emoji || "🧑",
-      avatarUrl: member.profile?.avatar_url || null,
-      personalJpy,
-      personalTwd,
-      splitShareJpy: perPersonSplitJpy,
-      splitShareTwd: perPersonSplitTwd,
-      totalJpy: personalJpy + perPersonSplitJpy,
-      totalTwd: personalTwd + perPersonSplitTwd,
-      ownedExpenses,
-    };
-  });
+      return {
+        userId: member.user_id,
+        name: member.profile?.display_name || "成員",
+        avatar: member.profile?.avatar_emoji || "🧑",
+        avatarUrl: member.profile?.avatar_url || null,
+        personalJpy,
+        personalTwd,
+        splitShareJpy: perJpy,
+        splitShareTwd: perTwd,
+        totalJpy: personalJpy + perJpy,
+        totalTwd: personalTwd + perTwd,
+        ownedExpenses,
+      };
+    });
 
-  breakdowns.sort((a, b) => b.totalJpy - a.totalJpy);
+    result.sort((a, b) => b.totalJpy - a.totalJpy);
+    return { breakdowns: result, totalSplitJpy: splitJpy, perPersonSplitJpy: perJpy, perPersonSplitTwd: perTwd };
+  }, [expenses, tripMembers]);
 
   if (expenses.length === 0) {
     return (
@@ -100,6 +103,7 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
           <div key={m.userId} className="rounded-2xl border bg-white shadow-sm overflow-hidden">
             <button
               onClick={() => setExpandedMember(isExpanded ? null : m.userId)}
+              aria-expanded={isExpanded}
               className="w-full flex items-center gap-3 p-4 text-left"
             >
               <UserAvatar avatarUrl={m.avatarUrl} avatarEmoji={m.avatar} size="md" />

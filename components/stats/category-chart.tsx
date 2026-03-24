@@ -49,8 +49,8 @@ export function CategoryChart({ expenses }: CategoryChartProps) {
                 strokeWidth={2}
                 stroke="#fff"
               >
-                {data.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
+                {data.map((entry) => (
+                  <Cell key={entry.name} fill={entry.color} />
                 ))}
               </Pie>
             </PieChart>

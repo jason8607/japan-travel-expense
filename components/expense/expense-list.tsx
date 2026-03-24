@@ -66,7 +66,7 @@ function groupExpenses(expenses: Expense[], groupBy: "date" | "category") {
     map.get(key)!.push(e);
   }
 
-  return Array.from(map.entries()).map(([key, exps]) => ({
+  const entries = Array.from(map.entries()).map(([key, exps]) => ({
     key,
     label:
       groupBy === "date"
@@ -74,4 +74,10 @@ function groupExpenses(expenses: Expense[], groupBy: "date" | "category") {
         : key,
     expenses: exps,
   }));
+
+  if (groupBy === "date") {
+    entries.sort((a, b) => b.key.localeCompare(a.key));
+  }
+
+  return entries;
 }

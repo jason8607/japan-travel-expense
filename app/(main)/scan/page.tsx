@@ -61,40 +61,43 @@ export default function ScanPage() {
 
     try {
       const rate = await getExchangeRate();
-      const expenseDate = data.date || new Date().toISOString().split("T")[0];
+      const now = new Date();
+      const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const expenseDate = data.date || localToday;
 
-      let savedCount = 0;
-      for (const item of data.items) {
-        const jpy = item.quantity * item.unit_price;
-        const twd = jpyToTwd(jpy, rate);
+      const results = await Promise.all(
+        data.items.map(async (item) => {
+          const jpy = item.quantity * item.unit_price;
+          const twd = jpyToTwd(jpy, rate);
 
-        const res = await fetch("/api/expenses", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            trip_id: currentTrip.id,
-            paid_by: user.id,
-            owner_id: item.owner_id,
-            title: item.name,
-            title_ja: item.name_ja || null,
-            amount_jpy: jpy,
-            amount_twd: twd,
-            exchange_rate: rate,
-            category: data.category,
-            payment_method: data.paymentMethod,
-            store_name: data.storeName,
-            store_name_ja: data.storeNameJa || null,
-            expense_date: expenseDate,
-            split_type: item.split_type,
-          }),
-        });
+          const res = await fetch("/api/expenses", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              trip_id: currentTrip.id,
+              paid_by: user.id,
+              owner_id: item.owner_id,
+              title: item.name,
+              title_ja: item.name_ja || null,
+              amount_jpy: jpy,
+              amount_twd: twd,
+              exchange_rate: rate,
+              category: data.category,
+              payment_method: data.paymentMethod,
+              store_name: data.storeName,
+              store_name_ja: data.storeNameJa || null,
+              expense_date: expenseDate,
+              split_type: item.split_type,
+            }),
+          });
 
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || "儲存失敗");
-        savedCount++;
-      }
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "儲存失敗");
+          return result;
+        })
+      );
 
-      toast.success(`已儲存 ${savedCount} 筆消費`);
+      toast.success(`已儲存 ${results.length} 筆消費`);
       router.push("/records");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "儲存失敗";

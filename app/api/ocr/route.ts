@@ -18,6 +18,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+      return NextResponse.json(
+        { error: "不支援的圖片格式" },
+        { status: 400 }
+      );
+    }
+
+    const MAX_BASE64_LENGTH = 10 * 1024 * 1024;
+    if (typeof image !== "string" || image.length > MAX_BASE64_LENGTH) {
+      return NextResponse.json(
+        { error: "圖片過大，請上傳 10MB 以下的圖片" },
+        { status: 400 }
+      );
+    }
+
     if (!process.env.GOOGLE_GEMINI_API_KEY) {
       return NextResponse.json(
         { error: "未設定 Gemini API Key，請到設定頁面配置" },

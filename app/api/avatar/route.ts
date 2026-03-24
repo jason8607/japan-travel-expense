@@ -15,6 +15,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "缺少檔案" }, { status: 400 });
     }
 
+    const MAX_FILE_SIZE = 2 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: "檔案過大，請上傳 2MB 以下的圖片" }, { status: 400 });
+    }
+
     const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return NextResponse.json({ error: "只允許上傳圖片（jpg、png、gif、webp）" }, { status: 400 });
@@ -49,10 +54,14 @@ export async function POST(req: NextRequest) {
     const { data } = admin.storage.from("avatars").getPublicUrl(path);
     const avatarUrl = data.publicUrl + "?t=" + Date.now();
 
-    await admin
+    const { error: dbError } = await admin
       .from("profiles")
       .update({ avatar_url: avatarUrl })
       .eq("id", user.id);
+
+    if (dbError) {
+      return NextResponse.json({ error: "頭像已上傳但更新個人資料失敗" }, { status: 500 });
+    }
 
     return NextResponse.json({ avatarUrl });
   } catch (err) {

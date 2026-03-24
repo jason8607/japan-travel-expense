@@ -41,12 +41,6 @@ export default function InvitePage() {
     setInviting(true);
 
     try {
-      const { data: users } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", email);
-
-      // Try to find user by matching auth email via profiles
       const { data: authUsers } = await supabase.rpc("find_user_by_email", {
         target_email: email,
       });

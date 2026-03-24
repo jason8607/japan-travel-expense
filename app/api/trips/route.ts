@@ -30,8 +30,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ trips: trips || [] });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("trips GET error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
 }
 
@@ -76,13 +76,14 @@ export async function PUT(req: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("trips PUT error:", error.message);
+      return NextResponse.json({ error: "更新旅程失敗" }, { status: 500 });
     }
 
     return NextResponse.json({ trip });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("trips PUT error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
 }
 
@@ -100,6 +101,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "缺少必要欄位" }, { status: 400 });
     }
 
+    if (end_date < start_date) {
+      return NextResponse.json({ error: "結束日期不可早於開始日期" }, { status: 400 });
+    }
+
     const admin = createAdminClient();
 
     const { data: trip, error: tripError } = await admin
@@ -115,7 +120,8 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (tripError) {
-      return NextResponse.json({ error: tripError.message }, { status: 500 });
+      console.error("trips POST error:", tripError.message);
+      return NextResponse.json({ error: "建立旅程失敗" }, { status: 500 });
     }
 
     const { error: memberError } = await admin.from("trip_members").insert({
@@ -125,16 +131,17 @@ export async function POST(req: NextRequest) {
     });
 
     if (memberError) {
+      console.error("trips POST member error:", memberError.message);
       await admin.from("trips").delete().eq("id", trip.id);
       return NextResponse.json(
-        { error: memberError.message },
+        { error: "建立旅程成員失敗" },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ trip });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("trips POST error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
 }

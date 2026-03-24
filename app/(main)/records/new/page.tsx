@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { ExpenseForm } from "@/components/expense/expense-form";
+import { toast } from "sonner";
 import type { Expense } from "@/types";
 
 function ExpensePageContent() {
@@ -18,12 +19,11 @@ function ExpensePageContent() {
     const fetchExpense = async () => {
       try {
         const res = await fetch(`/api/expenses?id=${editId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setEditExpense(data.expense);
-        }
+        if (!res.ok) throw new Error("載入失敗");
+        const data = await res.json();
+        setEditExpense(data.expense);
       } catch {
-        // ignore
+        toast.error("無法載入消費資料");
       } finally {
         setLoading(false);
       }

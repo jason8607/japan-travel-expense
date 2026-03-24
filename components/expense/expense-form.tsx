@@ -13,13 +13,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
-import { CATEGORIES, PAYMENT_METHODS } from "@/types";
 import type { Category, PaymentMethod, SplitType, Expense } from "@/types";
 import { Trash2, MapPin, Store, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { CategoryGrid } from "./category-grid";
+import { PaymentChips } from "./payment-chips";
 
 interface ExpenseFormProps {
   editExpense?: Expense | null;
@@ -42,9 +51,11 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   );
   const [storeName, setStoreName] = useState(editExpense?.store_name || "");
   const [location, setLocation] = useState(editExpense?.location || "");
-  const [expenseDate, setExpenseDate] = useState(
-    editExpense?.expense_date || new Date().toISOString().split("T")[0]
-  );
+  const [expenseDate, setExpenseDate] = useState(() => {
+    if (editExpense?.expense_date) return editExpense.expense_date;
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+  });
   const [paidBy, setPaidBy] = useState(editExpense?.paid_by || user?.id || "");
   const [splitType, setSplitType] = useState<SplitType>(
     editExpense?.split_type || "personal"
@@ -54,6 +65,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,8 +142,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
 
   const handleDelete = async () => {
     if (!editExpense) return;
-    if (!confirm("確定要刪除這筆消費嗎？")) return;
-
+    setShowDeleteDialog(false);
     setDeleting(true);
     try {
       const res = await fetch(`/api/expenses?id=${editExpense.id}`, {
@@ -196,52 +207,13 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       {/* 類別選擇 - 圖示網格 */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-slate-600">類別</Label>
-        <div className="grid grid-cols-4 gap-2">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.value}
-              type="button"
-              onClick={() => setCategory(cat.value)}
-              className={cn(
-                "flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border-2 transition-all duration-200",
-                category === cat.value
-                  ? "border-blue-400 bg-blue-50 shadow-sm"
-                  : "border-slate-100 bg-white hover:bg-slate-50"
-              )}
-            >
-              <span className="text-2xl leading-none">{cat.icon}</span>
-              <span className={cn(
-                "text-[11px] font-medium",
-                category === cat.value ? "text-blue-700" : "text-slate-500"
-              )}>
-                {cat.label}
-              </span>
-            </button>
-          ))}
-        </div>
+        <CategoryGrid value={category} onChange={setCategory} />
       </div>
 
       {/* 支付方式 - 橫排 chips */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-slate-600">支付方式</Label>
-        <div className="flex flex-wrap gap-2">
-          {PAYMENT_METHODS.map((pm) => (
-            <button
-              key={pm.value}
-              type="button"
-              onClick={() => setPaymentMethod(pm.value)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-full border-2 transition-all duration-200 text-sm",
-                paymentMethod === pm.value
-                  ? "border-blue-400 bg-blue-50 text-blue-700 font-medium"
-                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <span className="text-base leading-none">{pm.icon}</span>
-              <span>{pm.label}</span>
-            </button>
-          ))}
-        </div>
+        <PaymentChips value={paymentMethod} onChange={setPaymentMethod} />
       </div>
 
       {/* 店家 + 地點 */}
@@ -383,7 +355,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             type="button"
             variant="outline"
             className="w-full h-12 text-base text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200 rounded-xl"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteDialog(true)}
             disabled={saving || deleting}
           >
             <Trash2 className="h-4 w-4 mr-2" />
@@ -391,6 +363,27 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           </Button>
         )}
       </div>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>確定要刪除？</DialogTitle>
+            <DialogDescription>刪除後無法復原</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              取消
+            </Button>
+            <Button
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              確定刪除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

@@ -122,7 +122,3 @@ export const PAYMENT_METHODS: {
   { value: "Suica", label: "Suica", icon: "🚃", color: "#06B6D4" },
   { value: "其他", label: "其他", icon: "💰", color: "#6B7280" },
 ];
-
-export const DEFAULT_AVATARS = [
-  "👨", "👩", "🧑", "👦", "👧", "🧔", "👱", "👲",
-];

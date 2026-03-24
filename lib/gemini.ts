@@ -52,5 +52,10 @@ export async function recognizeReceipt(
     throw new Error("無法解析 AI 回應");
   }
 
-  return JSON.parse(jsonMatch[0]) as OCRResult;
+  const parsed = JSON.parse(jsonMatch[0]);
+  if (typeof parsed !== "object" || parsed === null || typeof parsed.total !== "number") {
+    throw new Error("AI 回應格式不符");
+  }
+
+  return parsed as OCRResult;
 }

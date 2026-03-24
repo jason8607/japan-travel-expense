@@ -52,11 +52,19 @@ export async function POST(request: NextRequest) {
       databaseId
     );
 
-    await supabase
+    const { error: dbError } = await supabase
       .from("expenses")
       .update({ notion_page_id: notionPageId })
       .eq("id", expenseId)
       .eq("trip_id", expense.trip_id);
+
+    if (dbError) {
+      console.error("Failed to save notion_page_id:", dbError.message);
+      return NextResponse.json(
+        { error: "Notion 同步成功但儲存 ID 失敗" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true, notionPageId });
   } catch (error: unknown) {

@@ -2,7 +2,16 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useApp } from "@/lib/context";
+import { createClient } from "@/lib/supabase/client";
 import type { Expense } from "@/types";
+
+function getLocalDateString() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 export function useExpenses() {
   const { currentTrip } = useApp();
@@ -18,14 +27,17 @@ export function useExpenses() {
 
     try {
       const res = await fetch(`/api/expenses?trip_id=${currentTrip.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setExpenses(data.expenses || []);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "載入失敗");
       }
-    } catch {
-      // ignore
+      const data = await res.json();
+      setExpenses(data.expenses || []);
+    } catch (err) {
+      console.error("Failed to load expenses:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [currentTrip?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -35,12 +47,21 @@ export function useExpenses() {
   useEffect(() => {
     if (!currentTrip) return;
 
-    const interval = setInterval(fetchExpenses, 30000);
-    return () => clearInterval(interval);
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`expenses-${currentTrip.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "expenses", filter: `trip_id=eq.${currentTrip.id}` },
+        () => { fetchExpenses(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [currentTrip?.id, fetchExpenses]);
 
   const todayTotal = expenses
-    .filter((e) => e.expense_date === new Date().toISOString().split("T")[0])
+    .filter((e) => e.expense_date === getLocalDateString())
     .reduce((s, e) => s + e.amount_jpy, 0);
 
   const totalJpy = expenses.reduce((s, e) => s + e.amount_jpy, 0);

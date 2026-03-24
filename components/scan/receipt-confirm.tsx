@@ -3,13 +3,15 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Category, OCRResult, PaymentMethod } from "@/types";
-import { CATEGORIES, PAYMENT_METHODS } from "@/types";
 import { Plus, Trash2, Users } from "lucide-react";
+import { CategoryGrid } from "@/components/expense/category-grid";
+import { PaymentChips } from "@/components/expense/payment-chips";
 import { useState } from "react";
 import { useApp } from "@/lib/context";
 import { cn } from "@/lib/utils";
 
 export interface ReceiptItemWithOwner {
+  _id: string;
   name: string;
   name_ja: string;
   quantity: number;
@@ -53,6 +55,7 @@ export function ReceiptConfirm({
   const [items, setItems] = useState<ReceiptItemWithOwner[]>(
     initialResult.items.map((item) => ({
       ...item,
+      _id: crypto.randomUUID(),
       owner_id: null,
       split_type: "personal" as const,
     }))
@@ -76,6 +79,7 @@ export function ReceiptConfirm({
     setItems((prev) => [
       ...prev,
       {
+        _id: crypto.randomUUID(),
         name_ja: "",
         name: "新品項",
         quantity: 1,
@@ -165,7 +169,7 @@ export function ReceiptConfirm({
 
         <div className="space-y-3">
           {items.map((item, index) => (
-            <div key={index} className="rounded-xl bg-gray-50 overflow-hidden">
+            <div key={item._id} className="rounded-xl bg-gray-50 overflow-hidden">
               <div className="flex items-start gap-3 p-3">
                 <div className="shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
                   {index + 1}
@@ -249,43 +253,13 @@ export function ReceiptConfirm({
       {/* Category picker */}
       <div className="rounded-2xl border bg-white p-4 shadow-sm">
         <h4 className="font-bold mb-3 text-sm">消費類別</h4>
-        <div className="grid grid-cols-4 gap-2">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c.value}
-              onClick={() => setCategory(c.value)}
-              className={`flex flex-col items-center gap-1 p-2.5 rounded-xl text-xs font-medium border-2 transition-all ${
-                category === c.value
-                  ? "border-blue-400 bg-blue-50 text-blue-600"
-                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              <span className="text-xl leading-none">{c.icon}</span>
-              <span>{c.label}</span>
-            </button>
-          ))}
-        </div>
+        <CategoryGrid value={category} onChange={setCategory} />
       </div>
 
       {/* Payment method picker */}
       <div className="rounded-2xl border bg-white p-4 shadow-sm">
         <h4 className="font-bold mb-3 text-sm">支付方式</h4>
-        <div className="flex flex-wrap gap-2">
-          {PAYMENT_METHODS.map((p) => (
-            <button
-              key={p.value}
-              onClick={() => setPaymentMethod(p.value)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium border-2 transition-all ${
-                paymentMethod === p.value
-                  ? "border-blue-400 bg-blue-50 text-blue-600"
-                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              <span className="text-base leading-none">{p.icon}</span>
-              <span>{p.label}</span>
-            </button>
-          ))}
-        </div>
+        <PaymentChips value={paymentMethod} onChange={setPaymentMethod} />
       </div>
 
       <Button

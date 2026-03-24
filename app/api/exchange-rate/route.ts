@@ -1,28 +1,10 @@
 import { NextResponse } from "next/server";
-
-const FREE_APIS = [
-  {
-    url: "https://open.er-api.com/v6/latest/JPY",
-    extract: (data: Record<string, unknown>) =>
-      (data.rates as Record<string, number>)?.TWD,
-  },
-  {
-    url: "https://api.exchangerate-api.com/v4/latest/JPY",
-    extract: (data: Record<string, unknown>) =>
-      (data.rates as Record<string, number>)?.TWD,
-  },
-  {
-    url: "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/jpy.json",
-    extract: (data: Record<string, unknown>) =>
-      (data.jpy as Record<string, number>)?.twd,
-  },
-];
+import { FREE_APIS, FALLBACK_RATE, CACHE_DURATION } from "@/lib/exchange-rate";
 
 let cachedRate: { rate: number; timestamp: number } | null = null;
-const CACHE_TTL = 6 * 60 * 60 * 1000;
 
 export async function GET() {
-  if (cachedRate && Date.now() - cachedRate.timestamp < CACHE_TTL) {
+  if (cachedRate && Date.now() - cachedRate.timestamp < CACHE_DURATION) {
     return NextResponse.json({ rate: cachedRate.rate, cached: true });
   }
 
@@ -30,7 +12,6 @@ export async function GET() {
     try {
       const res = await fetch(api.url, {
         signal: AbortSignal.timeout(5000),
-        next: { revalidate: 21600 },
       });
       if (!res.ok) continue;
       const data = await res.json();
@@ -44,5 +25,5 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ rate: 0.206, fallback: true });
+  return NextResponse.json({ rate: FALLBACK_RATE, fallback: true });
 }

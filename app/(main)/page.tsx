@@ -70,7 +70,8 @@ export default function HomePage() {
     );
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const todayExpenses = expenses.filter((e) => e.expense_date === today);
   const todayTwd = todayExpenses.reduce((s, e) => s + e.amount_twd, 0);
 
@@ -192,6 +193,7 @@ export default function HomePage() {
       <div className="fixed bottom-20 right-4 z-40">
         <Link
           href="/records/new"
+          aria-label="新增消費"
           className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all active:scale-95"
         >
           <Plus className="h-6 w-6" />

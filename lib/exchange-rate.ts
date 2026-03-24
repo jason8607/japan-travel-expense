@@ -1,13 +1,13 @@
-const FALLBACK_RATE = 0.206;
+export const FALLBACK_RATE = 0.206;
 const CACHE_KEY = "exchange_rate_jpy_twd";
-const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
+export const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
 
 interface CachedRate {
   rate: number;
   timestamp: number;
 }
 
-const FREE_APIS = [
+export const FREE_APIS = [
   {
     url: "https://open.er-api.com/v6/latest/JPY",
     extract: (data: Record<string, unknown>) =>
@@ -27,12 +27,16 @@ const FREE_APIS = [
 
 export async function getExchangeRate(): Promise<number> {
   if (typeof window !== "undefined") {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      const parsed: CachedRate = JSON.parse(cached);
-      if (Date.now() - parsed.timestamp < CACHE_DURATION) {
-        return parsed.rate;
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed: CachedRate = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < CACHE_DURATION) {
+          return parsed.rate;
+        }
       }
+    } catch {
+      localStorage.removeItem(CACHE_KEY);
     }
   }
 

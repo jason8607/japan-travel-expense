@@ -9,6 +9,15 @@ import { CATEGORIES, PAYMENT_METHODS } from "@/types";
 import type { Expense } from "@/types";
 import { useApp } from "@/lib/context";
 import Link from "next/link";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface ExpenseCardProps {
   expense: Expense;
@@ -18,6 +27,7 @@ interface ExpenseCardProps {
 export function ExpenseCard({ expense, onDelete }: ExpenseCardProps) {
   const { tripMembers } = useApp();
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const categoryInfo = CATEGORIES.find((c) => c.value === expense.category);
   const paymentInfo = PAYMENT_METHODS.find((p) => p.value === expense.payment_method);
 
@@ -85,18 +95,15 @@ export function ExpenseCard({ expense, onDelete }: ExpenseCardProps) {
       <div className="shrink-0 flex items-center gap-0.5">
         <Link
           href={`/records/new?edit=${expense.id}`}
+          aria-label="編輯消費"
           className="p-1.5 text-slate-300 hover:text-blue-500 transition-colors"
         >
           <Pencil className="h-3.5 w-3.5" />
         </Link>
         {onDelete && (
           <button
-            onClick={async () => {
-              if (!confirm("確定要刪除這筆消費嗎？")) return;
-              setDeleting(true);
-              await onDelete(expense.id);
-              setDeleting(false);
-            }}
+            aria-label="刪除消費"
+            onClick={() => setShowDeleteDialog(true)}
             disabled={deleting}
             className="p-1.5 text-slate-300 hover:text-red-500 transition-colors disabled:opacity-50"
           >
@@ -104,6 +111,32 @@ export function ExpenseCard({ expense, onDelete }: ExpenseCardProps) {
           </button>
         )}
       </div>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>確定要刪除？</DialogTitle>
+            <DialogDescription>刪除後無法復原</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              取消
+            </Button>
+            <Button
+              className="bg-red-500 hover:bg-red-600 text-white"
+              disabled={deleting}
+              onClick={async () => {
+                setShowDeleteDialog(false);
+                setDeleting(true);
+                await onDelete!(expense.id);
+                setDeleting(false);
+              }}
+            >
+              確定刪除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

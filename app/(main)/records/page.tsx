@@ -44,7 +44,7 @@ export default function RecordsPage() {
             href="/"
             className="text-sm text-blue-500"
           >
-            查看所有旅行消費
+            ← 返回首頁
           </Link>
         </div>
       </div>
@@ -77,6 +77,7 @@ export default function RecordsPage() {
       <div className="fixed bottom-20 right-4 z-40">
         <Link
           href="/records/new"
+          aria-label="新增消費"
           className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all active:scale-95"
         >
           <Plus className="h-6 w-6" />

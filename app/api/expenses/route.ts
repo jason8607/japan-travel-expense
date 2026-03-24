@@ -51,21 +51,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "無權限" }, { status: 403 });
     }
 
+    const limit = Math.min(Number(req.nextUrl.searchParams.get("limit")) || 200, 500);
+    const offset = Number(req.nextUrl.searchParams.get("offset")) || 0;
+
     const { data: expenses, error } = await admin
       .from("expenses")
       .select("*, profile:profiles!paid_by(*)")
       .eq("trip_id", tripId)
       .order("expense_date", { ascending: false })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("expenses GET list error:", error.message);
+      return NextResponse.json({ error: "載入消費紀錄失敗" }, { status: 500 });
     }
 
     return NextResponse.json({ expenses: expenses || [] });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("expenses GET error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
 }
 
@@ -79,6 +84,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       trip_id,
+      paid_by: rawPaidBy,
       title,
       title_ja,
       amount_jpy,
@@ -91,10 +97,16 @@ export async function POST(req: NextRequest) {
       store_name_ja,
       expense_date,
       receipt_image_url,
+      split_type,
+      owner_id,
     } = body;
 
     if (!trip_id) {
       return NextResponse.json({ error: "缺少 trip_id" }, { status: 400 });
+    }
+
+    if (typeof amount_jpy !== "number" || amount_jpy < 0) {
+      return NextResponse.json({ error: "金額必須為非負數" }, { status: 400 });
     }
 
     const admin = createAdminClient();
@@ -110,11 +122,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "無權限" }, { status: 403 });
     }
 
+    const paidBy = rawPaidBy || user.id;
+    if (paidBy !== user.id) {
+      const { data: paidByMember } = await admin
+        .from("trip_members")
+        .select("user_id")
+        .eq("trip_id", trip_id)
+        .eq("user_id", paidBy)
+        .single();
+      if (!paidByMember) {
+        return NextResponse.json({ error: "paid_by 必須是旅程成員" }, { status: 400 });
+      }
+    }
+
     const { data: expense, error } = await admin
       .from("expenses")
       .insert({
         trip_id,
-        paid_by: user.id,
+        paid_by: paidBy,
         title,
         title_ja,
         amount_jpy,
@@ -127,18 +152,21 @@ export async function POST(req: NextRequest) {
         store_name_ja,
         expense_date,
         receipt_image_url,
+        split_type,
+        owner_id,
       })
       .select()
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("expenses POST error:", error.message);
+      return NextResponse.json({ error: "新增消費失敗" }, { status: 500 });
     }
 
     return NextResponse.json({ expense });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("expenses POST error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
 }
 
@@ -173,7 +201,28 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "無權限" }, { status: 403 });
     }
 
-    const { trip_id: _tripId, ...safeUpdates } = updates;
+    const { paid_by: rawPaidBy } = updates;
+    if (rawPaidBy && rawPaidBy !== user.id) {
+      const { data: paidByMember } = await admin
+        .from("trip_members")
+        .select("user_id")
+        .eq("trip_id", existing.trip_id)
+        .eq("user_id", rawPaidBy)
+        .single();
+      if (!paidByMember) {
+        return NextResponse.json({ error: "paid_by 必須是旅程成員" }, { status: 400 });
+      }
+    }
+
+    const ALLOWED_FIELDS = [
+      "title", "title_ja", "amount_jpy", "amount_twd", "exchange_rate",
+      "category", "payment_method", "location", "store_name", "store_name_ja",
+      "expense_date", "receipt_image_url", "split_type", "owner_id", "paid_by",
+    ];
+    const safeUpdates: Record<string, unknown> = {};
+    for (const field of ALLOWED_FIELDS) {
+      if (field in updates) safeUpdates[field] = updates[field];
+    }
 
     const { data: expense, error } = await admin
       .from("expenses")
@@ -183,13 +232,14 @@ export async function PUT(req: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("expenses PUT error:", error.message);
+      return NextResponse.json({ error: "更新消費失敗" }, { status: 500 });
     }
 
     return NextResponse.json({ expense });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("expenses PUT error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
 }
 
@@ -228,12 +278,13 @@ export async function DELETE(req: NextRequest) {
       .eq("id", expenseId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("expenses DELETE error:", error.message);
+      return NextResponse.json({ error: "刪除消費失敗" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("expenses DELETE error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Camera, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Camera, Loader2, Upload } from "lucide-react";
 import Image from "next/image";
+import { useRef, useState } from "react";
 
 interface ReceiptUploadProps {
   onImageSelected: (base64: string, mimeType: string) => void;
@@ -38,7 +38,7 @@ export function ReceiptUpload({
     <div className="space-y-4">
       {preview ? (
         <div className="relative mx-4 rounded-2xl border bg-white p-4 shadow-sm">
-          <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-gray-50">
+          <div className="relative w-full aspect-3/4 rounded-xl overflow-hidden bg-gray-50">
             <Image
               src={preview}
               alt="收據"
