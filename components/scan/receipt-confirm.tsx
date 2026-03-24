@@ -9,6 +9,7 @@ import { PaymentChips } from "@/components/expense/payment-chips";
 import { useState } from "react";
 import { useApp } from "@/lib/context";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 export interface ReceiptItemWithOwner {
   _id: string;
@@ -42,7 +43,7 @@ export function ReceiptConfirm({
   onCancel,
   saving,
 }: ReceiptConfirmProps) {
-  const { user, tripMembers } = useApp();
+  const { user, profile: myProfile, tripMembers } = useApp();
   const [category, setCategory] = useState<Category>("餐飲");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     initialResult.payment_method === "cash" ? "現金"
@@ -129,7 +130,8 @@ export function ReceiptConfirm({
               onClick={() => setAllOwner(null, "personal")}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium bg-blue-50 border-blue-200 text-blue-700"
             >
-              {user ? "🧑 全部我的" : "全部我的"}
+              <UserAvatar avatarUrl={myProfile?.avatar_url} avatarEmoji={myProfile?.avatar_emoji} size="xs" />
+              全部我的
             </button>
             {tripMembers
               .filter((m) => m.user_id !== user?.id)
@@ -140,7 +142,8 @@ export function ReceiptConfirm({
                   onClick={() => setAllOwner(m.user_id, "personal")}
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-slate-200 text-slate-600 hover:bg-slate-50"
                 >
-                  {m.profile?.avatar_emoji || "🧑"} 全部{m.profile?.display_name || "成員"}的
+                  <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
+                  全部{m.profile?.display_name || "成員"}的
                 </button>
               ))}
             <button
@@ -212,7 +215,8 @@ export function ReceiptConfirm({
                         : "bg-white text-slate-400 hover:text-slate-600"
                     )}
                   >
-                    🧑 我
+                    <UserAvatar avatarUrl={myProfile?.avatar_url} avatarEmoji={myProfile?.avatar_emoji} size="xs" />
+                    我
                   </button>
                   {tripMembers
                     .filter((m) => m.user_id !== user?.id)
@@ -228,7 +232,8 @@ export function ReceiptConfirm({
                             : "bg-white text-slate-400 hover:text-slate-600"
                         )}
                       >
-                        {m.profile?.avatar_emoji || "🧑"} {m.profile?.display_name || "成員"}
+                        <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
+                        {m.profile?.display_name || "成員"}
                       </button>
                     ))}
                   <button
