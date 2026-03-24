@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
 import { CATEGORIES, PAYMENT_METHODS } from "@/types";
 import type { Category, PaymentMethod, Expense } from "@/types";
+import { Trash2, MapPin, Store } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ExpenseFormProps {
   editExpense?: Expense | null;
@@ -25,6 +27,7 @@ interface ExpenseFormProps {
 export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   const { user, currentTrip, tripMembers } = useApp();
   const router = useRouter();
+  const isEditing = !!editExpense;
 
   const [title, setTitle] = useState(editExpense?.title || "");
   const [amountJpy, setAmountJpy] = useState(
@@ -43,8 +46,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   );
   const [paidBy, setPaidBy] = useState(editExpense?.paid_by || user?.id || "");
   const [saving, setSaving] = useState(false);
-
-  // Auto-detect location is handled by trip schedule if configured
+  const [deleting, setDeleting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,30 +61,51 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       const jpy = Number(amountJpy);
       const twd = jpyToTwd(jpy, rate);
 
-      const expenseData = {
-        trip_id: currentTrip.id,
-        paid_by: paidBy || user.id,
-        title,
-        amount_jpy: jpy,
-        amount_twd: twd,
-        exchange_rate: rate,
-        category,
-        payment_method: paymentMethod,
-        store_name: storeName || null,
-        location: location || null,
-        expense_date: expenseDate,
-      };
+      if (isEditing) {
+        const res = await fetch("/api/expenses", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: editExpense.id,
+            paid_by: paidBy || user.id,
+            title,
+            amount_jpy: jpy,
+            amount_twd: twd,
+            exchange_rate: rate,
+            category,
+            payment_method: paymentMethod,
+            store_name: storeName || null,
+            location: location || null,
+            expense_date: expenseDate,
+          }),
+        });
 
-      const res = await fetch("/api/expenses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(expenseData),
-      });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "更新失敗");
+        toast.success("已更新消費紀錄");
+      } else {
+        const res = await fetch("/api/expenses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            trip_id: currentTrip.id,
+            paid_by: paidBy || user.id,
+            title,
+            amount_jpy: jpy,
+            amount_twd: twd,
+            exchange_rate: rate,
+            category,
+            payment_method: paymentMethod,
+            store_name: storeName || null,
+            location: location || null,
+            expense_date: expenseDate,
+          }),
+        });
 
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "儲存失敗");
-
-      toast.success(editExpense ? "已更新消費紀錄" : "已新增消費紀錄");
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "儲存失敗");
+        toast.success("已新增消費紀錄");
+      }
 
       router.push("/records");
       router.refresh();
@@ -94,22 +117,48 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!editExpense) return;
+    if (!confirm("確定要刪除這筆消費嗎？")) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/expenses?id=${editExpense.id}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "刪除失敗");
+
+      toast.success("已刪除消費紀錄");
+      router.push("/records");
+      router.refresh();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "刪除失敗";
+      toast.error(message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4">
-      <div className="space-y-2">
-        <Label htmlFor="title">品名</Label>
+    <form onSubmit={handleSubmit} className="space-y-5 p-4">
+      {/* 品名 */}
+      <div className="space-y-1.5">
+        <Label htmlFor="title" className="text-sm font-medium text-slate-600">品名</Label>
         <Input
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="例：拉麵、新幹線車票"
           required
+          className="h-12 rounded-xl border-slate-200 text-base focus-visible:ring-orange-500"
         />
       </div>
 
+      {/* 金額 + 日期 */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="amount">金額 (¥)</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="amount" className="text-sm font-medium text-slate-600">金額 (¥)</Label>
           <Input
             id="amount"
             type="number"
@@ -118,89 +167,114 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             placeholder="0"
             required
             min={0}
+            className="h-12 rounded-xl border-slate-200 text-xl font-bold focus-visible:ring-orange-500"
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="date">日期</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="date" className="text-sm font-medium text-slate-600">日期</Label>
           <Input
             id="date"
             type="date"
             value={expenseDate}
             onChange={(e) => setExpenseDate(e.target.value)}
+            className="h-12 rounded-xl border-slate-200 focus-visible:ring-orange-500"
           />
         </div>
       </div>
 
+      {/* 類別選擇 - 圖示網格 */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium text-slate-600">類別</Label>
+        <div className="grid grid-cols-4 gap-2">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.value}
+              type="button"
+              onClick={() => setCategory(cat.value)}
+              className={cn(
+                "flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border-2 transition-all duration-200",
+                category === cat.value
+                  ? "border-orange-400 bg-orange-50 shadow-sm"
+                  : "border-slate-100 bg-white hover:bg-slate-50"
+              )}
+            >
+              <span className="text-2xl leading-none">{cat.icon}</span>
+              <span className={cn(
+                "text-[11px] font-medium",
+                category === cat.value ? "text-orange-700" : "text-slate-500"
+              )}>
+                {cat.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 支付方式 - 橫排 chips */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium text-slate-600">支付方式</Label>
+        <div className="flex flex-wrap gap-2">
+          {PAYMENT_METHODS.map((pm) => (
+            <button
+              key={pm.value}
+              type="button"
+              onClick={() => setPaymentMethod(pm.value)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-full border-2 transition-all duration-200 text-sm",
+                paymentMethod === pm.value
+                  ? "border-orange-400 bg-orange-50 text-orange-700 font-medium"
+                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <span className="text-base leading-none">{pm.icon}</span>
+              <span>{pm.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 店家 + 地點 */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label>類別</Label>
-          <Select
-            value={category}
-            onValueChange={(v) => setCategory(v as Category)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c.value} value={c.value}>
-                  {c.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-1.5">
+          <Label htmlFor="store" className="text-sm font-medium text-slate-600">
+            <Store className="inline h-3.5 w-3.5 mr-1 text-slate-400" />
+            店家名稱
+          </Label>
+          <Input
+            id="store"
+            value={storeName}
+            onChange={(e) => setStoreName(e.target.value)}
+            placeholder="選填"
+            className="h-11 rounded-xl border-slate-200 focus-visible:ring-orange-500"
+          />
         </div>
-        <div className="space-y-2">
-          <Label>支付方式</Label>
-          <Select
-            value={paymentMethod}
-            onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PAYMENT_METHODS.map((p) => (
-                <SelectItem key={p.value} value={p.value}>
-                  {p.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-1.5">
+          <Label htmlFor="location" className="text-sm font-medium text-slate-600">
+            <MapPin className="inline h-3.5 w-3.5 mr-1 text-slate-400" />
+            地點
+          </Label>
+          <Input
+            id="location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="選填"
+            className="h-11 rounded-xl border-slate-200 focus-visible:ring-orange-500"
+          />
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="store">店家名稱</Label>
-        <Input
-          id="store"
-          value={storeName}
-          onChange={(e) => setStoreName(e.target.value)}
-          placeholder="選填"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="location">地點</Label>
-        <Input
-          id="location"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="選填，例：東京、大阪"
-        />
-      </div>
-
+      {/* 誰付的 */}
       {tripMembers.length > 1 && (
-        <div className="space-y-2">
-          <Label>誰付的</Label>
+        <div className="space-y-1.5">
+          <Label className="text-sm font-medium text-slate-600">誰付的</Label>
           <Select value={paidBy} onValueChange={(v) => { if (v) setPaidBy(v); }}>
-            <SelectTrigger>
+            <SelectTrigger className="h-11 rounded-xl border-slate-200 focus:ring-orange-500">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {tripMembers.map((m) => (
                 <SelectItem key={m.user_id} value={m.user_id}>
-                  {m.profile?.avatar_emoji || "🧑"}{" "}
+                  <span className="text-lg mr-1.5">{m.profile?.avatar_emoji || "🧑"}</span>
                   {m.profile?.display_name || "成員"}
                 </SelectItem>
               ))}
@@ -209,17 +283,33 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         </div>
       )}
 
-      <Button
-        type="submit"
-        className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-base"
-        disabled={saving}
-      >
-        {saving
-          ? "儲存中..."
-          : editExpense
-            ? "更新消費"
-            : "新增消費"}
-      </Button>
+      {/* 送出按鈕 */}
+      <div className="pt-2 space-y-3">
+        <Button
+          type="submit"
+          className="w-full bg-orange-500 hover:bg-orange-600 h-13 text-base font-semibold rounded-xl shadow-lg shadow-orange-200 transition-all active:scale-[0.98]"
+          disabled={saving || deleting}
+        >
+          {saving
+            ? "儲存中..."
+            : isEditing
+              ? "更新消費"
+              : "新增消費"}
+        </Button>
+
+        {isEditing && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-12 text-base text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200 rounded-xl"
+            onClick={handleDelete}
+            disabled={saving || deleting}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            {deleting ? "刪除中..." : "刪除此筆消費"}
+          </Button>
+        )}
+      </div>
     </form>
   );
 }

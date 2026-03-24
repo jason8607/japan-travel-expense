@@ -96,26 +96,27 @@ export interface OCRResult {
   payment_method: string;
 }
 
-export const CATEGORIES: { value: Category; label: string; color: string }[] = [
-  { value: "餐飲", label: "餐飲", color: "#F59E0B" },
-  { value: "交通", label: "交通", color: "#3B82F6" },
-  { value: "購物", label: "購物", color: "#EC4899" },
-  { value: "住宿", label: "住宿", color: "#10B981" },
-  { value: "門票", label: "門票", color: "#8B5CF6" },
-  { value: "藥品", label: "藥品", color: "#EF4444" },
-  { value: "其他", label: "其他", color: "#6B7280" },
+export const CATEGORIES: { value: Category; label: string; icon: string; color: string }[] = [
+  { value: "餐飲", label: "餐飲", icon: "🍽️", color: "#F59E0B" },
+  { value: "交通", label: "交通", icon: "🚆", color: "#3B82F6" },
+  { value: "購物", label: "購物", icon: "🛍️", color: "#EC4899" },
+  { value: "住宿", label: "住宿", icon: "🏨", color: "#10B981" },
+  { value: "門票", label: "門票", icon: "🎫", color: "#8B5CF6" },
+  { value: "藥品", label: "藥品", icon: "💊", color: "#EF4444" },
+  { value: "其他", label: "其他", icon: "📦", color: "#6B7280" },
 ];
 
 export const PAYMENT_METHODS: {
   value: PaymentMethod;
   label: string;
+  icon: string;
   color: string;
 }[] = [
-  { value: "現金", label: "現金", color: "#10B981" },
-  { value: "信用卡", label: "信用卡", color: "#3B82F6" },
-  { value: "PayPay", label: "PayPay", color: "#EC4899" },
-  { value: "Suica", label: "Suica", color: "#06B6D4" },
-  { value: "其他", label: "其他", color: "#6B7280" },
+  { value: "現金", label: "現金", icon: "💴", color: "#10B981" },
+  { value: "信用卡", label: "信用卡", icon: "💳", color: "#3B82F6" },
+  { value: "PayPay", label: "PayPay", icon: "📱", color: "#EC4899" },
+  { value: "Suica", label: "Suica", icon: "🚃", color: "#06B6D4" },
+  { value: "其他", label: "其他", icon: "💰", color: "#6B7280" },
 ];
 
 export const DEFAULT_AVATARS = [

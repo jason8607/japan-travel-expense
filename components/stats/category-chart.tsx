@@ -19,6 +19,7 @@ export function CategoryChart({ expenses }: CategoryChartProps) {
       .reduce((s, e) => s + e.amount_jpy, 0);
     return {
       name: cat.label,
+      icon: cat.icon,
       value: amount,
       color: cat.color,
       percentage: Math.round((amount / total) * 100),
@@ -60,7 +61,7 @@ export function CategoryChart({ expenses }: CategoryChartProps) {
                 className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="flex-1">{item.name}</span>
+              <span className="flex-1">{item.icon} {item.name}</span>
               <span className="text-muted-foreground text-xs">
                 {item.percentage}%
               </span>

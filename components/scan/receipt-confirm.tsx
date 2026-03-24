@@ -130,13 +130,14 @@ export function ReceiptConfirm({
             <button
               key={c.value}
               onClick={() => setCategory(c.value)}
-              className={`py-2 rounded-xl text-xs font-medium border transition-colors ${
+              className={`flex flex-col items-center gap-1 p-2.5 rounded-xl text-xs font-medium border-2 transition-all ${
                 category === c.value
-                  ? "border-orange-500 bg-orange-50 text-orange-600"
-                  : "border-gray-100 bg-gray-50 text-gray-600"
+                  ? "border-orange-400 bg-orange-50 text-orange-600"
+                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
               }`}
             >
-              {c.value}
+              <span className="text-xl leading-none">{c.icon}</span>
+              <span>{c.label}</span>
             </button>
           ))}
         </div>
@@ -145,18 +146,19 @@ export function ReceiptConfirm({
       {/* Payment method picker */}
       <div className="rounded-2xl border bg-white p-4 shadow-sm">
         <h4 className="font-bold mb-3 text-sm">支付方式</h4>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-wrap gap-2">
           {PAYMENT_METHODS.map((p) => (
             <button
               key={p.value}
               onClick={() => setPaymentMethod(p.value)}
-              className={`py-2 rounded-xl text-xs font-medium border transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium border-2 transition-all ${
                 paymentMethod === p.value
-                  ? "border-orange-500 bg-orange-50 text-orange-600"
-                  : "border-gray-100 bg-gray-50 text-gray-600"
+                  ? "border-orange-400 bg-orange-50 text-orange-600"
+                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
               }`}
             >
-              {p.value}
+              <span className="text-base leading-none">{p.icon}</span>
+              <span>{p.label}</span>
             </button>
           ))}
         </div>
