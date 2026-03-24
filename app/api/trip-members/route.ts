@@ -97,6 +97,9 @@ export async function DELETE(req: NextRequest) {
 
     const ownerId = ownerMember?.user_id || user.id;
 
+    // 先轉移資料，再刪成員
+    // 若轉移失敗成員還在，可重試；若先刪成員轉移才失敗，會產生孤兒資料（paid_by 指向非成員）
+
     const { data: paidExpenses } = await admin
       .from("expenses")
       .select("id, title")
@@ -104,22 +107,34 @@ export async function DELETE(req: NextRequest) {
       .eq("paid_by", user_id);
 
     if (paidExpenses && paidExpenses.length > 0) {
-      for (const exp of paidExpenses) {
-        await admin
-          .from("expenses")
-          .update({
-            paid_by: ownerId,
-            title: exp.title.endsWith("（轉移）") ? exp.title : `${exp.title}（轉移）`,
-          })
-          .eq("id", exp.id);
+      const results = await Promise.all(
+        paidExpenses.map((exp) =>
+          admin
+            .from("expenses")
+            .update({
+              paid_by: ownerId,
+              title: exp.title.endsWith("（轉移）") ? exp.title : `${exp.title}（轉移）`,
+            })
+            .eq("id", exp.id)
+        )
+      );
+      const transferError = results.find((r) => r.error)?.error;
+      if (transferError) {
+        console.error("trip-members: expense transfer error:", transferError.message);
+        return NextResponse.json({ error: "轉移消費紀錄失敗，成員未移除" }, { status: 500 });
       }
     }
 
-    await admin
+    const { error: ownerIdError } = await admin
       .from("expenses")
       .update({ owner_id: null, split_type: "personal" })
       .eq("trip_id", trip_id)
       .eq("owner_id", user_id);
+
+    if (ownerIdError) {
+      console.error("trip-members: owner_id cleanup error:", ownerIdError.message);
+      return NextResponse.json({ error: "清除消費歸屬失敗，成員未移除" }, { status: 500 });
+    }
 
     const { error } = await admin
       .from("trip_members")

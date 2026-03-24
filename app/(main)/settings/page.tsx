@@ -7,6 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -62,6 +70,9 @@ export default function SettingsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [members, setMembers] = useState<(TripMember & { profile?: Profile })[]>([]);
+
+  // Remove member dialog
+  const [removeTarget, setRemoveTarget] = useState<{ userId: string; name: string } | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -244,9 +255,10 @@ export default function SettingsPage() {
     (m) => m.user_id === user?.id && m.role === "owner"
   );
 
-  const handleRemoveMember = async (targetUserId: string, targetName: string) => {
-    if (!currentTrip) return;
-    if (!confirm(`確定要移除「${targetName}」嗎？`)) return;
+  const handleRemoveMember = async () => {
+    if (!currentTrip || !removeTarget) return;
+    const { userId: targetUserId, name: targetName } = removeTarget;
+    setRemoveTarget(null);
 
     try {
       const res = await fetch("/api/trip-members", {
@@ -464,7 +476,7 @@ export default function SettingsPage() {
                   </span>
                   {isOwner && m.role !== "owner" && (
                     <button
-                      onClick={() => handleRemoveMember(m.user_id, m.profile?.display_name || "成員")}
+                      onClick={() => setRemoveTarget({ userId: m.user_id, name: m.profile?.display_name || "成員" })}
                       className="p-1 text-slate-300 hover:text-red-500 transition-colors"
                       aria-label={`移除${m.profile?.display_name || "成員"}`}
                     >
@@ -595,6 +607,28 @@ export default function SettingsPage() {
         <LogOut className="h-4 w-4 mr-2" />
         登出
       </Button>
+
+      <Dialog open={!!removeTarget} onOpenChange={(open) => { if (!open) setRemoveTarget(null); }}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>確定要移除成員？</DialogTitle>
+            <DialogDescription>
+              將移除「{removeTarget?.name}」，該成員的消費紀錄會轉移給建立者。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveTarget(null)}>
+              取消
+            </Button>
+            <Button
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={handleRemoveMember}
+            >
+              確定移除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
