@@ -34,7 +34,7 @@ export async function recognizeReceipt(
   imageBase64: string,
   mimeType: string
 ): Promise<OCRResult> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
   const result = await model.generateContent([
     RECEIPT_PROMPT,
