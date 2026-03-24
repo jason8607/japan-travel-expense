@@ -3,6 +3,7 @@
 import { useApp } from "@/lib/context";
 import { useExpenses } from "@/hooks/use-expenses";
 import { ExpenseCard } from "@/components/expense/expense-card";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -43,7 +44,7 @@ export default function HomePage() {
         </p>
         <Link
           href="/auth/login"
-          className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-xl font-medium"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-medium"
         >
           開始使用
         </Link>
@@ -61,7 +62,7 @@ export default function HomePage() {
         </p>
         <Link
           href="/trip/new"
-          className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-xl font-medium"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-medium"
         >
           建立旅程
         </Link>
@@ -97,9 +98,10 @@ export default function HomePage() {
         <h1 className="text-xl font-bold text-slate-800">
           {currentTrip.name}
         </h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          {profile?.avatar_emoji} {profile?.display_name}
-        </p>
+        <div className="flex items-center justify-center gap-1.5 mt-1">
+          <UserAvatar avatarUrl={profile?.avatar_url} avatarEmoji={profile?.avatar_emoji} size="xs" />
+          <span className="text-xs text-muted-foreground">{profile?.display_name}</span>
+        </div>
       </div>
 
       {/* 2x2 Stats Grid */}
@@ -107,8 +109,8 @@ export default function HomePage() {
         {/* 今日支出 */}
         <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center">
-              <Receipt className="h-3.5 w-3.5 text-orange-500" />
+            <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+              <Receipt className="h-3.5 w-3.5 text-blue-500" />
             </div>
             <span className="text-xs text-muted-foreground font-medium">今日支出</span>
           </div>
@@ -150,9 +152,12 @@ export default function HomePage() {
               </span>
             </div>
             <p className="text-xl font-bold text-slate-800 tracking-tight">
-              {budgetPercentage}%
+              {formatJPY(budgetSpent)}
             </p>
             <Progress value={budgetPercentage} className="h-1.5 mt-2" />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              / {formatJPY(cashBudget)}（{budgetPercentage}%）
+            </p>
           </div>
         )}
 
@@ -187,7 +192,7 @@ export default function HomePage() {
       <div className="fixed bottom-20 right-4 z-40">
         <Link
           href="/records/new"
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg hover:bg-orange-600 transition-all active:scale-95"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all active:scale-95"
         >
           <Plus className="h-6 w-6" />
         </Link>

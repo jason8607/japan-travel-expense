@@ -139,9 +139,9 @@
   }
 }
 
-/* Progress bar orange theme */
+/* Progress bar blue theme */
 [data-slot="progress-indicator"] {
-  background-color: #f97316 !important;
+  background-color: #3b82f6 !important;
 }
 
 /* Safe area padding for mobile */

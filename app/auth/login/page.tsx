@@ -163,7 +163,7 @@ export default function LoginPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full h-10 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm"
+                className="w-full h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm"
                 disabled={loading}
               >
                 {loading ? "處理中..." : isSignUp ? "註冊" : "登入"}
@@ -173,7 +173,7 @@ export default function LoginPage() {
             <div className="mt-3 text-center text-xs">
               <button
                 onClick={() => setIsSignUp(!isSignUp)}
-                className="text-orange-500 hover:underline"
+                className="text-blue-500 hover:underline"
               >
                 {isSignUp ? "已有帳號？登入" : "還沒有帳號？註冊"}
               </button>

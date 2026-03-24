@@ -58,7 +58,7 @@ export function InstallPrompt() {
         <Button
           size="sm"
           onClick={handleInstall}
-          className="bg-orange-500 hover:bg-orange-600"
+          className="bg-blue-500 hover:bg-blue-600"
         >
           <Download className="h-3.5 w-3.5 mr-1" />
           安裝

@@ -65,6 +65,7 @@ export interface Expense {
   store_name_ja: string | null;
   expense_date: string;
   split_type: SplitType;
+  owner_id: string | null;
   receipt_image_url: string | null;
   notion_page_id: string | null;
   created_at: string;

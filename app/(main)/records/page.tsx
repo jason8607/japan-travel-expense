@@ -7,12 +7,26 @@ import { ExpenseList } from "@/components/expense/expense-list";
 import { MemberSummary } from "@/components/expense/member-summary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import Link from "next/link";
 
 export default function RecordsPage() {
   const { currentTrip, tripMembers, loading: ctxLoading } = useApp();
-  const { expenses, loading } = useExpenses();
+  const { expenses, loading, refresh } = useExpenses();
   const [groupBy, setGroupBy] = useState<"date" | "category" | "member">("date");
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/expenses?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "刪除失敗");
+      toast.success("已刪除");
+      await refresh();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "刪除失敗";
+      toast.error(message);
+    }
+  };
 
   if (loading || ctxLoading) {
     return (
@@ -28,7 +42,7 @@ export default function RecordsPage() {
         <div className="flex items-center justify-between mb-1">
           <Link
             href="/"
-            className="text-sm text-orange-500"
+            className="text-sm text-blue-500"
           >
             查看所有旅行消費
           </Link>
@@ -55,15 +69,15 @@ export default function RecordsPage() {
       </div>
 
       {groupBy === "member" ? (
-        <MemberSummary expenses={expenses} tripMembers={tripMembers} />
+        <MemberSummary expenses={expenses} tripMembers={tripMembers} onDelete={handleDelete} />
       ) : (
-        <ExpenseList expenses={expenses} groupBy={groupBy} />
+        <ExpenseList expenses={expenses} groupBy={groupBy} onDelete={handleDelete} />
       )}
 
       <div className="fixed bottom-20 right-4 z-40">
         <Link
           href="/records/new"
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg hover:bg-orange-600 transition-all active:scale-95"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all active:scale-95"
         >
           <Plus className="h-6 w-6" />
         </Link>

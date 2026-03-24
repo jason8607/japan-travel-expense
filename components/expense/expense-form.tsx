@@ -17,8 +17,9 @@ import { toast } from "sonner";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
 import { CATEGORIES, PAYMENT_METHODS } from "@/types";
 import type { Category, PaymentMethod, SplitType, Expense } from "@/types";
-import { Trash2, MapPin, Store, User, Users } from "lucide-react";
+import { Trash2, MapPin, Store, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 interface ExpenseFormProps {
   editExpense?: Expense | null;
@@ -48,6 +49,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   const [splitType, setSplitType] = useState<SplitType>(
     editExpense?.split_type || "personal"
   );
+  const [ownerId, setOwnerId] = useState<string | null>(
+    editExpense?.owner_id || null
+  );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -71,6 +75,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           body: JSON.stringify({
             id: editExpense.id,
             paid_by: paidBy || user.id,
+            owner_id: ownerId,
             title,
             amount_jpy: jpy,
             amount_twd: twd,
@@ -94,6 +99,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           body: JSON.stringify({
             trip_id: currentTrip.id,
             paid_by: paidBy || user.id,
+            owner_id: ownerId,
             title,
             amount_jpy: jpy,
             amount_twd: twd,
@@ -156,7 +162,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="例：拉麵、新幹線車票"
           required
-          className="h-12 rounded-xl border-slate-200 text-base focus-visible:ring-orange-500"
+          className="h-12 rounded-xl border-slate-200 text-base focus-visible:ring-blue-500"
         />
       </div>
 
@@ -172,7 +178,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             placeholder="0"
             required
             min={0}
-            className="h-12 rounded-xl border-slate-200 text-xl font-bold focus-visible:ring-orange-500"
+            className="h-12 rounded-xl border-slate-200 text-xl font-bold focus-visible:ring-blue-500"
           />
         </div>
         <div className="space-y-1.5">
@@ -182,7 +188,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             type="date"
             value={expenseDate}
             onChange={(e) => setExpenseDate(e.target.value)}
-            className="h-12 rounded-xl border-slate-200 focus-visible:ring-orange-500"
+            className="h-12 rounded-xl border-slate-200 focus-visible:ring-blue-500"
           />
         </div>
       </div>
@@ -199,14 +205,14 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               className={cn(
                 "flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border-2 transition-all duration-200",
                 category === cat.value
-                  ? "border-orange-400 bg-orange-50 shadow-sm"
+                  ? "border-blue-400 bg-blue-50 shadow-sm"
                   : "border-slate-100 bg-white hover:bg-slate-50"
               )}
             >
               <span className="text-2xl leading-none">{cat.icon}</span>
               <span className={cn(
                 "text-[11px] font-medium",
-                category === cat.value ? "text-orange-700" : "text-slate-500"
+                category === cat.value ? "text-blue-700" : "text-slate-500"
               )}>
                 {cat.label}
               </span>
@@ -227,7 +233,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-full border-2 transition-all duration-200 text-sm",
                 paymentMethod === pm.value
-                  ? "border-orange-400 bg-orange-50 text-orange-700 font-medium"
+                  ? "border-blue-400 bg-blue-50 text-blue-700 font-medium"
                   : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
               )}
             >
@@ -250,7 +256,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             value={storeName}
             onChange={(e) => setStoreName(e.target.value)}
             placeholder="選填"
-            className="h-11 rounded-xl border-slate-200 focus-visible:ring-orange-500"
+            className="h-11 rounded-xl border-slate-200 focus-visible:ring-blue-500"
           />
         </div>
         <div className="space-y-1.5">
@@ -263,36 +269,51 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="選填"
-            className="h-11 rounded-xl border-slate-200 focus-visible:ring-orange-500"
+            className="h-11 rounded-xl border-slate-200 focus-visible:ring-blue-500"
           />
         </div>
       </div>
 
-      {/* 分帳方式 */}
+      {/* 這筆是誰的 */}
       {tripMembers.length > 1 && (
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-slate-600">分帳方式</Label>
-          <div className="grid grid-cols-2 gap-2">
+          <Label className="text-sm font-medium text-slate-600">這筆是誰的</Label>
+          <div className="flex flex-wrap gap-2">
+            {tripMembers.map((m) => {
+              const isMe = m.user_id === user?.id;
+              const isSelected =
+                splitType === "personal" &&
+                (isMe ? ownerId === null : ownerId === m.user_id);
+              return (
+                <button
+                  key={m.user_id}
+                  type="button"
+                  onClick={() => {
+                    setSplitType("personal");
+                    setOwnerId(isMe ? null : m.user_id);
+                  }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all duration-200 text-sm font-medium",
+                    isSelected
+                      ? "border-blue-400 bg-blue-50 text-blue-700"
+                      : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+                  )}
+                >
+                  <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
+                  {isMe ? "我的" : m.profile?.display_name || "成員"}
+                </button>
+              );
+            })}
             <button
               type="button"
-              onClick={() => setSplitType("personal")}
+              onClick={() => {
+                setSplitType("split");
+                setOwnerId(null);
+              }}
               className={cn(
-                "flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium",
-                splitType === "personal"
-                  ? "border-orange-400 bg-orange-50 text-orange-700"
-                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <User className="h-4 w-4" />
-              只記自己
-            </button>
-            <button
-              type="button"
-              onClick={() => setSplitType("split")}
-              className={cn(
-                "flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium",
+                "flex items-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all duration-200 text-sm font-medium",
                 splitType === "split"
-                  ? "border-blue-400 bg-blue-50 text-blue-700"
+                  ? "border-teal-400 bg-teal-50 text-teal-700"
                   : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
               )}
             >
@@ -300,9 +321,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               均分 ({tripMembers.length} 人)
             </button>
           </div>
-          {splitType === "split" && (
-            <p className="text-xs text-blue-500 bg-blue-50 rounded-lg px-3 py-2">
-              💡 每人 ¥{amountJpy ? Math.round(Number(amountJpy) / tripMembers.length).toLocaleString() : 0}
+          {splitType === "split" && amountJpy && (
+            <p className="text-xs text-teal-500 bg-teal-50 rounded-lg px-3 py-2">
+              每人 ¥{Math.round(Number(amountJpy) / tripMembers.length).toLocaleString()}
             </p>
           )}
         </div>
@@ -313,14 +334,14 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         <div className="space-y-1.5">
           <Label className="text-sm font-medium text-slate-600">誰付的</Label>
           <Select value={paidBy} onValueChange={(v) => { if (v) setPaidBy(v); }}>
-            <SelectTrigger className="h-11 rounded-xl border-slate-200 focus:ring-orange-500">
+            <SelectTrigger className="h-11 rounded-xl border-slate-200 focus:ring-blue-500">
               <SelectValue>
                 {(value: string) => {
                   const member = tripMembers.find((m) => m.user_id === value);
                   if (!member) return "選擇成員";
                   return (
                     <span className="flex items-center gap-1.5">
-                      <span className="text-lg leading-none">{member.profile?.avatar_emoji || "🧑"}</span>
+                      <UserAvatar avatarUrl={member.profile?.avatar_url} avatarEmoji={member.profile?.avatar_emoji} size="xs" />
                       {member.profile?.display_name || "成員"}
                     </span>
                   );
@@ -334,7 +355,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                   value={m.user_id}
                   label={`${m.profile?.avatar_emoji || "🧑"} ${m.profile?.display_name || "成員"}`}
                 >
-                  <span className="text-lg leading-none">{m.profile?.avatar_emoji || "🧑"}</span>
+                  <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" className="inline-flex" />
                   {m.profile?.display_name || "成員"}
                 </SelectItem>
               ))}
@@ -347,7 +368,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       <div className="pt-2 space-y-3">
         <Button
           type="submit"
-          className="w-full bg-orange-500 hover:bg-orange-600 h-13 text-base font-semibold rounded-xl shadow-lg shadow-orange-200 transition-all active:scale-[0.98]"
+          className="w-full bg-blue-500 hover:bg-blue-600 h-13 text-base font-semibold rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98]"
           disabled={saving || deleting}
         >
           {saving

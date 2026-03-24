@@ -9,6 +9,7 @@ import type { Expense } from "@/types";
 interface ExpenseListProps {
   expenses: Expense[];
   groupBy: "date" | "category";
+  onDelete?: (id: string) => Promise<void>;
 }
 
 function getDayOfWeek(dateStr: string) {
@@ -16,7 +17,7 @@ function getDayOfWeek(dateStr: string) {
   return days[parseISO(dateStr).getDay()];
 }
 
-export function ExpenseList({ expenses, groupBy }: ExpenseListProps) {
+export function ExpenseList({ expenses, groupBy, onDelete }: ExpenseListProps) {
   if (expenses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
@@ -46,7 +47,7 @@ export function ExpenseList({ expenses, groupBy }: ExpenseListProps) {
             </div>
             <div className="space-y-2 px-4">
               {group.expenses.map((expense) => (
-                <ExpenseCard key={expense.id} expense={expense} />
+                <ExpenseCard key={expense.id} expense={expense} onDelete={onDelete} />
               ))}
             </div>
           </div>

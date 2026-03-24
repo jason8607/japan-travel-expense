@@ -118,12 +118,12 @@ export default function SchedulePage() {
 
       <div className="p-4 space-y-4">
         {/* 說明卡片 */}
-        <div className="rounded-2xl bg-orange-50 border border-orange-100 p-4">
+        <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
           <div className="flex items-start gap-3">
-            <MapPin className="h-5 w-5 text-orange-500 mt-0.5 shrink-0" />
+            <MapPin className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-orange-800">設定每天的旅行地點</p>
-              <p className="text-xs text-orange-600 mt-1">
+              <p className="text-sm font-medium text-blue-800">設定每天的旅行地點</p>
+              <p className="text-xs text-blue-600 mt-1">
                 填寫後，新增消費時會自動帶入當天地點，方便記錄在哪裡花的錢。
               </p>
             </div>
@@ -155,7 +155,7 @@ export default function SchedulePage() {
                     updateScheduleItem(index, "location", e.target.value)
                   }
                   placeholder="地點，例：東京、金澤"
-                  className="flex-1 h-9 text-sm rounded-lg border-slate-200 focus-visible:ring-orange-500"
+                  className="flex-1 h-9 text-sm rounded-lg border-slate-200 focus-visible:ring-blue-500"
                 />
                 <button
                   onClick={() => removeScheduleItem(index)}
@@ -171,7 +171,7 @@ export default function SchedulePage() {
         {schedule.length > 0 && (
           <Button
             onClick={handleSave}
-            className="w-full h-12 bg-orange-500 hover:bg-orange-600 rounded-xl text-base font-semibold shadow-lg shadow-orange-200"
+            className="w-full h-12 bg-blue-500 hover:bg-blue-600 rounded-xl text-base font-semibold shadow-lg shadow-blue-200"
             disabled={saving}
           >
             {saving ? "儲存中..." : "儲存日程"}

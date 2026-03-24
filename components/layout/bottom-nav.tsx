@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "首頁", icon: Home },
-  { href: "/records", label: "紀錄", icon: ClipboardList },
+  { href: "/records", label: "記帳", icon: ClipboardList },
   { href: "/scan", label: "掃描", icon: Camera },
   { href: "/stats", label: "統計", icon: BarChart3 },
   { href: "/settings", label: "設定", icon: Settings },
@@ -39,7 +39,7 @@ export function BottomNav() {
               className={cn(
                 "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors",
                 isActive
-                  ? "text-orange-500"
+                  ? "text-blue-500"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

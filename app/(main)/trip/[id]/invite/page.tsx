@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { UserPlus, Copy, Users } from "lucide-react";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import type { TripMember, Profile } from "@/types";
 
 export default function InvitePage() {
@@ -105,9 +106,7 @@ export default function InvitePage() {
           <div className="space-y-2">
             {members.map((m) => (
               <div key={m.user_id} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-lg">
-                  {m.profile?.avatar_emoji || "🧑"}
-                </div>
+                <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="sm" />
                 <div className="flex-1">
                   <p className="text-sm font-medium">
                     {m.profile?.display_name || "成員"}
@@ -133,7 +132,7 @@ export default function InvitePage() {
           </div>
           <Button
             type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600"
+            className="w-full bg-blue-500 hover:bg-blue-600"
             disabled={inviting}
           >
             <UserPlus className="h-4 w-4 mr-2" />

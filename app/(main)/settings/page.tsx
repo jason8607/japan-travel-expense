@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarPicker } from "@/components/ui/avatar-picker";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import type { Trip, TripMember, Profile } from "@/types";
 
 export default function SettingsPage() {
@@ -44,6 +45,7 @@ export default function SettingsPage() {
 
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [avatarEmoji, setAvatarEmoji] = useState(profile?.avatar_emoji || "🧑");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url || null);
   const [notionToken, setNotionToken] = useState("");
   const [notionDbId, setNotionDbId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -65,6 +67,7 @@ export default function SettingsPage() {
     if (profile) {
       setDisplayName(profile.display_name || "");
       setAvatarEmoji(profile.avatar_emoji || "🧑");
+      setAvatarUrl(profile.avatar_url || null);
     }
   }, [profile]);
 
@@ -98,12 +101,34 @@ export default function SettingsPage() {
     toast.success(`已切換至「${trip.name}」`);
   };
 
+  const handleUploadAvatar = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/avatar", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "上傳失敗");
+      return data.avatarUrl;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "上傳失敗";
+      toast.error(message);
+      return null;
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (!user) return;
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ display_name: displayName, avatar_emoji: avatarEmoji })
+      .update({
+        display_name: displayName,
+        avatar_emoji: avatarEmoji,
+        avatar_url: avatarUrl,
+      })
       .eq("id", user.id);
 
     if (error) {
@@ -239,7 +264,7 @@ export default function SettingsPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Link
           href="/auth/login"
-          className="bg-orange-500 text-white px-6 py-2 rounded-xl"
+          className="bg-blue-500 text-white px-6 py-2 rounded-xl"
         >
           請先登入
         </Link>
@@ -255,7 +280,7 @@ export default function SettingsPage() {
       <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100">
           <h2 className="text-sm font-bold flex items-center gap-2">
-            <Plane className="h-4 w-4 text-orange-500" />
+            <Plane className="h-4 w-4 text-blue-500" />
             我的旅程
           </h2>
         </div>
@@ -268,13 +293,13 @@ export default function SettingsPage() {
                 onClick={() => handleSwitchTrip(trip)}
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
-                  isActive ? "bg-orange-50" : "hover:bg-slate-50"
+                  isActive ? "bg-blue-50" : "hover:bg-slate-50"
                 )}
               >
                 <div className="flex-1 min-w-0">
                   <p className={cn(
                     "text-sm font-medium truncate",
-                    isActive ? "text-orange-700" : "text-slate-700"
+                    isActive ? "text-blue-700" : "text-slate-700"
                   )}>
                     {trip.name}
                   </p>
@@ -283,7 +308,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 {isActive && (
-                  <Check className="h-4 w-4 text-orange-500 shrink-0" />
+                  <Check className="h-4 w-4 text-blue-500 shrink-0" />
                 )}
               </button>
             );
@@ -306,7 +331,7 @@ export default function SettingsPage() {
             {!editingTrip ? (
               <button
                 onClick={() => setEditingTrip(true)}
-                className="text-xs text-orange-500 flex items-center gap-1"
+                className="text-xs text-blue-500 flex items-center gap-1"
               >
                 <Pencil className="h-3 w-3" />
                 編輯
@@ -364,7 +389,7 @@ export default function SettingsPage() {
               </div>
               <Button
                 onClick={handleSaveTrip}
-                className="w-full h-10 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm"
+                className="w-full h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm"
                 disabled={saving}
               >
                 {saving ? "儲存中..." : "儲存變更"}
@@ -390,7 +415,7 @@ export default function SettingsPage() {
               </span>
               <button
                 onClick={() => setShowInvite(!showInvite)}
-                className="text-xs text-orange-500 flex items-center gap-1"
+                className="text-xs text-blue-500 flex items-center gap-1"
               >
                 <UserPlus className="h-3 w-3" />
                 {showInvite ? "收起" : "邀請"}
@@ -399,9 +424,7 @@ export default function SettingsPage() {
             <div className="px-4 pb-3 space-y-2">
               {(members.length > 0 ? members : tripMembers).map((m) => (
                 <div key={m.user_id} className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-sm">
-                    {m.profile?.avatar_emoji || "🧑"}
-                  </div>
+                  <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="sm" />
                   <span className="text-sm flex-1">
                     {m.profile?.display_name || "成員"}
                   </span>
@@ -425,7 +448,7 @@ export default function SettingsPage() {
                   <Button
                     type="submit"
                     size="sm"
-                    className="bg-orange-500 hover:bg-orange-600 rounded-lg h-9 px-3"
+                    className="bg-blue-500 hover:bg-blue-600 rounded-lg h-9 px-3"
                     disabled={inviting}
                   >
                     {inviting ? "..." : "邀請"}
@@ -456,7 +479,13 @@ export default function SettingsPage() {
         </div>
         <div className="p-4 space-y-3">
           <div className="flex items-center gap-3">
-            <AvatarPicker value={avatarEmoji} onChange={setAvatarEmoji} />
+            <AvatarPicker
+              avatarUrl={avatarUrl}
+              avatarEmoji={avatarEmoji}
+              onChangeEmoji={setAvatarEmoji}
+              onChangeUrl={setAvatarUrl}
+              onUpload={handleUploadAvatar}
+            />
             <div className="flex-1 space-y-1.5">
               <Label className="text-xs text-slate-500">暱稱</Label>
               <Input
@@ -469,7 +498,7 @@ export default function SettingsPage() {
           </div>
           <Button
             onClick={handleSaveProfile}
-            className="w-full h-10 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm"
+            className="w-full h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm"
             disabled={saving}
           >
             儲存個人資料
@@ -477,8 +506,8 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* ===== Notion 同步 ===== */}
-      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+      {/* ===== Notion 同步（暫時隱藏） ===== */}
+      {/* <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100">
           <h2 className="text-sm font-bold flex items-center gap-2">
             <Link2 className="h-4 w-4 text-slate-500" />
@@ -514,7 +543,7 @@ export default function SettingsPage() {
             儲存 Notion 設定
           </Button>
         </div>
-      </div>
+      </div> */}
 
       <Separator />
 

@@ -104,7 +104,7 @@ export default function NewTripPage() {
 
         <Button
           type="submit"
-          className="w-full h-12 text-base bg-orange-500 hover:bg-orange-600"
+          className="w-full h-12 text-base bg-blue-500 hover:bg-blue-600"
           disabled={saving}
         >
           {saving ? "建立中..." : "建立旅程"}

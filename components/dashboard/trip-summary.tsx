@@ -21,8 +21,8 @@ export function TripSummary({
     <div className="mx-4 rounded-2xl bg-white p-5 shadow-sm border">
       <Link href="/records" className="block">
         <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-orange-50 p-2.5">
-            <ClipboardList className="h-5 w-5 text-orange-500" />
+          <div className="rounded-xl bg-blue-50 p-2.5">
+            <ClipboardList className="h-5 w-5 text-blue-500" />
           </div>
           <div>
             <p className="text-sm text-muted-foreground">

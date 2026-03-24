@@ -6,9 +6,10 @@ import { useApp } from "@/lib/context";
 import { PageHeader } from "@/components/layout/page-header";
 import { ReceiptUpload } from "@/components/scan/receipt-upload";
 import { ReceiptConfirm } from "@/components/scan/receipt-confirm";
+import type { ReceiptItemWithOwner } from "@/components/scan/receipt-confirm";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
 import { toast } from "sonner";
-import type { OCRResult, Category, PaymentMethod, SplitType } from "@/types";
+import type { OCRResult, Category, PaymentMethod } from "@/types";
 
 export default function ScanPage() {
   const { user, currentTrip } = useApp();
@@ -47,42 +48,53 @@ export default function ScanPage() {
     }
   };
 
-  const handleConfirm = async (result: OCRResult, category: Category, paymentMethod: PaymentMethod, splitType: SplitType) => {
+  const handleConfirm = async (data: {
+    items: ReceiptItemWithOwner[];
+    category: Category;
+    paymentMethod: PaymentMethod;
+    storeName: string;
+    storeNameJa: string;
+    date: string;
+  }) => {
     if (!currentTrip || !user) return;
     setSaving(true);
 
     try {
       const rate = await getExchangeRate();
-      const totalJpy = result.items.reduce(
-        (s, item) => s + item.quantity * item.unit_price,
-        0
-      );
+      const expenseDate = data.date || new Date().toISOString().split("T")[0];
 
-      const res = await fetch("/api/expenses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          trip_id: currentTrip.id,
-          paid_by: user.id,
-          title: result.store_name,
-          title_ja: result.store_name_ja,
-          amount_jpy: totalJpy,
-          amount_twd: jpyToTwd(totalJpy, rate),
-          exchange_rate: rate,
-          category,
-          payment_method: paymentMethod,
-          store_name: result.store_name,
-          store_name_ja: result.store_name_ja,
-          expense_date:
-            result.date || new Date().toISOString().split("T")[0],
-          split_type: splitType,
-        }),
-      });
+      let savedCount = 0;
+      for (const item of data.items) {
+        const jpy = item.quantity * item.unit_price;
+        const twd = jpyToTwd(jpy, rate);
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "儲存失敗");
+        const res = await fetch("/api/expenses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            trip_id: currentTrip.id,
+            paid_by: user.id,
+            owner_id: item.owner_id,
+            title: item.name,
+            title_ja: item.name_ja || null,
+            amount_jpy: jpy,
+            amount_twd: twd,
+            exchange_rate: rate,
+            category: data.category,
+            payment_method: data.paymentMethod,
+            store_name: data.storeName,
+            store_name_ja: data.storeNameJa || null,
+            expense_date: expenseDate,
+            split_type: item.split_type,
+          }),
+        });
 
-      toast.success(`已儲存 ${result.items.length} 筆消費`);
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "儲存失敗");
+        savedCount++;
+      }
+
+      toast.success(`已儲存 ${savedCount} 筆消費`);
       router.push("/records");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "儲存失敗";

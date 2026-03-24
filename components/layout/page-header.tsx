@@ -25,7 +25,7 @@ export function PageHeader({
         {showBack && (
           <button
             onClick={() => router.back()}
-            className="absolute left-0 flex items-center text-sm text-orange-500"
+            className="absolute left-0 flex items-center text-sm text-blue-500"
           >
             <ChevronLeft className="h-5 w-5" />
             <span>返回</span>

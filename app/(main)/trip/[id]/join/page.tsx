@@ -125,7 +125,7 @@ export default function JoinTripPage() {
         {!user ? (
           <button
             onClick={handleJoin}
-            className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium"
+            className="w-full h-12 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium"
           >
             登入後加入旅程
           </button>
@@ -133,7 +133,7 @@ export default function JoinTripPage() {
           <button
             onClick={handleJoin}
             disabled={joining}
-            className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium disabled:opacity-60"
+            className="w-full h-12 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium disabled:opacity-60"
           >
             {joining ? "加入中..." : "加入旅程"}
           </button>

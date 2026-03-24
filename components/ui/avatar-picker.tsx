@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Camera, ImageIcon } from "lucide-react";
+import { UserAvatar } from "./user-avatar";
 import {
   Dialog,
   DialogContent,
@@ -11,43 +13,65 @@ import {
 } from "@/components/ui/dialog";
 
 const AVATAR_OPTIONS = [
-  { emoji: "👨", label: "男生" },
-  { emoji: "👩", label: "女生" },
-  { emoji: "🧑", label: "中性" },
-  { emoji: "👦", label: "男孩" },
-  { emoji: "👧", label: "女孩" },
-  { emoji: "🧔", label: "鬍子" },
-  { emoji: "👱", label: "金髮" },
-  { emoji: "👲", label: "帽子" },
-  { emoji: "🦊", label: "狐狸" },
-  { emoji: "🐱", label: "貓咪" },
-  { emoji: "🐶", label: "狗狗" },
-  { emoji: "🐰", label: "兔子" },
-  { emoji: "🐻", label: "小熊" },
-  { emoji: "🐼", label: "熊貓" },
-  { emoji: "🦁", label: "獅子" },
-  { emoji: "🐸", label: "青蛙" },
-  { emoji: "🦄", label: "獨角獸" },
-  { emoji: "🐧", label: "企鵝" },
-  { emoji: "🦉", label: "貓頭鷹" },
-  { emoji: "🌸", label: "櫻花" },
+  "🐱", "🐶", "🦊", "🐰", "🐻",
+  "🐼", "🦁", "🐯", "🐸", "🐧",
+  "🦉", "🦄", "🐨", "🐷", "🐮",
+  "🐵", "🦋", "🐬", "🦈", "🐙",
 ];
 
 interface AvatarPickerProps {
-  value: string;
-  onChange: (emoji: string) => void;
+  avatarUrl: string | null;
+  avatarEmoji: string;
+  onChangeEmoji: (emoji: string) => void;
+  onChangeUrl: (url: string | null) => void;
+  onUpload?: (file: File) => Promise<string | null>;
 }
 
-export function AvatarPicker({ value, onChange }: AvatarPickerProps) {
+export function AvatarPicker({
+  avatarUrl,
+  avatarEmoji,
+  onChangeEmoji,
+  onChangeUrl,
+  onUpload,
+}: AvatarPickerProps) {
   const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onUpload) return;
+
+    setUploading(true);
+    try {
+      const url = await onUpload(file);
+      if (url) {
+        onChangeUrl(url);
+        onChangeEmoji("🧑");
+        setOpen(false);
+      }
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const handleSelectEmoji = (emoji: string) => {
+    onChangeEmoji(emoji);
+    onChangeUrl(null);
+    setOpen(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={<button type="button" />}
-        className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-2xl hover:bg-slate-200 transition shrink-0 ring-2 ring-transparent hover:ring-orange-200"
+        className="relative w-14 h-14 rounded-full shrink-0 group"
       >
-        {value}
+        <UserAvatar avatarUrl={avatarUrl} avatarEmoji={avatarEmoji} size="lg" />
+        <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
+          <Camera className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition" />
+        </div>
       </DialogTrigger>
       <DialogContent className="max-w-xs rounded-2xl">
         <DialogHeader>
@@ -56,30 +80,42 @@ export function AvatarPicker({ value, onChange }: AvatarPickerProps) {
 
         {/* Preview */}
         <div className="flex justify-center py-2">
-          <div className="w-20 h-20 rounded-full bg-orange-50 border-2 border-orange-200 flex items-center justify-center text-4xl">
-            {value}
-          </div>
+          <UserAvatar avatarUrl={avatarUrl} avatarEmoji={avatarEmoji} size="xl" className="border-2 border-blue-200" />
         </div>
 
-        {/* Grid */}
+        {/* Upload button */}
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-slate-200 text-sm text-slate-500 hover:border-blue-300 hover:text-blue-500 transition disabled:opacity-50"
+        >
+          <ImageIcon className="h-4 w-4" />
+          {uploading ? "上傳中..." : "上傳自訂頭像"}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {/* Emoji grid */}
         <div className="grid grid-cols-5 gap-2">
-          {AVATAR_OPTIONS.map((opt) => (
+          {AVATAR_OPTIONS.map((emoji) => (
             <button
-              key={opt.emoji}
+              key={emoji}
               type="button"
-              onClick={() => {
-                onChange(opt.emoji);
-                setOpen(false);
-              }}
+              onClick={() => handleSelectEmoji(emoji)}
               className={cn(
-                "flex flex-col items-center gap-0.5 p-2 rounded-xl border-2 transition-all",
-                value === opt.emoji
-                  ? "border-orange-400 bg-orange-50 scale-105"
+                "flex items-center justify-center p-2.5 rounded-xl border-2 transition-all",
+                !avatarUrl && avatarEmoji === emoji
+                  ? "border-blue-400 bg-blue-50 scale-105"
                   : "border-transparent bg-slate-50 hover:bg-slate-100"
               )}
             >
-              <span className="text-2xl leading-none">{opt.emoji}</span>
-              <span className="text-[9px] text-muted-foreground">{opt.label}</span>
+              <span className="text-2xl leading-none">{emoji}</span>
             </button>
           ))}
         </div>

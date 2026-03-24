@@ -44,6 +44,8 @@ export function CategoryChart({ expenses }: CategoryChartProps) {
                 innerRadius={30}
                 outerRadius={50}
                 dataKey="value"
+                startAngle={90}
+                endAngle={-270}
                 strokeWidth={2}
                 stroke="#fff"
               >
