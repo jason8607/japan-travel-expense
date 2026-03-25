@@ -45,8 +45,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error: unknown) {
     console.error("OCR error:", error);
-    const message =
-      error instanceof Error ? error.message : "收據辨識失敗";
+    const raw = error instanceof Error ? error.message : "";
+    let message = "收據辨識失敗，請重新拍照試試";
+
+    if (raw.includes("429") || raw.includes("quota")) {
+      message = "AI 辨識額度已用完，請稍後再試";
+    } else if (raw.includes("404") || raw.includes("no longer available")) {
+      message = "AI 模型暫時無法使用，請稍後再試";
+    } else if (raw.includes("400") || raw.includes("INVALID_ARGUMENT")) {
+      message = "圖片無法辨識，請確認是清晰的收據照片";
+    } else if (raw.includes("403") || raw.includes("PERMISSION_DENIED")) {
+      message = "API 金鑰權限不足，請聯繫管理員";
+    } else if (raw.includes("500") || raw.includes("INTERNAL")) {
+      message = "AI 服務暫時異常，請稍後再試";
+    } else if (raw.includes("無法解析") || raw.includes("格式不符")) {
+      message = "無法辨識收據內容，請確認圖片是日本收據";
+    }
+
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

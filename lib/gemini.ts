@@ -63,15 +63,32 @@ export async function recognizeReceipt(
   ]);
 
   const text = result.response.text();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
+  console.log("Gemini raw response:", text.slice(0, 2000));
+
+  let jsonStr = text;
+  const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+  if (fenceMatch) {
+    jsonStr = fenceMatch[1];
+  }
+
+  const braceMatch = jsonStr.match(/\{[\s\S]*\}/);
+  if (!braceMatch) {
+    console.error("Gemini: no JSON found in response");
     throw new Error("無法解析 AI 回應");
   }
 
-  const parsed = JSON.parse(jsonMatch[0]);
-  if (typeof parsed !== "object" || parsed === null || typeof parsed.total !== "number") {
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(braceMatch[0]);
+  } catch (parseErr) {
+    console.error("Gemini JSON parse error:", parseErr, "\nExtracted:", braceMatch[0].slice(0, 500));
     throw new Error("AI 回應格式不符");
   }
 
-  return parsed as OCRResult;
+  if (typeof parsed !== "object" || parsed === null || typeof parsed.total !== "number") {
+    console.error("Gemini: unexpected structure:", JSON.stringify(parsed).slice(0, 500));
+    throw new Error("AI 回應格式不符");
+  }
+
+  return parsed as unknown as OCRResult;
 }
