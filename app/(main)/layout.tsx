@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { GuestMigrationDialog } from "@/components/layout/guest-migration-dialog";
 
 export default function MainLayout({
   children,
@@ -9,6 +10,7 @@ export default function MainLayout({
     <>
       <main className="pb-16">{children}</main>
       <BottomNav />
+      <GuestMigrationDialog />
     </>
   );
 }

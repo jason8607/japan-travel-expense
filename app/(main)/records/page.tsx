@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useApp } from "@/lib/context";
 import { useExpenses } from "@/hooks/use-expenses";
 import { ExpenseList } from "@/components/expense/expense-list";
@@ -8,18 +8,27 @@ import { MemberSummary } from "@/components/expense/member-summary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { deleteGuestExpense } from "@/lib/guest-storage";
 import Link from "next/link";
 
 export default function RecordsPage() {
-  const { currentTrip, tripMembers, loading: ctxLoading } = useApp();
+  const { currentTrip, tripMembers, isGuest, loading: ctxLoading } = useApp();
   const { expenses, loading, error, refresh } = useExpenses();
   const [groupBy, setGroupBy] = useState<"date" | "category" | "member">("date");
 
+  useEffect(() => {
+    if (isGuest && groupBy === "member") setGroupBy("date");
+  }, [isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/expenses?id=${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "刪除失敗");
+      if (isGuest) {
+        deleteGuestExpense(id);
+      } else {
+        const res = await fetch(`/api/expenses?id=${id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "刪除失敗");
+      }
       toast.success("已刪除");
       await refresh();
     } catch (err: unknown) {
@@ -70,9 +79,11 @@ export default function RecordsPage() {
             <TabsTrigger value="category" className="flex-1">
               按類別
             </TabsTrigger>
-            <TabsTrigger value="member" className="flex-1">
-              按成員
-            </TabsTrigger>
+            {!isGuest && (
+              <TabsTrigger value="member" className="flex-1">
+                按成員
+              </TabsTrigger>
+            )}
           </TabsList>
         </Tabs>
       </div>

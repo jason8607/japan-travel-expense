@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
+import { addGuestExpense, updateGuestExpense, deleteGuestExpense } from "@/lib/guest-storage";
 import type { Category, PaymentMethod, SplitType, Expense } from "@/types";
 import { Trash2, MapPin, Store, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ interface ExpenseFormProps {
 }
 
 export function ExpenseForm({ editExpense }: ExpenseFormProps) {
-  const { user, currentTrip, tripMembers } = useApp();
+  const { user, currentTrip, tripMembers, isGuest } = useApp();
   const router = useRouter();
   const isEditing = !!editExpense;
 
@@ -69,8 +70,12 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentTrip || !user) {
+    if (!currentTrip) {
       toast.error("請先建立或選擇一個旅程");
+      return;
+    }
+    if (!isGuest && !user) {
+      toast.error("請先登入");
       return;
     }
     setSaving(true);
@@ -80,13 +85,47 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       const jpy = Number(amountJpy);
       const twd = jpyToTwd(jpy, rate);
 
+      if (isGuest) {
+        if (isEditing && editExpense) {
+          const result = updateGuestExpense(editExpense.id, {
+            title,
+            amount_jpy: jpy,
+            amount_twd: twd,
+            exchange_rate: rate,
+            category,
+            payment_method: paymentMethod,
+            store_name: storeName || null,
+            location: location || null,
+            expense_date: expenseDate,
+          });
+          if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
+          toast.success("已更新消費紀錄");
+        } else {
+          const result = addGuestExpense({
+            title,
+            amount_jpy: jpy,
+            amount_twd: twd,
+            exchange_rate: rate,
+            category,
+            payment_method: paymentMethod,
+            store_name: storeName || null,
+            location: location || null,
+            expense_date: expenseDate,
+          });
+          if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
+          toast.success("已新增消費紀錄");
+        }
+        router.push("/records");
+        return;
+      }
+
       if (isEditing) {
         const res = await fetch("/api/expenses", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             id: editExpense.id,
-            paid_by: paidBy || user.id,
+            paid_by: paidBy || user!.id,
             owner_id: ownerId,
             title,
             amount_jpy: jpy,
@@ -110,7 +149,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             trip_id: currentTrip.id,
-            paid_by: paidBy || user.id,
+            paid_by: paidBy || user!.id,
             owner_id: ownerId,
             title,
             amount_jpy: jpy,
@@ -145,15 +184,19 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
     setShowDeleteDialog(false);
     setDeleting(true);
     try {
-      const res = await fetch(`/api/expenses?id=${editExpense.id}`, {
-        method: "DELETE",
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "刪除失敗");
+      if (isGuest) {
+        deleteGuestExpense(editExpense.id);
+      } else {
+        const res = await fetch(`/api/expenses?id=${editExpense.id}`, {
+          method: "DELETE",
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "刪除失敗");
+      }
 
       toast.success("已刪除消費紀錄");
       router.push("/records");
-      router.refresh();
+      if (!isGuest) router.refresh();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "刪除失敗";
       toast.error(message);
@@ -247,7 +290,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       </div>
 
       {/* 這筆是誰的 */}
-      {tripMembers.length > 1 && (
+      {!isGuest && tripMembers.length > 1 && (
         <div className="space-y-2">
           <Label className="text-sm font-medium text-slate-600">這筆是誰的</Label>
           <div className="flex flex-wrap gap-2">
@@ -302,7 +345,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       )}
 
       {/* 誰付的 */}
-      {tripMembers.length > 1 && (
+      {!isGuest && tripMembers.length > 1 && (
         <div className="space-y-1.5">
           <Label className="text-sm font-medium text-slate-600">誰付的</Label>
           <Select value={paidBy} onValueChange={(v) => { if (v) setPaidBy(v); }}>

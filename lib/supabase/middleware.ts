@@ -31,11 +31,17 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const p = request.nextUrl.pathname;
   const isPublic =
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/auth") ||
-    request.nextUrl.pathname.match(/^\/trip\/[^/]+\/join$/) ||
-    request.nextUrl.pathname.match(/^\/api\/trips\/[^/]+\/public$/);
+    p === "/" ||
+    p.startsWith("/auth") ||
+    p === "/records" || p === "/records/new" ||
+    p === "/scan" ||
+    p === "/stats" ||
+    p === "/settings" ||
+    p.match(/^\/trip\/[^/]+\/join$/) ||
+    p.match(/^\/api\/trips\/[^/]+\/public$/) ||
+    p === "/api/exchange-rate";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

@@ -31,6 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AvatarPicker } from "@/components/ui/avatar-picker";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { updateGuestTrip } from "@/lib/guest-storage";
 import type { Trip, TripMember, Profile } from "@/types";
 
 export default function SettingsPage() {
@@ -40,7 +41,9 @@ export default function SettingsPage() {
     trips,
     currentTrip,
     tripMembers,
+    isGuest,
     setCurrentTrip,
+    exitGuestMode,
     refreshProfile,
     refreshTrips,
     refreshTrip,
@@ -84,7 +87,7 @@ export default function SettingsPage() {
       setTripStart(currentTrip.start_date);
       setTripEnd(currentTrip.end_date);
       setTripBudget(currentTrip.cash_budget?.toString() || "");
-      loadMembers(currentTrip.id);
+      if (!isGuest) loadMembers(currentTrip.id);
     }
   }, [currentTrip?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -270,6 +273,26 @@ export default function SettingsPage() {
     router.refresh();
   };
 
+  const handleSaveGuestTrip = () => {
+    if (!currentTrip) return;
+    setSaving(true);
+    const updated = updateGuestTrip({
+      name: tripName,
+      start_date: tripStart,
+      end_date: tripEnd,
+      cash_budget: tripBudget ? Number(tripBudget) : null,
+    });
+    if (!updated) {
+      setSaving(false);
+      toast.error("結束日期不能早於開始日期");
+      return;
+    }
+    setCurrentTrip(updated);
+    setEditingTrip(false);
+    setSaving(false);
+    toast.success("旅程已更新");
+  };
+
   if (ctxLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
@@ -278,7 +301,7 @@ export default function SettingsPage() {
     );
   }
 
-  if (!user) {
+  if (!user && !isGuest) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Link
@@ -287,6 +310,126 @@ export default function SettingsPage() {
         >
           請先登入
         </Link>
+      </div>
+    );
+  }
+
+  if (isGuest) {
+    return (
+      <div className="space-y-4 p-4 pb-4">
+        <h1 className="text-xl font-bold">設定</h1>
+
+        {/* Guest trip editing */}
+        {currentTrip && (
+          <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-sm font-bold flex items-center gap-2">
+                <Plane className="h-4 w-4 text-blue-500" />
+                試用旅程
+              </h2>
+              {!editingTrip ? (
+                <button
+                  onClick={() => setEditingTrip(true)}
+                  className="text-xs text-blue-500 flex items-center gap-1"
+                >
+                  <Pencil className="h-3 w-3" />
+                  編輯
+                </button>
+              ) : (
+                <button
+                  onClick={() => setEditingTrip(false)}
+                  className="text-xs text-muted-foreground flex items-center gap-1"
+                >
+                  <X className="h-3 w-3" />
+                  取消
+                </button>
+              )}
+            </div>
+
+            {editingTrip ? (
+              <div className="p-4 space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">旅程名稱</Label>
+                  <Input
+                    value={tripName}
+                    onChange={(e) => setTripName(e.target.value)}
+                    className="h-10 rounded-lg text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">開始日期</Label>
+                    <Input
+                      type="date"
+                      value={tripStart}
+                      onChange={(e) => setTripStart(e.target.value)}
+                      className="h-10 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">結束日期</Label>
+                    <Input
+                      type="date"
+                      value={tripEnd}
+                      onChange={(e) => setTripEnd(e.target.value)}
+                      className="h-10 rounded-lg text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">現金預算 (¥)</Label>
+                  <Input
+                    type="number"
+                    value={tripBudget}
+                    onChange={(e) => setTripBudget(e.target.value)}
+                    placeholder="選填"
+                    className="h-10 rounded-lg text-sm"
+                  />
+                </div>
+                <Button
+                  onClick={handleSaveGuestTrip}
+                  className="w-full h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm"
+                  disabled={saving}
+                >
+                  {saving ? "儲存中..." : "儲存變更"}
+                </Button>
+              </div>
+            ) : (
+              <div className="px-4 py-3">
+                <p className="font-medium text-sm">{currentTrip.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {currentTrip.start_date} ~ {currentTrip.end_date}
+                  {currentTrip.cash_budget && (
+                    <> · 預算 ¥{currentTrip.cash_budget.toLocaleString()}</>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-center">
+          <p className="text-sm text-blue-800 mb-3">
+            登入後可永久保存資料、多人分帳、AI 收據辨識
+          </p>
+          <Link
+            href="/auth/login"
+            className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-colors"
+          >
+            登入 / 註冊
+          </Link>
+        </div>
+
+        <Separator />
+
+        <Button
+          variant="ghost"
+          onClick={() => { exitGuestMode(); router.push("/"); }}
+          className="w-full text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          結束試用
+        </Button>
       </div>
     );
   }

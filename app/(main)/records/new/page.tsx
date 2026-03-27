@@ -4,17 +4,28 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { ExpenseForm } from "@/components/expense/expense-form";
+import { useApp } from "@/lib/context";
+import { getGuestExpenses } from "@/lib/guest-storage";
 import { toast } from "sonner";
 import type { Expense } from "@/types";
 
 function ExpensePageContent() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
+  const { isGuest } = useApp();
   const [editExpense, setEditExpense] = useState<Expense | null>(null);
   const [loading, setLoading] = useState(!!editId);
 
   useEffect(() => {
     if (!editId) return;
+
+    if (isGuest) {
+      const found = getGuestExpenses().find((e) => e.id === editId) ?? null;
+      setEditExpense(found);
+      if (!found) toast.error("無法載入消費資料");
+      setLoading(false);
+      return;
+    }
 
     const fetchExpense = async () => {
       try {
@@ -30,7 +41,7 @@ function ExpensePageContent() {
     };
 
     fetchExpense();
-  }, [editId]);
+  }, [editId, isGuest]);
 
   if (loading) {
     return (

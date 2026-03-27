@@ -17,7 +17,7 @@ import Link from "next/link";
 import { differenceInDays, parseISO } from "date-fns";
 
 export default function HomePage() {
-  const { user, profile, currentTrip, loading: appLoading } = useApp();
+  const { user, profile, currentTrip, isGuest, enterGuestMode, loading: appLoading } = useApp();
   const { expenses, loading, todayTotal, totalJpy, totalTwd, cashTotal, count } =
     useExpenses();
 
@@ -32,7 +32,7 @@ export default function HomePage() {
     );
   }
 
-  if (!user) {
+  if (!user && !isGuest) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
         <div className="text-5xl mb-4">🗾</div>
@@ -48,6 +48,12 @@ export default function HomePage() {
         >
           開始使用
         </Link>
+        <button
+          onClick={enterGuestMode}
+          className="mt-3 text-sm text-blue-500 hover:text-blue-600 font-medium transition-colors"
+        >
+          不登入，先試用 →
+        </button>
       </div>
     );
   }
@@ -94,6 +100,21 @@ export default function HomePage() {
 
   return (
     <div className="pb-4">
+      {/* Guest Banner */}
+      {isGuest && (
+        <div className="mx-4 mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between">
+          <p className="text-xs text-amber-800">
+            試用模式 — 資料僅存在此裝置
+          </p>
+          <Link
+            href="/auth/login"
+            className="text-xs font-semibold text-amber-700 hover:text-amber-900 whitespace-nowrap ml-3"
+          >
+            登入保存 →
+          </Link>
+        </div>
+      )}
+
       {/* Trip Name Header */}
       <div className="text-center pt-6 pb-4 px-4">
         <h1 className="text-xl font-bold text-slate-800">

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useApp } from "@/lib/context";
 import { createClient } from "@/lib/supabase/client";
+import { getGuestExpenses } from "@/lib/guest-storage";
 import type { Expense } from "@/types";
 
 function getLocalDateString() {
@@ -14,12 +15,19 @@ function getLocalDateString() {
 }
 
 export function useExpenses() {
-  const { currentTrip } = useApp();
+  const { currentTrip, isGuest } = useApp();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchExpenses = useCallback(async () => {
+    if (isGuest) {
+      setExpenses(getGuestExpenses());
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     if (!currentTrip) {
       setExpenses([]);
       setLoading(false);
@@ -42,14 +50,14 @@ export function useExpenses() {
     } finally {
       setLoading(false);
     }
-  }, [currentTrip?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentTrip?.id, isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
 
   useEffect(() => {
-    if (!currentTrip) return;
+    if (!currentTrip || isGuest) return;
 
     const supabase = createClient();
     const channel = supabase
@@ -62,7 +70,7 @@ export function useExpenses() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [currentTrip?.id, fetchExpenses]);
+  }, [currentTrip?.id, fetchExpenses, isGuest]);
 
   const todayTotal = expenses
     .filter((e) => e.expense_date === getLocalDateString())

@@ -11,6 +11,13 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Profile, Trip, TripMember } from "@/types";
+import {
+  initGuestTrip,
+  getGuestTrip,
+  isGuestMode,
+  clearGuestData,
+  hasGuestData,
+} from "@/lib/guest-storage";
 
 interface AppContextType {
   user: User | null;
@@ -20,6 +27,11 @@ interface AppContextType {
   tripMembers: TripMember[];
   setCurrentTrip: (trip: Trip | null) => void;
   loading: boolean;
+  isGuest: boolean;
+  enterGuestMode: () => void;
+  exitGuestMode: () => void;
+  showMigration: boolean;
+  setShowMigration: (v: boolean) => void;
   refreshProfile: () => Promise<void>;
   refreshTrip: () => Promise<void>;
   refreshTrips: () => Promise<Trip[]>;
@@ -33,6 +45,11 @@ const AppContext = createContext<AppContextType>({
   tripMembers: [],
   setCurrentTrip: () => {},
   loading: true,
+  isGuest: false,
+  enterGuestMode: () => {},
+  exitGuestMode: () => {},
+  showMigration: false,
+  setShowMigration: () => {},
   refreshProfile: async () => {},
   refreshTrip: async () => {},
   refreshTrips: async () => [],
@@ -45,6 +62,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
   const [tripMembers, setTripMembers] = useState<TripMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
+  const [showMigration, setShowMigration] = useState(false);
 
   const hasSupabase =
     !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -54,6 +73,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!hasSupabase) return null;
     return createClient();
   };
+
+  const enterGuestMode = useCallback(() => {
+    const trip = initGuestTrip();
+    setIsGuest(true);
+    setCurrentTrip(trip);
+    setTrips([trip]);
+    setTripMembers([]);
+    setUser(null);
+    setProfile(null);
+  }, []);
+
+  const exitGuestMode = useCallback(() => {
+    clearGuestData();
+    setIsGuest(false);
+    setCurrentTrip(null);
+    setTrips([]);
+    setTripMembers([]);
+  }, []);
 
   const refreshProfile = async () => {
     const supabase = getSupabase();
@@ -71,7 +108,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshTrip = useCallback(async () => {
-    if (!currentTrip) return;
+    if (!currentTrip || isGuest) return;
     try {
       const res = await fetch(`/api/trip-members?trip_id=${currentTrip.id}`);
       if (res.ok) {
@@ -81,9 +118,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore
     }
-  }, [currentTrip?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentTrip?.id, isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshTrips = useCallback(async () => {
+    if (isGuest) return [];
     try {
       const res = await fetch("/api/trips");
       if (res.ok) {
@@ -96,11 +134,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // ignore
     }
     return [];
-  }, []);
+  }, [isGuest]);
 
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) {
+      if (isGuestMode()) {
+        const trip = getGuestTrip();
+        if (trip) {
+          setIsGuest(true);
+          setCurrentTrip(trip);
+          setTrips([trip]);
+        }
+      }
       setLoading(false);
       return;
     }
@@ -112,6 +158,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUser(u);
 
       if (u) {
+        if (isGuestMode() && hasGuestData()) {
+          setShowMigration(true);
+        } else if (isGuestMode()) {
+          clearGuestData();
+        }
+        setIsGuest(false);
+
         const { data: p } = await supabase
           .from("profiles")
           .select("*")
@@ -137,6 +190,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         } catch {
           // ignore fetch error
         }
+      } else {
+        if (isGuestMode()) {
+          const trip = getGuestTrip();
+          if (trip) {
+            setIsGuest(true);
+            setCurrentTrip(trip);
+            setTrips([trip]);
+          }
+        }
       }
       setLoading(false);
     };
@@ -146,8 +208,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event: string, session: { user: User | null } | null) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) {
+      const newUser = session?.user ?? null;
+      setUser(newUser);
+      if (newUser) {
+        if (isGuestMode() && hasGuestData()) {
+          setShowMigration(true);
+        }
+        setIsGuest(false);
+      }
+      if (!newUser && !isGuestMode()) {
         setProfile(null);
         setCurrentTrip(null);
         setTrips([]);
@@ -159,11 +228,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (currentTrip) {
+    if (currentTrip && !isGuest) {
       refreshTrip();
       localStorage.setItem("current_trip_id", currentTrip.id);
     }
-  }, [currentTrip?.id, refreshTrip]);
+  }, [currentTrip?.id, refreshTrip, isGuest]);
 
   return (
     <AppContext.Provider
@@ -175,6 +244,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         tripMembers,
         setCurrentTrip,
         loading,
+        isGuest,
+        enterGuestMode,
+        exitGuestMode,
+        showMigration,
+        setShowMigration,
         refreshProfile,
         refreshTrip,
         refreshTrips,

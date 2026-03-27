@@ -10,9 +10,11 @@ import type { ReceiptItemWithOwner } from "@/components/scan/receipt-confirm";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
 import { toast } from "sonner";
 import type { OCRResult, PaymentMethod } from "@/types";
+import Link from "next/link";
+import { Camera as CameraIcon } from "lucide-react";
 
 export default function ScanPage() {
-  const { user, currentTrip } = useApp();
+  const { user, currentTrip, isGuest } = useApp();
   const router = useRouter();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -109,6 +111,38 @@ export default function ScanPage() {
   const handleCancel = () => {
     setOcrResult(null);
   };
+
+  if (isGuest || !user) {
+    return (
+      <div className="pb-4">
+        <PageHeader title="掃描收據" />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
+            <CameraIcon className="h-8 w-8 text-blue-400" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800 mb-2">
+            AI 收據辨識需要登入才能使用
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            登入後可拍照上傳日文收據，<br />
+            AI 自動辨識店名、金額、品項並翻譯成中文
+          </p>
+          <Link
+            href="/auth/login"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-medium transition-colors"
+          >
+            登入 / 註冊
+          </Link>
+          <Link
+            href="/"
+            className="mt-3 text-sm text-muted-foreground hover:text-slate-700 transition-colors"
+          >
+            返回首頁
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-4">
