@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { cookies } from "next/headers";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const rawNext = searchParams.get("next") ?? "/";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
   if (code) {
     const cookieStore = await cookies();
@@ -40,7 +41,7 @@ export async function GET(request: Request) {
           const googleName = user.user_metadata?.full_name || user.user_metadata?.name;
 
           if (googleAvatarUrl) {
-            const admin = createAdminClient();
+            const admin = getAdminClient();
             const { data: profile } = await admin
               .from("profiles")
               .select("avatar_url, display_name")

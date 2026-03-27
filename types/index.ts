@@ -85,6 +85,8 @@ export interface ExpenseItem {
   tax_type: string | null;
 }
 
+export type TaxType = "reduced" | "standard";
+
 export interface OCRResult {
   store_name_ja: string;
   store_name: string;
@@ -95,7 +97,7 @@ export interface OCRResult {
     quantity: number;
     unit_price: number;
     tax_rate: number;
-    tax_type: string;
+    tax_type: TaxType;
   }[];
   total: number;
   payment_method: string;

@@ -27,20 +27,23 @@ function ExpensePageContent() {
       return;
     }
 
+    let cancelled = false;
     const fetchExpense = async () => {
       try {
         const res = await fetch(`/api/expenses?id=${editId}`);
+        if (cancelled) return;
         if (!res.ok) throw new Error("載入失敗");
         const data = await res.json();
-        setEditExpense(data.expense);
+        if (!cancelled) setEditExpense(data.expense);
       } catch {
-        toast.error("無法載入消費資料");
+        if (!cancelled) toast.error("無法載入消費資料");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchExpense();
+    return () => { cancelled = true; };
   }, [editId, isGuest]);
 
   if (loading) {

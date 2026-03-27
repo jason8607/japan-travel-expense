@@ -25,6 +25,7 @@ export function PageHeader({
         {showBack && (
           <button
             onClick={() => router.back()}
+            aria-label="返回上一頁"
             className="absolute left-0 flex items-center text-sm text-blue-500"
           >
             <ChevronLeft className="h-5 w-5" />

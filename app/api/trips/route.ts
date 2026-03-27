@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/auth-helper";
 
 export async function GET(req: NextRequest) {
@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "未登入" }, { status: 401 });
     }
 
-    const admin = createAdminClient();
+    const admin = getAdminClient();
 
     const { data: memberRows, error: memberError } = await admin
       .from("trip_members")
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     const { data: trips } = await admin
       .from("trips")
-      .select("*")
+      .select("id, name, start_date, end_date, currency, cash_budget, created_by, created_at")
       .in("id", tripIds)
       .order("start_date", { ascending: false });
 
@@ -54,7 +54,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "缺少旅程 ID" }, { status: 400 });
     }
 
-    const admin = createAdminClient();
+    const admin = getAdminClient();
 
     const { data: member } = await admin
       .from("trip_members")
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "結束日期不可早於開始日期" }, { status: 400 });
     }
 
-    const admin = createAdminClient();
+    const admin = getAdminClient();
 
     const { data: trip, error: tripError } = await admin
       .from("trips")

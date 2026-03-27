@@ -187,33 +187,15 @@ export default function SettingsPage() {
     setInviting(true);
 
     try {
-      const { data: authUsers } = await supabase.rpc("find_user_by_email", {
-        target_email: inviteEmail,
+      const res = await fetch("/api/trip-members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trip_id: currentTrip.id, email: inviteEmail }),
       });
+      const data = await res.json();
 
-      let userId: string | null = null;
-      if (authUsers && authUsers.length > 0) {
-        userId = authUsers[0].id;
-      }
-
-      if (!userId) {
-        toast.error("找不到此 Email 的使用者，請確認對方已註冊");
-        setInviting(false);
-        return;
-      }
-
-      const { error } = await supabase.from("trip_members").insert({
-        trip_id: currentTrip.id,
-        user_id: userId,
-        role: "member",
-      });
-
-      if (error) {
-        if (error.code === "23505") {
-          toast.error("此成員已在旅程中");
-        } else {
-          throw error;
-        }
+      if (!res.ok) {
+        toast.error(data.error || "邀請失敗");
       } else {
         toast.success("已邀請成員加入");
         setInviteEmail("");
@@ -260,11 +242,15 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     if (!currentTrip) return;
     const link = `${window.location.origin}/trip/${currentTrip.id}/join`;
-    navigator.clipboard.writeText(link);
-    toast.success("邀請連結已複製");
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("邀請連結已複製");
+    } catch {
+      toast.error("複製失敗，請手動複製連結");
+    }
   };
 
   const handleLogout = async () => {
@@ -663,6 +649,7 @@ export default function SettingsPage() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="你的暱稱"
+                maxLength={50}
                 className="h-10 rounded-lg text-sm"
               />
             </div>

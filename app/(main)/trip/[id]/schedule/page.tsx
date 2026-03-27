@@ -185,6 +185,7 @@ export default function SchedulePage() {
                 />
                 <button
                   onClick={() => removeScheduleItem(index)}
+                  aria-label="刪除此日行程"
                   className="p-1.5 text-slate-300 hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />

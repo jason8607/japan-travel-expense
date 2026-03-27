@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { recognizeReceipt } from "@/lib/gemini";
 import { getRequestUser } from "@/lib/supabase/auth-helper";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 const DAILY_LIMIT_PER_USER = 50;
 const MINUTE_LIMIT = 5;
+// Warm-instance burst protection only; resets on cold start in serverless.
+// Primary protection is the DB-backed daily limit in checkAndRecordUsage.
 const rateLimitMap = new Map<string, number[]>();
 
 function isMinuteRateLimited(userId: string): boolean {
@@ -17,7 +19,7 @@ function isMinuteRateLimited(userId: string): boolean {
   return false;
 }
 
-async function checkAndRecordUsage(admin: ReturnType<typeof createAdminClient>, userId: string): Promise<{ allowed: boolean; count: number }> {
+async function checkAndRecordUsage(admin: ReturnType<typeof getAdminClient>, userId: string): Promise<{ allowed: boolean; count: number }> {
   const today = new Date().toISOString().slice(0, 10);
 
   const { count, error: countError } = await admin
@@ -28,7 +30,7 @@ async function checkAndRecordUsage(admin: ReturnType<typeof createAdminClient>, 
 
   if (countError) {
     console.error("ocr_usage count error:", countError.message);
-    return { allowed: true, count: 0 };
+    return { allowed: false, count: -1 };
   }
 
   const current = count ?? 0;
@@ -39,6 +41,7 @@ async function checkAndRecordUsage(admin: ReturnType<typeof createAdminClient>, 
   const { error: insertError } = await admin.from("ocr_usage").insert({ user_id: userId });
   if (insertError) {
     console.error("ocr_usage insert error:", insertError.message);
+    return { allowed: false, count: -1 };
   }
 
   return { allowed: true, count: current + 1 };
@@ -49,23 +52,6 @@ export async function POST(request: NextRequest) {
     const user = await getRequestUser(request);
     if (!user) {
       return NextResponse.json({ error: "請先登入" }, { status: 401 });
-    }
-
-    if (isMinuteRateLimited(user.id)) {
-      return NextResponse.json(
-        { error: "辨識太頻繁，請稍後再試" },
-        { status: 429 }
-      );
-    }
-
-    const admin = createAdminClient();
-
-    const { allowed } = await checkAndRecordUsage(admin, user.id);
-    if (!allowed) {
-      return NextResponse.json(
-        { error: `今日辨識已達上限（${DAILY_LIMIT_PER_USER} 次），明天再試` },
-        { status: 429 }
-      );
     }
 
     const { image, mimeType } = await request.json();
@@ -98,6 +84,23 @@ export async function POST(request: NextRequest) {
         { error: "未設定 Gemini API Key，請到設定頁面配置" },
         { status: 500 }
       );
+    }
+
+    if (isMinuteRateLimited(user.id)) {
+      return NextResponse.json(
+        { error: "辨識太頻繁，請稍後再試" },
+        { status: 429 }
+      );
+    }
+
+    const admin = getAdminClient();
+
+    const { allowed, count } = await checkAndRecordUsage(admin, user.id);
+    if (!allowed) {
+      const msg = count === -1
+        ? "系統忙碌中，請稍後再試"
+        : `今日辨識已達上限（${DAILY_LIMIT_PER_USER} 次），明天再試`;
+      return NextResponse.json({ error: msg }, { status: 429 });
     }
 
     const result = await recognizeReceipt(image, mimeType);

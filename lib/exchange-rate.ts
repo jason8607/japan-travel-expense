@@ -71,7 +71,9 @@ export async function getExchangeRate(): Promise<number> {
 }
 
 export function jpyToTwd(jpy: number, rate: number): number {
-  return Math.round(jpy * rate);
+  const result = jpy * rate;
+  if (!Number.isFinite(result)) return 0;
+  return Math.round(result);
 }
 
 export function formatJPY(amount: number): string {

@@ -41,33 +41,15 @@ export default function InvitePage() {
     setInviting(true);
 
     try {
-      const { data: authUsers } = await supabase.rpc("find_user_by_email", {
-        target_email: email,
+      const res = await fetch("/api/trip-members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trip_id: tripId, email }),
       });
+      const data = await res.json();
 
-      let userId: string | null = null;
-      if (authUsers && authUsers.length > 0) {
-        userId = authUsers[0].id;
-      }
-
-      if (!userId) {
-        toast.error("找不到此 Email 的使用者，請確認對方已註冊");
-        setInviting(false);
-        return;
-      }
-
-      const { error } = await supabase.from("trip_members").insert({
-        trip_id: tripId,
-        user_id: userId,
-        role: "member",
-      });
-
-      if (error) {
-        if (error.code === "23505") {
-          toast.error("此成員已在旅程中");
-        } else {
-          throw error;
-        }
+      if (!res.ok) {
+        toast.error(data.error || "邀請失敗");
       } else {
         toast.success("已邀請成員加入");
         setEmail("");
@@ -81,10 +63,14 @@ export default function InvitePage() {
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     const link = `${window.location.origin}/trip/${tripId}/join`;
-    navigator.clipboard.writeText(link);
-    toast.success("邀請連結已複製");
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("邀請連結已複製");
+    } catch {
+      toast.error("複製失敗，請手動複製連結");
+    }
   };
 
   return (

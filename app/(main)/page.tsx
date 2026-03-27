@@ -18,7 +18,7 @@ import { differenceInDays, parseISO } from "date-fns";
 
 export default function HomePage() {
   const { user, profile, currentTrip, isGuest, enterGuestMode, loading: appLoading } = useApp();
-  const { expenses, loading, todayTotal, totalJpy, totalTwd, cashTotal, count } =
+  const { expenses, loading, todayTotal, totalJpy, totalTwd, cashTotal } =
     useExpenses();
 
   if (appLoading || loading) {

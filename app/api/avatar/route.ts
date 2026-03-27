@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/auth-helper";
 
 export async function POST(req: NextRequest) {
@@ -20,9 +20,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "檔案過大，請上傳 2MB 以下的圖片" }, { status: 400 });
     }
 
-    const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: "只允許上傳圖片（jpg、png、gif、webp）" }, { status: 400 });
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    const MAGIC_BYTES: Record<string, number[]> = {
+      "image/jpeg": [0xFF, 0xD8, 0xFF],
+      "image/png": [0x89, 0x50, 0x4E, 0x47],
+      "image/gif": [0x47, 0x49, 0x46],
+      "image/webp": [0x52, 0x49, 0x46, 0x46],
+    };
+
+    const detectedType = Object.entries(MAGIC_BYTES).find(([, bytes]) =>
+      bytes.every((b, i) => buffer[i] === b)
+    )?.[0];
+
+    if (!detectedType) {
+      return NextResponse.json({ error: "檔案不是有效的圖片格式" }, { status: 400 });
     }
 
     const MIME_TO_EXT: Record<string, string> = {
@@ -31,17 +43,16 @@ export async function POST(req: NextRequest) {
       "image/gif": "gif",
       "image/webp": "webp",
     };
-    const ext = MIME_TO_EXT[file.type];
+    const ext = MIME_TO_EXT[detectedType];
     const path = `${user.id}.${ext}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
 
-    const admin = createAdminClient();
+    const admin = getAdminClient();
 
     const { error: uploadError } = await admin.storage
       .from("avatars")
       .upload(path, buffer, {
         upsert: true,
-        contentType: file.type,
+        contentType: detectedType,
       });
 
     if (uploadError) {

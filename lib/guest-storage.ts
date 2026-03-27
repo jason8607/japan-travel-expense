@@ -30,8 +30,15 @@ export function initGuestTrip(): Trip {
 export function getGuestTrip(): Trip | null {
   try {
     const raw = localStorage.getItem(GUEST_TRIP_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed.id !== "string" || typeof parsed.name !== "string") {
+      localStorage.removeItem(GUEST_TRIP_KEY);
+      return null;
+    }
+    return parsed;
   } catch {
+    localStorage.removeItem(GUEST_TRIP_KEY);
     return null;
   }
 }
@@ -50,8 +57,17 @@ export function updateGuestTrip(updates: Partial<Trip>): Trip | null {
 export function getGuestExpenses(): Expense[] {
   try {
     const raw = localStorage.getItem(GUEST_EXPENSES_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      localStorage.removeItem(GUEST_EXPENSES_KEY);
+      return [];
+    }
+    return parsed.filter(
+      (e: unknown) => e && typeof e === "object" && "id" in e && "title" in e && "amount_jpy" in e
+    );
   } catch {
+    localStorage.removeItem(GUEST_EXPENSES_KEY);
     return [];
   }
 }
@@ -108,9 +124,11 @@ export function updateGuestExpense(id: string, updates: Partial<Expense>): Expen
   const expenses = getGuestExpenses();
   const idx = expenses.findIndex((e) => e.id === id);
   if (idx === -1) return null;
-  expenses[idx] = { ...expenses[idx], ...updates, id };
-  if (!saveGuestExpenses(expenses)) return null;
-  return expenses[idx];
+  const updated = { ...expenses[idx], ...updates, id };
+  const newList = [...expenses];
+  newList[idx] = updated;
+  if (!saveGuestExpenses(newList)) return null;
+  return updated;
 }
 
 export function deleteGuestExpense(id: string): boolean {

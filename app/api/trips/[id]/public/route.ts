@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(
   _req: Request,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const admin = createAdminClient();
+    const admin = getAdminClient();
 
     const { data: trip, error } = await admin
       .from("trips")

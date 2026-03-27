@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncExpenseToNotion } from "@/lib/notion";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/auth-helper";
 
 export async function POST(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createAdminClient();
+    const supabase = getAdminClient();
 
     const { data: expense, error } = await supabase
       .from("expenses")

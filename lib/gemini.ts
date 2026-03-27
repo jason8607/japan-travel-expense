@@ -63,7 +63,9 @@ export async function recognizeReceipt(
   ]);
 
   const text = result.response.text();
-  console.log("Gemini response length:", text.length);
+  if (process.env.NODE_ENV !== "production") {
+    console.log("Gemini response length:", text.length);
+  }
 
   let jsonStr = text;
   const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
@@ -71,19 +73,33 @@ export async function recognizeReceipt(
     jsonStr = fenceMatch[1];
   }
 
-  const braceMatch = jsonStr.match(/\{[\s\S]*\}/);
-  if (!braceMatch) {
+  let depth = 0;
+  let start = -1;
+  let end = -1;
+  for (let i = 0; i < jsonStr.length; i++) {
+    if (jsonStr[i] === "{") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (jsonStr[i] === "}") {
+      depth--;
+      if (depth === 0) { end = i; break; }
+    }
+  }
+
+  if (start === -1 || end === -1) {
     console.error("Gemini: no JSON found in response");
     throw new Error("無法解析 AI 回應");
   }
 
+  const jsonBlock = jsonStr.slice(start, end + 1);
+
   let parsed: Record<string, unknown>;
   try {
-    parsed = JSON.parse(braceMatch[0]);
+    parsed = JSON.parse(jsonBlock);
   } catch (parseErr) {
     console.error("Gemini JSON parse error:", parseErr instanceof Error ? parseErr.message : parseErr);
     if (process.env.NODE_ENV !== "production") {
-      console.error("Extracted JSON snippet:", braceMatch[0].slice(0, 500));
+      console.error("Extracted JSON snippet:", jsonBlock.slice(0, 500));
     }
     throw new Error("AI 回應格式不符");
   }
@@ -99,5 +115,22 @@ export async function recognizeReceipt(
     throw new Error("AI 回應格式不符");
   }
 
-  return parsed as unknown as OCRResult;
+  const items = parsed.items as Record<string, unknown>[];
+  const validatedItems = items.map((item, i) => ({
+    name: typeof item.name === "string" ? item.name : `品項 ${i + 1}`,
+    name_ja: typeof item.name_ja === "string" ? item.name_ja : "",
+    quantity: typeof item.quantity === "number" && item.quantity > 0 ? item.quantity : 1,
+    unit_price: typeof item.unit_price === "number" ? item.unit_price : 0,
+    tax_rate: typeof item.tax_rate === "number" ? item.tax_rate : 0.1,
+    tax_type: item.tax_type === "reduced" ? "reduced" as const : "standard" as const,
+  }));
+
+  return {
+    store_name: parsed.store_name as string,
+    store_name_ja: typeof parsed.store_name_ja === "string" ? parsed.store_name_ja : "",
+    date: typeof parsed.date === "string" ? parsed.date : "",
+    items: validatedItems,
+    total: parsed.total as number,
+    payment_method: typeof parsed.payment_method === "string" ? parsed.payment_method : "cash",
+  };
 }

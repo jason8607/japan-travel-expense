@@ -30,8 +30,12 @@ export function InstallPrompt() {
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
+    try {
+      await deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+    } catch {
+      // browser cancelled or not supported
+    }
     setShowPrompt(false);
     setDeferredPrompt(null);
     localStorage.setItem("install_prompt_dismissed", "true");

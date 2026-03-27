@@ -118,6 +118,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore
     }
+  // Only re-create when trip ID or guest status changes; other deps are stable refs
   }, [currentTrip?.id, isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshTrips = useCallback(async () => {
@@ -207,7 +208,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: string, session: { user: User | null } | null) => {
+    } = supabase.auth.onAuthStateChange(async (_event: string, session: { user: User | null } | null) => {
       const newUser = session?.user ?? null;
       setUser(newUser);
       if (newUser) {
@@ -215,6 +216,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setShowMigration(true);
         }
         setIsGuest(false);
+
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", newUser.id)
+          .single();
+        if (p) setProfile(p);
+
+        try {
+          const res = await fetch("/api/trips");
+          if (res.ok) {
+            const data = await res.json();
+            const fetchedTrips = data.trips || [];
+            setTrips(fetchedTrips);
+            if (fetchedTrips.length > 0) {
+              const savedId = localStorage.getItem("current_trip_id");
+              const saved = savedId
+                ? fetchedTrips.find((t: Trip) => t.id === savedId)
+                : null;
+              setCurrentTrip(saved || fetchedTrips[0]);
+            }
+          }
+        } catch {
+          // ignore
+        }
       }
       if (!newUser && !isGuestMode()) {
         setProfile(null);
@@ -225,6 +251,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
+  // Mount-only: auth listener should subscribe once and never re-subscribe
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/auth-helper";
 
 export async function GET(req: NextRequest) {
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "缺少 trip_id" }, { status: 400 });
     }
 
-    const admin = createAdminClient();
+    const admin = getAdminClient();
 
     const { data: membership } = await admin
       .from("trip_members")
@@ -44,6 +44,67 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function POST(req: NextRequest) {
+  try {
+    const user = await getRequestUser(req);
+    if (!user) {
+      return NextResponse.json({ error: "未登入" }, { status: 401 });
+    }
+
+    const { trip_id, email } = await req.json();
+    if (!trip_id || !email) {
+      return NextResponse.json({ error: "缺少必要參數" }, { status: 400 });
+    }
+
+    const admin = getAdminClient();
+
+    const { data: callerMembership } = await admin
+      .from("trip_members")
+      .select("role")
+      .eq("trip_id", trip_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!callerMembership || callerMembership.role !== "owner") {
+      return NextResponse.json({ error: "只有建立者可以邀請成員" }, { status: 403 });
+    }
+
+    const { data: found } = await admin.rpc("find_user_by_email", { email_input: email });
+    if (!found || found.length === 0) {
+      return NextResponse.json({ error: "找不到此 Email 的使用者，請確認對方已註冊" }, { status: 404 });
+    }
+
+    const targetUserId = found[0].id;
+
+    const { data: existing } = await admin
+      .from("trip_members")
+      .select("user_id")
+      .eq("trip_id", trip_id)
+      .eq("user_id", targetUserId)
+      .single();
+
+    if (existing) {
+      return NextResponse.json({ error: "此成員已在旅程中" }, { status: 409 });
+    }
+
+    const { error } = await admin.from("trip_members").insert({
+      trip_id,
+      user_id: targetUserId,
+      role: "member",
+    });
+
+    if (error) {
+      console.error("trip-members POST error:", error.message);
+      return NextResponse.json({ error: "邀請成員失敗" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("trip-members POST error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const user = await getRequestUser(req);
@@ -60,7 +121,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "無法移除自己" }, { status: 400 });
     }
 
-    const admin = createAdminClient();
+    const admin = getAdminClient();
 
     const { data: callerMembership } = await admin
       .from("trip_members")

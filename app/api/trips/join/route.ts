@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/auth-helper";
 
 export async function POST(req: NextRequest) {
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "缺少旅程 ID" }, { status: 400 });
     }
 
-    const admin = createAdminClient();
+    const admin = getAdminClient();
 
     const { data: trip } = await admin
       .from("trips")

@@ -81,14 +81,15 @@ export function GuestMigrationDialog() {
         successCount = results.filter(Boolean).length;
       }
 
-      clearGuestData();
       const trips = await refreshTrips();
       const migrated = trips.find((t: { id: string }) => t.id === newTripId);
       if (migrated) setCurrentTrip(migrated);
 
-      if (successCount < guestExpenses.length) {
-        toast.success(`已匯入 ${successCount}/${guestExpenses.length} 筆紀錄`);
+      const failCount = guestExpenses.length - successCount;
+      if (failCount > 0) {
+        toast.warning(`已匯入 ${successCount}/${guestExpenses.length} 筆紀錄，${failCount} 筆失敗`);
       } else {
+        clearGuestData();
         toast.success(`已匯入 ${successCount} 筆紀錄`);
       }
       setShowMigration(false);
@@ -101,12 +102,14 @@ export function GuestMigrationDialog() {
   };
 
   const handleSkip = () => {
-    clearGuestData();
-    setShowMigration(false);
+    if (confirm("確定捨棄試用紀錄嗎？此操作無法復原。")) {
+      clearGuestData();
+      setShowMigration(false);
+    }
   };
 
   return (
-    <Dialog open={showMigration} onOpenChange={(open) => { if (!open) handleSkip(); }}>
+    <Dialog open={showMigration} onOpenChange={() => {}}>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>匯入試用紀錄？</DialogTitle>

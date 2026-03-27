@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import {
   AreaChart,
   Area,
@@ -19,6 +20,7 @@ interface DailyTrendProps {
 }
 
 export function DailyTrend({ expenses, startDate, endDate }: DailyTrendProps) {
+  const gradientId = useId();
   if (expenses.length === 0) return null;
 
   const today = startOfDay(new Date());
@@ -51,7 +53,7 @@ export function DailyTrend({ expenses, startDate, endDate }: DailyTrendProps) {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
-              <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#F97316" stopOpacity={0.3} />
                 <stop offset="95%" stopColor="#F97316" stopOpacity={0} />
               </linearGradient>
@@ -77,7 +79,7 @@ export function DailyTrend({ expenses, startDate, endDate }: DailyTrendProps) {
               dataKey="amount"
               stroke="#F97316"
               strokeWidth={2}
-              fill="url(#colorAmount)"
+              fill={`url(#${gradientId})`}
             />
           </AreaChart>
         </ResponsiveContainer>

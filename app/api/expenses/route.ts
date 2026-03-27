@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { getRequestUser } from "@/lib/supabase/auth-helper";
 
-async function verifyTripAccess(admin: ReturnType<typeof createAdminClient>, tripId: string, userId: string) {
+async function verifyTripAccess(admin: ReturnType<typeof getAdminClient>, tripId: string, userId: string) {
   const { data } = await admin
     .from("trip_members")
     .select("trip_id")
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "未登入" }, { status: 401 });
     }
 
-    const admin = createAdminClient();
+    const admin = getAdminClient();
     const expenseId = req.nextUrl.searchParams.get("id");
 
     if (expenseId) {
@@ -105,11 +105,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "缺少 trip_id" }, { status: 400 });
     }
 
+    if (!title || typeof title !== "string" || title.trim().length === 0) {
+      return NextResponse.json({ error: "標題不得為空" }, { status: 400 });
+    }
+
     if (typeof amount_jpy !== "number" || amount_jpy < 0) {
       return NextResponse.json({ error: "金額必須為非負數" }, { status: 400 });
     }
 
-    const admin = createAdminClient();
+    const VALID_CATEGORIES = ["餐飲", "交通", "購物", "住宿", "門票", "藥品", "美妝", "衣服", "其他"];
+    if (category && !VALID_CATEGORIES.includes(category)) {
+      return NextResponse.json({ error: "無效的分類" }, { status: 400 });
+    }
+
+    const VALID_PAYMENTS = ["現金", "信用卡", "PayPay", "Suica", "其他"];
+    if (payment_method && !VALID_PAYMENTS.includes(payment_method)) {
+      return NextResponse.json({ error: "無效的付款方式" }, { status: 400 });
+    }
+
+    if (expense_date && !/^\d{4}-\d{2}-\d{2}$/.test(expense_date)) {
+      return NextResponse.json({ error: "日期格式錯誤" }, { status: 400 });
+    }
+
+    const admin = getAdminClient();
 
     const { data: member } = await admin
       .from("trip_members")
@@ -132,6 +150,18 @@ export async function POST(req: NextRequest) {
         .single();
       if (!paidByMember) {
         return NextResponse.json({ error: "paid_by 必須是旅程成員" }, { status: 400 });
+      }
+    }
+
+    if (owner_id && owner_id !== user.id && owner_id !== paidBy) {
+      const { data: ownerMember } = await admin
+        .from("trip_members")
+        .select("user_id")
+        .eq("trip_id", trip_id)
+        .eq("user_id", owner_id)
+        .single();
+      if (!ownerMember) {
+        return NextResponse.json({ error: "owner_id 必須是旅程成員" }, { status: 400 });
       }
     }
 
@@ -184,7 +214,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "缺少 id" }, { status: 400 });
     }
 
-    const admin = createAdminClient();
+    const admin = getAdminClient();
 
     const { data: existing } = await admin
       .from("expenses")
@@ -216,6 +246,19 @@ export async function PUT(req: NextRequest) {
 
     if ("amount_jpy" in updates && (typeof updates.amount_jpy !== "number" || updates.amount_jpy < 0)) {
       return NextResponse.json({ error: "金額必須為非負數" }, { status: 400 });
+    }
+
+    const { owner_id: updateOwnerId } = updates;
+    if (updateOwnerId && updateOwnerId !== user.id && updateOwnerId !== updates.paid_by) {
+      const { data: ownerMember } = await admin
+        .from("trip_members")
+        .select("user_id")
+        .eq("trip_id", existing.trip_id)
+        .eq("user_id", updateOwnerId)
+        .single();
+      if (!ownerMember) {
+        return NextResponse.json({ error: "owner_id 必須是旅程成員" }, { status: 400 });
+      }
     }
 
     const ALLOWED_FIELDS = [
@@ -259,7 +302,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "缺少 id" }, { status: 400 });
     }
 
-    const admin = createAdminClient();
+    const admin = getAdminClient();
 
     const { data: existing } = await admin
       .from("expenses")
