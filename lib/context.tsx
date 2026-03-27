@@ -1,23 +1,23 @@
 "use client";
 
 import {
+  clearGuestData,
+  getGuestTrip,
+  hasGuestData,
+  initGuestTrip,
+  isGuestMode,
+} from "@/lib/guest-storage";
+import { createClient } from "@/lib/supabase/client";
+import type { Profile, Trip, TripMember } from "@/types";
+import type { User } from "@supabase/supabase-js";
+import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
-  useCallback,
   type ReactNode,
 } from "react";
-import { createClient } from "@/lib/supabase/client";
-import type { User } from "@supabase/supabase-js";
-import type { Profile, Trip, TripMember } from "@/types";
-import {
-  initGuestTrip,
-  getGuestTrip,
-  isGuestMode,
-  clearGuestData,
-  hasGuestData,
-} from "@/lib/guest-storage";
 
 interface AppContextType {
   user: User | null;
@@ -155,9 +155,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const init = async () => {
       try {
         const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        const u = session?.user ?? null;
+          data: { user: u },
+        } = await supabase.auth.getUser();
         setUser(u);
 
         if (u) {
@@ -214,39 +213,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: string, session: { user: User | null } | null) => {
+    } = supabase.auth.onAuthStateChange((_event: string, session: { user: User | null } | null) => {
       const newUser = session?.user ?? null;
       setUser(newUser);
       if (newUser) {
-        try {
-          if (isGuestMode() && hasGuestData()) {
-            setShowMigration(true);
-          }
-          setIsGuest(false);
-
-          const { data: p } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", newUser.id)
-            .single();
-          if (p) setProfile(p);
-
-          const res = await fetch("/api/trips");
-          if (res.ok) {
-            const data = await res.json();
-            const fetchedTrips = data.trips || [];
-            setTrips(fetchedTrips);
-            if (fetchedTrips.length > 0) {
-              const savedId = localStorage.getItem("current_trip_id");
-              const saved = savedId
-                ? fetchedTrips.find((t: Trip) => t.id === savedId)
-                : null;
-              setCurrentTrip(saved || fetchedTrips[0]);
-            }
-          }
-        } catch (err) {
-          console.error("onAuthStateChange error:", err);
+        if (isGuestMode() && hasGuestData()) {
+          setShowMigration(true);
         }
+        setIsGuest(false);
       }
       if (!newUser && !isGuestMode()) {
         setProfile(null);
@@ -265,7 +239,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshTrip();
       localStorage.setItem("current_trip_id", currentTrip.id);
     }
-  }, [currentTrip?.id, refreshTrip, isGuest]);
+  }, [currentTrip?.id, refreshTrip, isGuest, currentTrip]);  
 
   return (
     <AppContext.Provider
