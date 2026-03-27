@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     const { data: trips } = await admin
       .from("trips")
-      .select("id, name, start_date, end_date, currency, cash_budget, created_by, created_at")
+      .select("id, name, start_date, end_date, currency, cash_budget, notion_database_id, created_by, created_at")
       .in("id", tripIds)
       .order("start_date", { ascending: false });
 

@@ -153,55 +153,60 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     const init = async () => {
-      const {
-        data: { user: u },
-      } = await supabase.auth.getUser();
-      setUser(u);
+      try {
+        const {
+          data: { user: u },
+        } = await supabase.auth.getUser();
+        setUser(u);
 
-      if (u) {
-        if (isGuestMode() && hasGuestData()) {
-          setShowMigration(true);
-        } else if (isGuestMode()) {
-          clearGuestData();
-        }
-        setIsGuest(false);
+        if (u) {
+          if (isGuestMode() && hasGuestData()) {
+            setShowMigration(true);
+          } else if (isGuestMode()) {
+            clearGuestData();
+          }
+          setIsGuest(false);
 
-        const { data: p } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", u.id)
-          .single();
-        setProfile(p);
+          const { data: p } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", u.id)
+            .single();
+          if (p) setProfile(p);
 
-        try {
-          const res = await fetch("/api/trips");
-          if (res.ok) {
-            const data = await res.json();
-            const fetchedTrips = data.trips || [];
-            setTrips(fetchedTrips);
+          try {
+            const res = await fetch("/api/trips");
+            if (res.ok) {
+              const data = await res.json();
+              const fetchedTrips = data.trips || [];
+              setTrips(fetchedTrips);
 
-            if (fetchedTrips.length > 0) {
-              const savedId = localStorage.getItem("current_trip_id");
-              const saved = savedId
-                ? fetchedTrips.find((t: Trip) => t.id === savedId)
-                : null;
-              setCurrentTrip(saved || fetchedTrips[0]);
+              if (fetchedTrips.length > 0) {
+                const savedId = localStorage.getItem("current_trip_id");
+                const saved = savedId
+                  ? fetchedTrips.find((t: Trip) => t.id === savedId)
+                  : null;
+                setCurrentTrip(saved || fetchedTrips[0]);
+              }
+            }
+          } catch {
+            // ignore fetch error
+          }
+        } else {
+          if (isGuestMode()) {
+            const trip = getGuestTrip();
+            if (trip) {
+              setIsGuest(true);
+              setCurrentTrip(trip);
+              setTrips([trip]);
             }
           }
-        } catch {
-          // ignore fetch error
         }
-      } else {
-        if (isGuestMode()) {
-          const trip = getGuestTrip();
-          if (trip) {
-            setIsGuest(true);
-            setCurrentTrip(trip);
-            setTrips([trip]);
-          }
-        }
+      } catch (err) {
+        console.error("init error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     init();
@@ -212,19 +217,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const newUser = session?.user ?? null;
       setUser(newUser);
       if (newUser) {
-        if (isGuestMode() && hasGuestData()) {
-          setShowMigration(true);
-        }
-        setIsGuest(false);
-
-        const { data: p } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", newUser.id)
-          .single();
-        if (p) setProfile(p);
-
         try {
+          if (isGuestMode() && hasGuestData()) {
+            setShowMigration(true);
+          }
+          setIsGuest(false);
+
+          const { data: p } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", newUser.id)
+            .single();
+          if (p) setProfile(p);
+
           const res = await fetch("/api/trips");
           if (res.ok) {
             const data = await res.json();
@@ -238,8 +243,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               setCurrentTrip(saved || fetchedTrips[0]);
             }
           }
-        } catch {
-          // ignore
+        } catch (err) {
+          console.error("onAuthStateChange error:", err);
         }
       }
       if (!newUser && !isGuestMode()) {

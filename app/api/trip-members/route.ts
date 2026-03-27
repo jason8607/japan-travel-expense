@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "只有建立者可以邀請成員" }, { status: 403 });
     }
 
-    const { data: found } = await admin.rpc("find_user_by_email", { email_input: email });
+    const { data: found } = await admin.rpc("find_user_by_email", { target_email: email });
     if (!found || found.length === 0) {
       return NextResponse.json({ error: "找不到此 Email 的使用者，請確認對方已註冊" }, { status: 404 });
     }
