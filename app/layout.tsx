@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AppProvider } from "@/lib/context";
 import { ServiceWorkerRegister } from "@/components/layout/sw-register";
 import { InstallPrompt } from "@/components/layout/install-prompt";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -45,6 +46,7 @@ export default function RootLayout({
           <Toaster position="top-center" />
           <ServiceWorkerRegister />
         </AppProvider>
+        <Analytics />
       </body>
     </html>
   );
