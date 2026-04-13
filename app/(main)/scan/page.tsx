@@ -53,6 +53,7 @@ export default function ScanPage() {
   const handleConfirm = async (data: {
     items: ReceiptItemWithOwner[];
     paymentMethod: PaymentMethod;
+    creditCardId: string | null;
     storeName: string;
     storeNameJa: string;
     date: string;
@@ -89,6 +90,7 @@ export default function ScanPage() {
               store_name_ja: data.storeNameJa || null,
               expense_date: expenseDate,
               split_type: item.split_type,
+              credit_card_id: data.creditCardId,
             }),
           });
 

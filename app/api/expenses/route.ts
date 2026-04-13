@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
       receipt_image_url,
       split_type,
       owner_id,
+      credit_card_id,
     } = body;
 
     if (!trip_id) {
@@ -113,9 +114,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "金額必須為非負數" }, { status: 400 });
     }
 
-    const VALID_CATEGORIES = ["餐飲", "交通", "購物", "住宿", "門票", "藥品", "美妝", "衣服", "其他"];
-    if (category && !VALID_CATEGORIES.includes(category)) {
-      return NextResponse.json({ error: "無效的分類" }, { status: 400 });
+    if (category && (typeof category !== "string" || category.trim().length === 0)) {
+      return NextResponse.json({ error: "分類不得為空" }, { status: 400 });
     }
 
     const VALID_PAYMENTS = ["現金", "信用卡", "PayPay", "Suica", "其他"];
@@ -165,6 +165,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (credit_card_id) {
+      const { data: card } = await admin
+        .from("credit_cards")
+        .select("user_id")
+        .eq("id", credit_card_id)
+        .single();
+      if (!card || card.user_id !== user.id) {
+        return NextResponse.json({ error: "無效的信用卡" }, { status: 400 });
+      }
+    }
+
     const { data: expense, error } = await admin
       .from("expenses")
       .insert({
@@ -184,6 +195,7 @@ export async function POST(req: NextRequest) {
         receipt_image_url,
         split_type,
         owner_id,
+        credit_card_id: credit_card_id || null,
       })
       .select()
       .single();
@@ -265,10 +277,22 @@ export async function PUT(req: NextRequest) {
       "title", "title_ja", "amount_jpy", "amount_twd", "exchange_rate",
       "category", "payment_method", "location", "store_name", "store_name_ja",
       "expense_date", "receipt_image_url", "split_type", "owner_id", "paid_by",
+      "credit_card_id",
     ];
     const safeUpdates: Record<string, unknown> = {};
     for (const field of ALLOWED_FIELDS) {
       if (field in updates) safeUpdates[field] = updates[field];
+    }
+
+    if (safeUpdates.credit_card_id) {
+      const { data: card } = await admin
+        .from("credit_cards")
+        .select("user_id")
+        .eq("id", safeUpdates.credit_card_id as string)
+        .single();
+      if (!card || card.user_id !== user.id) {
+        return NextResponse.json({ error: "無效的信用卡" }, { status: 400 });
+      }
     }
 
     const { data: expense, error } = await admin

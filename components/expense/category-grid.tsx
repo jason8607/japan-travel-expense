@@ -1,20 +1,21 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { CATEGORIES } from "@/types";
-import type { Category } from "@/types";
+import { useCategories } from "@/hooks/use-categories";
 
 interface CategoryGridProps {
-  value: Category;
-  onChange: (category: Category) => void;
+  value: string;
+  onChange: (category: string) => void;
 }
 
 export function CategoryGrid({ value, onChange }: CategoryGridProps) {
+  const { categories } = useCategories();
+
   return (
     <div className="grid grid-cols-4 gap-2">
-      {CATEGORIES.map((cat) => (
+      {categories.map((cat) => (
         <button
-          key={cat.value}
+          key={cat.id}
           type="button"
           onClick={() => onChange(cat.value)}
           className={cn(

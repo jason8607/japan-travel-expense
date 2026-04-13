@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CategoryGrid } from "./category-grid";
 import { PaymentChips } from "./payment-chips";
+import { CreditCardPicker } from "./credit-card-picker";
 
 interface ExpenseFormProps {
   editExpense?: Expense | null;
@@ -64,6 +65,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   const [ownerId, setOwnerId] = useState<string | null>(
     editExpense?.owner_id || null
   );
+  const [creditCardId, setCreditCardId] = useState<string | null>(
+    editExpense?.credit_card_id || null
+  );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -85,6 +89,8 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       const jpy = Number(amountJpy);
       const twd = jpyToTwd(jpy, rate);
 
+      const cardId = paymentMethod === "信用卡" ? creditCardId : null;
+
       if (isGuest) {
         if (isEditing && editExpense) {
           const result = updateGuestExpense(editExpense.id, {
@@ -97,6 +103,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             store_name: storeName || null,
             location: location || null,
             expense_date: expenseDate,
+            credit_card_id: cardId,
           });
           if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
           toast.success("已更新消費紀錄");
@@ -111,6 +118,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             store_name: storeName || null,
             location: location || null,
             expense_date: expenseDate,
+            credit_card_id: cardId,
           });
           if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
           toast.success("已新增消費紀錄");
@@ -137,6 +145,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             location: location || null,
             expense_date: expenseDate,
             split_type: splitType,
+            credit_card_id: cardId,
           }),
         });
 
@@ -161,6 +170,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             location: location || null,
             expense_date: expenseDate,
             split_type: splitType,
+            credit_card_id: cardId,
           }),
         });
 
@@ -256,7 +266,16 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       {/* 支付方式 - 橫排 chips */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-slate-600">支付方式</Label>
-        <PaymentChips value={paymentMethod} onChange={setPaymentMethod} />
+        <PaymentChips
+          value={paymentMethod}
+          onChange={(m) => {
+            setPaymentMethod(m);
+            if (m !== "信用卡") setCreditCardId(null);
+          }}
+        />
+        {paymentMethod === "信用卡" && (
+          <CreditCardPicker value={creditCardId} onChange={setCreditCardId} />
+        )}
       </div>
 
       {/* 店家 + 地點 */}

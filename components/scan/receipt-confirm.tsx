@@ -3,9 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Category, OCRResult, PaymentMethod } from "@/types";
-import { CATEGORIES } from "@/types";
 import { ChevronDown, Plus, Trash2, Users } from "lucide-react";
 import { PaymentChips } from "@/components/expense/payment-chips";
+import { CreditCardPicker } from "@/components/expense/credit-card-picker";
+import { useCategories } from "@/hooks/use-categories";
 import { useState } from "react";
 import { useApp } from "@/lib/context";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ interface ReceiptConfirmProps {
   onConfirm: (data: {
     items: ReceiptItemWithOwner[];
     paymentMethod: PaymentMethod;
+    creditCardId: string | null;
     storeName: string;
     storeNameJa: string;
     date: string;
@@ -44,6 +46,7 @@ export function ReceiptConfirm({
   saving,
 }: ReceiptConfirmProps) {
   const { user, profile: myProfile, tripMembers } = useApp();
+  const { categories: CATEGORIES } = useCategories();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     initialResult.payment_method === "cash" ? "現金"
     : initialResult.payment_method === "credit_card" ? "信用卡"
@@ -51,6 +54,8 @@ export function ReceiptConfirm({
     : initialResult.payment_method === "suica" ? "Suica"
     : "現金"
   );
+
+  const [creditCardId, setCreditCardId] = useState<string | null>(null);
 
   const [items, setItems] = useState<ReceiptItemWithOwner[]>(
     initialResult.items.map((item) => ({
@@ -337,9 +342,18 @@ export function ReceiptConfirm({
       </div>
 
       {/* Payment method picker */}
-      <div className="rounded-2xl border bg-white p-4 shadow-sm">
-        <h4 className="font-bold mb-3 text-sm">支付方式</h4>
-        <PaymentChips value={paymentMethod} onChange={setPaymentMethod} />
+      <div className="rounded-2xl border bg-white p-4 shadow-sm space-y-3">
+        <h4 className="font-bold text-sm">支付方式</h4>
+        <PaymentChips
+          value={paymentMethod}
+          onChange={(m) => {
+            setPaymentMethod(m);
+            if (m !== "信用卡") setCreditCardId(null);
+          }}
+        />
+        {paymentMethod === "信用卡" && (
+          <CreditCardPicker value={creditCardId} onChange={setCreditCardId} />
+        )}
       </div>
 
       <Button
@@ -347,6 +361,7 @@ export function ReceiptConfirm({
           onConfirm({
             items,
             paymentMethod,
+            creditCardId: paymentMethod === "信用卡" ? creditCardId : null,
             storeName,
             storeNameJa,
             date,

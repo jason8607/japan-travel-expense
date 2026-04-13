@@ -92,6 +92,7 @@ export function addGuestExpense(data: {
   location?: string | null;
   expense_date: string;
   split_type?: SplitType;
+  credit_card_id?: string | null;
 }): Expense | null {
   const expenses = getGuestExpenses();
   const expense: Expense = {
@@ -111,6 +112,7 @@ export function addGuestExpense(data: {
     expense_date: data.expense_date,
     split_type: data.split_type || "personal",
     owner_id: null,
+    credit_card_id: data.credit_card_id ?? null,
     receipt_image_url: null,
     notion_page_id: null,
     created_at: new Date().toISOString(),

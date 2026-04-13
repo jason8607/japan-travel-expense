@@ -6,6 +6,7 @@ import { CategoryChart } from "@/components/stats/category-chart";
 import { PaymentChart } from "@/components/stats/payment-chart";
 import { DailyTrend } from "@/components/stats/daily-trend";
 import { TopExpenses } from "@/components/stats/top-expenses";
+import { CashbackChart } from "@/components/stats/cashback-chart";
 
 export default function StatsPage() {
   const { currentTrip, loading: ctxLoading } = useApp();
@@ -41,6 +42,7 @@ export default function StatsPage() {
     <div className="space-y-4 p-4 pb-4">
       <CategoryChart expenses={expenses} />
       <PaymentChart expenses={expenses} />
+      <CashbackChart expenses={expenses} />
       <DailyTrend
         expenses={expenses}
         startDate={currentTrip.start_date}

@@ -5,8 +5,8 @@ import { Pencil, Trash2, Users, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
-import { CATEGORIES, PAYMENT_METHODS } from "@/types";
-import type { Expense } from "@/types";
+import { PAYMENT_METHODS, DEFAULT_CATEGORIES } from "@/types";
+import type { Expense, CategoryItem } from "@/types";
 import { useApp } from "@/lib/context";
 import Link from "next/link";
 import {
@@ -22,13 +22,14 @@ import { Button } from "@/components/ui/button";
 interface ExpenseCardProps {
   expense: Expense;
   onDelete?: (id: string) => Promise<void>;
+  categories?: CategoryItem[];
 }
 
-export function ExpenseCard({ expense, onDelete }: ExpenseCardProps) {
+export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES }: ExpenseCardProps) {
   const { tripMembers } = useApp();
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const categoryInfo = CATEGORIES.find((c) => c.value === expense.category);
+  const categoryInfo = categories.find((c) => c.value === expense.category);
   const paymentInfo = PAYMENT_METHODS.find((p) => p.value === expense.payment_method);
 
   const ownerMember = expense.owner_id

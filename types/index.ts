@@ -1,13 +1,4 @@
-export type Category =
-  | "餐飲"
-  | "交通"
-  | "購物"
-  | "住宿"
-  | "門票"
-  | "藥品"
-  | "美妝"
-  | "衣服"
-  | "其他";
+export type Category = string;
 
 export type PaymentMethod = "現金" | "信用卡" | "PayPay" | "Suica" | "其他";
 
@@ -67,6 +58,7 @@ export interface Expense {
   expense_date: string;
   split_type: SplitType;
   owner_id: string | null;
+  credit_card_id: string | null;
   receipt_image_url: string | null;
   notion_page_id: string | null;
   created_at: string;
@@ -87,6 +79,21 @@ export interface ExpenseItem {
 
 export type TaxType = "reduced" | "standard";
 
+export interface CategoryItem {
+  id: string;
+  value: string;
+  label: string;
+  icon: string;
+  color: string;
+}
+
+export interface CreditCard {
+  id: string;
+  name: string;
+  cashback_rate: number;
+  cashback_limit: number;
+}
+
 export interface OCRResult {
   store_name_ja: string;
   store_name: string;
@@ -103,17 +110,20 @@ export interface OCRResult {
   payment_method: string;
 }
 
-export const CATEGORIES: { value: Category; label: string; icon: string; color: string }[] = [
-  { value: "餐飲", label: "餐飲", icon: "🍽️", color: "#F59E0B" },
-  { value: "交通", label: "交通", icon: "🚆", color: "#3B82F6" },
-  { value: "購物", label: "購物", icon: "🛍️", color: "#EC4899" },
-  { value: "住宿", label: "住宿", icon: "🏨", color: "#10B981" },
-  { value: "門票", label: "門票", icon: "🎫", color: "#8B5CF6" },
-  { value: "藥品", label: "藥品", icon: "💊", color: "#EF4444" },
-  { value: "美妝", label: "美妝", icon: "💄", color: "#F472B6" },
-  { value: "衣服", label: "衣服", icon: "👕", color: "#A78BFA" },
-  { value: "其他", label: "其他", icon: "📦", color: "#6B7280" },
+export const DEFAULT_CATEGORIES: CategoryItem[] = [
+  { id: "default-food",     value: "餐飲", label: "餐飲", icon: "🍽️", color: "#F59E0B" },
+  { id: "default-transport", value: "交通", label: "交通", icon: "🚆", color: "#3B82F6" },
+  { id: "default-shopping",  value: "購物", label: "購物", icon: "🛍️", color: "#EC4899" },
+  { id: "default-hotel",     value: "住宿", label: "住宿", icon: "🏨", color: "#10B981" },
+  { id: "default-ticket",    value: "門票", label: "門票", icon: "🎫", color: "#8B5CF6" },
+  { id: "default-medicine",  value: "藥品", label: "藥品", icon: "💊", color: "#EF4444" },
+  { id: "default-beauty",    value: "美妝", label: "美妝", icon: "💄", color: "#F472B6" },
+  { id: "default-clothes",   value: "衣服", label: "衣服", icon: "👕", color: "#A78BFA" },
+  { id: "default-other",     value: "其他", label: "其他", icon: "📦", color: "#6B7280" },
 ];
+
+/** @deprecated Use useCategories() hook instead */
+export const CATEGORIES = DEFAULT_CATEGORIES;
 
 export const PAYMENT_METHODS: {
   value: PaymentMethod;

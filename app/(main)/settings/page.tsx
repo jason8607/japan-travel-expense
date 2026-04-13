@@ -32,6 +32,8 @@ import { cn } from "@/lib/utils";
 import { AvatarPicker } from "@/components/ui/avatar-picker";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { updateGuestTrip } from "@/lib/guest-storage";
+import { CreditCardManager } from "@/components/settings/credit-card-manager";
+import { CategoryManager } from "@/components/settings/category-manager";
 import type { Trip, TripMember, Profile } from "@/types";
 
 export default function SettingsPage() {
@@ -394,6 +396,9 @@ export default function SettingsPage() {
           </div>
         )}
 
+        <CreditCardManager />
+        <CategoryManager />
+
         <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-center">
           <p className="text-sm text-blue-800 mb-3">
             登入後可永久保存資料、多人分帳、AI 收據辨識
@@ -625,6 +630,12 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* ===== 信用卡管理 ===== */}
+      <CreditCardManager />
+
+      {/* ===== 分類管理 ===== */}
+      <CategoryManager />
 
       {/* ===== 個人資料 ===== */}
       <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">

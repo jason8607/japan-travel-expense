@@ -4,7 +4,8 @@ import { format, parseISO } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import { ExpenseCard } from "./expense-card";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
-import type { Expense } from "@/types";
+import { useCategories } from "@/hooks/use-categories";
+import type { Expense, CategoryItem } from "@/types";
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -22,6 +23,8 @@ function getDayOfWeek(dateStr: string) {
 }
 
 export function ExpenseList({ expenses, groupBy, onDelete }: ExpenseListProps) {
+  const { categories } = useCategories();
+
   if (expenses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
@@ -51,7 +54,7 @@ export function ExpenseList({ expenses, groupBy, onDelete }: ExpenseListProps) {
             </div>
             <div className="space-y-2 px-4">
               {group.expenses.map((expense) => (
-                <ExpenseCard key={expense.id} expense={expense} onDelete={onDelete} />
+                <ExpenseCard key={expense.id} expense={expense} onDelete={onDelete} categories={categories} />
               ))}
             </div>
           </div>
