@@ -22,11 +22,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
+import { getExchangeRate, jpyToTwd, twdToJpy } from "@/lib/exchange-rate";
 import { addGuestExpense, updateGuestExpense, deleteGuestExpense } from "@/lib/guest-storage";
 import type { Category, PaymentMethod, SplitType, Expense } from "@/types";
 import { Trash2, MapPin, Store, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getPreTripDate, isPreTripDate } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CategoryGrid } from "./category-grid";
 import { PaymentChips } from "./payment-chips";
@@ -42,9 +42,14 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   const isEditing = !!editExpense;
 
   const [title, setTitle] = useState(editExpense?.title || "");
-  const [amountJpy, setAmountJpy] = useState(
-    editExpense?.amount_jpy?.toString() || ""
+  const [currency, setCurrency] = useState<"JPY" | "TWD">(
+    editExpense?.input_currency || "JPY"
   );
+  const [amount, setAmount] = useState(() => {
+    if (!editExpense) return "";
+    if (editExpense.input_currency === "TWD") return editExpense.amount_twd?.toString() || "";
+    return editExpense.amount_jpy?.toString() || "";
+  });
   const [category, setCategory] = useState<Category>(
     editExpense?.category || "餐飲"
   );
@@ -86,8 +91,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
 
     try {
       const rate = await getExchangeRate();
-      const jpy = Number(amountJpy);
-      const twd = jpyToTwd(jpy, rate);
+      const inputAmount = Number(amount);
+      const jpy = currency === "JPY" ? inputAmount : twdToJpy(inputAmount, rate);
+      const twd = currency === "TWD" ? inputAmount : jpyToTwd(inputAmount, rate);
 
       const cardId = paymentMethod === "信用卡" ? creditCardId : null;
 
@@ -104,6 +110,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             location: location || null,
             expense_date: expenseDate,
             credit_card_id: cardId,
+            input_currency: currency,
           });
           if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
           toast.success("已更新消費紀錄");
@@ -119,6 +126,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             location: location || null,
             expense_date: expenseDate,
             credit_card_id: cardId,
+            input_currency: currency,
           });
           if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
           toast.success("已新增消費紀錄");
@@ -146,6 +154,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             expense_date: expenseDate,
             split_type: splitType,
             credit_card_id: cardId,
+            input_currency: currency,
           }),
         });
 
@@ -171,6 +180,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             expense_date: expenseDate,
             split_type: splitType,
             credit_card_id: cardId,
+            input_currency: currency,
           }),
         });
 
@@ -230,15 +240,39 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         />
       </div>
 
+      {/* 幣別 */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium text-slate-600">幣別</Label>
+        <div className="flex gap-2">
+          {([["JPY", "🇯🇵 ¥ 日幣"], ["TWD", "🇹🇼 NT$ 台幣"]] as const).map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => setCurrency(val)}
+              className={cn(
+                "flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all",
+                currency === val
+                  ? "border-blue-400 bg-blue-50 text-blue-700"
+                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* 金額 + 日期 */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="amount" className="text-sm font-medium text-slate-600">金額 (¥)</Label>
+          <Label htmlFor="amount" className="text-sm font-medium text-slate-600">
+            金額 ({currency === "JPY" ? "¥" : "NT$"})
+          </Label>
           <Input
             id="amount"
             type="number"
-            value={amountJpy}
-            onChange={(e) => setAmountJpy(e.target.value)}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
             required
             min={0}
@@ -254,6 +288,23 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             onChange={(e) => setExpenseDate(e.target.value)}
             className="h-12 rounded-xl border-slate-200 focus-visible:ring-blue-500"
           />
+          {currentTrip && (
+            <button
+              type="button"
+              onClick={() => {
+                const pre = getPreTripDate(currentTrip.start_date);
+                setExpenseDate(expenseDate === pre ? new Date().toISOString().slice(0, 10) : pre);
+              }}
+              className={cn(
+                "text-xs px-2.5 py-1 rounded-full transition-colors",
+                currentTrip && isPreTripDate(expenseDate, currentTrip.start_date)
+                  ? "bg-amber-100 text-amber-700 font-medium"
+                  : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+              )}
+            >
+              ✈️ 行前
+            </button>
+          )}
         </div>
       </div>
 
@@ -355,9 +406,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               均分 ({tripMembers.length} 人)
             </button>
           </div>
-          {splitType === "split" && amountJpy && (
+          {splitType === "split" && amount && (
             <p className="text-xs text-teal-500 bg-teal-50 rounded-lg px-3 py-2">
-              每人 ¥{Math.round(Number(amountJpy) / tripMembers.length).toLocaleString()}
+              每人 {currency === "JPY" ? "¥" : "NT$"}{Math.round(Number(amount) / tripMembers.length).toLocaleString()}
             </p>
           )}
         </div>

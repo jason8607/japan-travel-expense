@@ -76,6 +76,13 @@ export function jpyToTwd(jpy: number, rate: number): number {
   return Math.round(result);
 }
 
+export function twdToJpy(twd: number, rate: number): number {
+  if (!rate || rate <= 0) return 0;
+  const result = twd / rate;
+  if (!Number.isFinite(result)) return 0;
+  return Math.round(result);
+}
+
 export function formatJPY(amount: number): string {
   return `¥${amount.toLocaleString()}`;
 }

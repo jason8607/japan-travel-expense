@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
       split_type,
       owner_id,
       credit_card_id,
+      input_currency,
     } = body;
 
     if (!trip_id) {
@@ -196,6 +197,7 @@ export async function POST(req: NextRequest) {
         split_type,
         owner_id,
         credit_card_id: credit_card_id || null,
+        input_currency: input_currency || "JPY",
       })
       .select()
       .single();
@@ -278,6 +280,7 @@ export async function PUT(req: NextRequest) {
       "category", "payment_method", "location", "store_name", "store_name_ja",
       "expense_date", "receipt_image_url", "split_type", "owner_id", "paid_by",
       "credit_card_id",
+      "input_currency",
     ];
     const safeUpdates: Record<string, unknown> = {};
     for (const field of ALLOWED_FIELDS) {

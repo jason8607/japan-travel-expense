@@ -3,22 +3,22 @@
 import { useApp } from "@/lib/context";
 import { useExpenses } from "@/hooks/use-expenses";
 import { ExpenseCard } from "@/components/expense/expense-card";
+import { BudgetBar } from "@/components/home/budget-bar";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
-import { Progress } from "@/components/ui/progress";
 import {
   Plus,
   Receipt,
   TrendingUp,
-  Target,
   CalendarDays,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { differenceInDays, parseISO } from "date-fns";
 
 export default function HomePage() {
   const { user, profile, currentTrip, isGuest, enterGuestMode, loading: appLoading } = useApp();
-  const { expenses, loading, todayTotal, totalJpy, totalTwd, cashTotal } =
+  const { expenses, loading, todayTotal, totalJpy, totalTwd } =
     useExpenses();
 
   if (appLoading || loading) {
@@ -89,15 +89,6 @@ export default function HomePage() {
     totalDays
   );
 
-  const cashBudget = currentTrip.cash_budget || 0;
-  const suicaTotal = expenses
-    .filter((e) => e.payment_method === "Suica")
-    .reduce((s, e) => s + e.amount_jpy, 0);
-  const budgetSpent = cashTotal + suicaTotal;
-  const budgetPercentage = cashBudget
-    ? Math.min(Math.round((budgetSpent / cashBudget) * 100), 100)
-    : 0;
-
   return (
     <div className="pb-4">
       {/* Guest Banner */}
@@ -162,25 +153,33 @@ export default function HomePage() {
           </div>
         </Link>
 
-        {/* 預算進度 */}
-        {cashBudget > 0 && (
-          <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-                <Target className="h-3.5 w-3.5 text-emerald-500" />
+        {/* 今日預算 */}
+        {currentTrip.budget_jpy ? (() => {
+          const dailyBudget = Math.round(currentTrip.budget_jpy! / totalDays);
+          const isOver = todayTotal > dailyBudget;
+          return (
+            <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+                  <Wallet className="h-3.5 w-3.5 text-emerald-500" />
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">今日預算</span>
               </div>
-              <span className="text-xs text-muted-foreground font-medium">
-                預算進度（現金 + Suica）
-              </span>
+              <p className="text-xl font-bold text-slate-800 tracking-tight">
+                {formatJPY(dailyBudget)}
+              </p>
+              <p className={`text-[11px] mt-0.5 ${isOver ? "text-red-500 font-medium" : "text-muted-foreground"}`}>
+                {isOver ? `超支 ${formatJPY(todayTotal - dailyBudget)}` : `還可花 ${formatJPY(dailyBudget - todayTotal)}`}
+              </p>
             </div>
-            <p className="text-xl font-bold text-slate-800 tracking-tight">
-              {formatJPY(budgetSpent)}
-            </p>
-            <Progress value={budgetPercentage} className="h-1.5 mt-2" />
-            <p className="text-[11px] text-muted-foreground mt-1">
-              / {formatJPY(cashBudget)}（{budgetPercentage}%）
-            </p>
-          </div>
+          );
+        })() : (
+          <Link href="/settings" className="block">
+            <div className="rounded-2xl bg-white border border-dashed border-slate-200 p-4 shadow-sm h-full flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:border-blue-300 hover:text-blue-500 transition-colors">
+              <Wallet className="h-5 w-5" />
+              <span className="text-xs font-medium">設定預算</span>
+            </div>
+          </Link>
         )}
 
         {/* 旅程天數 */}
@@ -199,6 +198,13 @@ export default function HomePage() {
           </p>
         </div>
       </div>
+
+      {/* 旅程預算進度 */}
+      {currentTrip.budget_jpy && (
+        <div className="mt-4 px-4">
+          <BudgetBar trip={currentTrip} expenses={expenses} />
+        </div>
+      )}
 
       {/* 今日花費 */}
       {todayExpenses.length > 0 && (

@@ -16,7 +16,7 @@ export default function NewTripPage() {
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [cashBudget, setCashBudget] = useState("");
+  const [budget, setBudget] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,7 +36,7 @@ export default function NewTripPage() {
           name,
           start_date: startDate,
           end_date: endDate,
-          cash_budget: cashBudget ? Number(cashBudget) : null,
+          budget_jpy: budget ? Number(budget) : null,
         }),
       });
 
@@ -93,16 +93,16 @@ export default function NewTripPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="budget">現金預算 (¥)</Label>
+          <Label htmlFor="budget">旅程預算 (¥)</Label>
           <Input
             id="budget"
             type="number"
-            value={cashBudget}
-            onChange={(e) => setCashBudget(e.target.value)}
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
             placeholder="選填，例：100000"
           />
           <p className="text-xs text-muted-foreground">
-            設定後可在首頁查看現金預算進度
+            設定後可在首頁查看預算進度與每日建議額度
           </p>
         </div>
 

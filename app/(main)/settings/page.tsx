@@ -88,7 +88,7 @@ export default function SettingsPage() {
       setTripName(currentTrip.name);
       setTripStart(currentTrip.start_date);
       setTripEnd(currentTrip.end_date);
-      setTripBudget(currentTrip.cash_budget?.toString() || "");
+      setTripBudget(currentTrip.budget_jpy?.toString() || "");
       if (!isGuest) loadMembers(currentTrip.id);
     }
   }, [currentTrip?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -165,7 +165,7 @@ export default function SettingsPage() {
           name: tripName,
           start_date: tripStart,
           end_date: tripEnd,
-          cash_budget: tripBudget ? Number(tripBudget) : null,
+          budget_jpy: tripBudget ? Number(tripBudget) : null,
         }),
       });
       const data = await res.json();
@@ -268,7 +268,7 @@ export default function SettingsPage() {
       name: tripName,
       start_date: tripStart,
       end_date: tripEnd,
-      cash_budget: tripBudget ? Number(tripBudget) : null,
+      budget_jpy: tripBudget ? Number(tripBudget) : null,
     });
     if (!updated) {
       setSaving(false);
@@ -365,7 +365,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">現金預算 (¥)</Label>
+                  <Label className="text-xs text-slate-500">旅程預算 (¥)</Label>
                   <Input
                     type="number"
                     value={tripBudget}
@@ -387,8 +387,8 @@ export default function SettingsPage() {
                 <p className="font-medium text-sm">{currentTrip.name}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {currentTrip.start_date} ~ {currentTrip.end_date}
-                  {currentTrip.cash_budget && (
-                    <> · 預算 ¥{currentTrip.cash_budget.toLocaleString()}</>
+                  {currentTrip.budget_jpy && (
+                    <> · 總預算 ¥{currentTrip.budget_jpy.toLocaleString()}</>
                   )}
                 </p>
               </div>
@@ -531,7 +531,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">現金預算 (¥)</Label>
+                <Label className="text-xs text-slate-500">旅程預算 (¥)</Label>
                 <Input
                   type="number"
                   value={tripBudget}
@@ -553,8 +553,8 @@ export default function SettingsPage() {
               <p className="font-medium text-sm">{currentTrip.name}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {currentTrip.start_date} ~ {currentTrip.end_date}
-                {currentTrip.cash_budget && (
-                  <> · 預算 ¥{currentTrip.cash_budget.toLocaleString()}</>
+                {currentTrip.budget_jpy && (
+                  <> · 總預算 ¥{currentTrip.budget_jpy.toLocaleString()}</>
                 )}
               </p>
             </div>

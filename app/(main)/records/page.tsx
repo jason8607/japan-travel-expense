@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useApp } from "@/lib/context";
 import { useExpenses } from "@/hooks/use-expenses";
 import { ExpenseList } from "@/components/expense/expense-list";
 import { MemberSummary } from "@/components/expense/member-summary";
+import { ExpenseFilter, EMPTY_FILTER } from "@/components/expense/expense-filter";
+import type { ExpenseFilterState } from "@/components/expense/expense-filter";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -15,10 +17,36 @@ export default function RecordsPage() {
   const { currentTrip, tripMembers, isGuest, loading: ctxLoading } = useApp();
   const { expenses, loading, error, refresh } = useExpenses();
   const [groupBy, setGroupBy] = useState<"date" | "category" | "member">("date");
+  const [filter, setFilter] = useState<ExpenseFilterState>(EMPTY_FILTER);
 
   useEffect(() => {
     if (isGuest && groupBy === "member") setGroupBy("date");
   }, [isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const filtered = useMemo(() => {
+    let result = expenses;
+
+    if (filter.query) {
+      const q = filter.query.toLowerCase();
+      result = result.filter(
+        (e) =>
+          e.title.toLowerCase().includes(q) ||
+          (e.title_ja && e.title_ja.toLowerCase().includes(q)) ||
+          (e.store_name && e.store_name.toLowerCase().includes(q)) ||
+          (e.store_name_ja && e.store_name_ja.toLowerCase().includes(q))
+      );
+    }
+
+    if (filter.categories.length > 0) {
+      result = result.filter((e) => filter.categories.includes(e.category));
+    }
+
+    if (filter.paymentMethods.length > 0) {
+      result = result.filter((e) => filter.paymentMethods.includes(e.payment_method));
+    }
+
+    return result;
+  }, [expenses, filter]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -67,6 +95,14 @@ export default function RecordsPage() {
         </div>
       </div>
 
+      <div className="px-4 mb-3">
+        <ExpenseFilter
+          onChange={setFilter}
+          total={expenses.length}
+          filtered={filtered.length}
+        />
+      </div>
+
       <div className="px-4 mb-4">
         <Tabs
           value={groupBy}
@@ -89,9 +125,9 @@ export default function RecordsPage() {
       </div>
 
       {groupBy === "member" ? (
-        <MemberSummary expenses={expenses} tripMembers={tripMembers} onDelete={handleDelete} />
+        <MemberSummary expenses={filtered} tripMembers={tripMembers} onDelete={handleDelete} />
       ) : (
-        <ExpenseList expenses={expenses} groupBy={groupBy} onDelete={handleDelete} />
+        <ExpenseList expenses={filtered} groupBy={groupBy} onDelete={handleDelete} />
       )}
 
       <div className="fixed bottom-20 right-4 z-40">

@@ -7,11 +7,9 @@ import { CategoryChart } from "@/components/stats/category-chart";
 import { PaymentChart } from "@/components/stats/payment-chart";
 import { TopExpenses } from "@/components/stats/top-expenses";
 import { CashbackChart } from "@/components/stats/cashback-chart";
-import { DayTabs } from "@/components/stats/day-tabs";
+import { DayTabs, PRE_TRIP_KEY } from "@/components/stats/day-tabs";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
-import { parseISO, format } from "date-fns";
-
-const DAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
+import { formatDateLabel, isPreTripDate } from "@/lib/utils";
 
 export default function StatsPage() {
   const { currentTrip, loading: ctxLoading } = useApp();
@@ -23,13 +21,13 @@ export default function StatsPage() {
     return [...set].sort();
   }, [expenses]);
 
-  const filtered = useMemo(
-    () =>
-      selectedDate
-        ? expenses.filter((e) => e.expense_date === selectedDate)
-        : expenses,
-    [expenses, selectedDate]
-  );
+  const filtered = useMemo(() => {
+    if (!selectedDate) return expenses;
+    if (selectedDate === PRE_TRIP_KEY && currentTrip) {
+      return expenses.filter((e) => isPreTripDate(e.expense_date, currentTrip.start_date));
+    }
+    return expenses.filter((e) => e.expense_date === selectedDate);
+  }, [expenses, selectedDate, currentTrip]);
 
   const totalJpy = filtered.reduce((s, e) => s + e.amount_jpy, 0);
   const totalTwd = filtered.reduce((s, e) => s + e.amount_twd, 0);
@@ -61,15 +59,14 @@ export default function StatsPage() {
   }
 
   const dateLabel = selectedDate
-    ? (() => {
-        const d = parseISO(selectedDate);
-        return `${format(d, "M/d")}(${DAY_LABELS[d.getDay()]})`;
-      })()
+    ? selectedDate === PRE_TRIP_KEY
+      ? "行前"
+      : formatDateLabel(selectedDate, currentTrip?.start_date)
     : null;
 
   return (
     <div className="space-y-4 p-4 pb-4">
-      <DayTabs dates={dates} selected={selectedDate} onChange={setSelectedDate} />
+      <DayTabs dates={dates} selected={selectedDate} onChange={setSelectedDate} tripStartDate={currentTrip?.start_date} />
 
       <div className="rounded-2xl border bg-white p-4 shadow-sm text-center">
         <p className="text-xs text-muted-foreground mb-1">

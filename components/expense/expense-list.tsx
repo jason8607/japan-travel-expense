@@ -1,10 +1,10 @@
 "use client";
 
-import { format, parseISO } from "date-fns";
-import { zhTW } from "date-fns/locale";
 import { ExpenseCard } from "./expense-card";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
+import { formatDateLabel } from "@/lib/utils";
 import { useCategories } from "@/hooks/use-categories";
+import { useApp } from "@/lib/context";
 import type { Expense, CategoryItem } from "@/types";
 
 interface ExpenseListProps {
@@ -13,17 +13,9 @@ interface ExpenseListProps {
   onDelete?: (id: string) => Promise<void>;
 }
 
-function getDayOfWeek(dateStr: string) {
-  try {
-    const days = ["日", "一", "二", "三", "四", "五", "六"];
-    return days[parseISO(dateStr).getDay()];
-  } catch {
-    return "?";
-  }
-}
-
 export function ExpenseList({ expenses, groupBy, onDelete }: ExpenseListProps) {
   const { categories } = useCategories();
+  const { currentTrip } = useApp();
 
   if (expenses.length === 0) {
     return (
@@ -34,7 +26,7 @@ export function ExpenseList({ expenses, groupBy, onDelete }: ExpenseListProps) {
     );
   }
 
-  const grouped = groupExpenses(expenses, groupBy);
+  const grouped = groupExpenses(expenses, groupBy, currentTrip?.start_date);
 
   return (
     <div className="space-y-6">
@@ -64,7 +56,7 @@ export function ExpenseList({ expenses, groupBy, onDelete }: ExpenseListProps) {
   );
 }
 
-function groupExpenses(expenses: Expense[], groupBy: "date" | "category") {
+function groupExpenses(expenses: Expense[], groupBy: "date" | "category", startDate?: string) {
   const map = new Map<string, Expense[]>();
 
   for (const e of expenses) {
@@ -77,7 +69,7 @@ function groupExpenses(expenses: Expense[], groupBy: "date" | "category") {
     key,
     label:
       groupBy === "date"
-        ? (() => { try { return `${format(parseISO(key), "yyyy-MM-dd", { locale: zhTW })}（${getDayOfWeek(key)}）`; } catch { return key; } })()
+        ? formatDateLabel(key, startDate)
         : key,
     expenses: exps,
   }));

@@ -18,6 +18,7 @@ export function initGuestTrip(): Trip {
     end_date: getLocalDateString(7),
     currency: "JPY",
     cash_budget: null,
+    budget_jpy: null,
     notion_database_id: null,
     created_by: "guest",
     created_at: new Date().toISOString(),
@@ -93,6 +94,7 @@ export function addGuestExpense(data: {
   expense_date: string;
   split_type?: SplitType;
   credit_card_id?: string | null;
+  input_currency?: "JPY" | "TWD";
 }): Expense | null {
   const expenses = getGuestExpenses();
   const expense: Expense = {
@@ -113,6 +115,7 @@ export function addGuestExpense(data: {
     split_type: data.split_type || "personal",
     owner_id: null,
     credit_card_id: data.credit_card_id ?? null,
+    input_currency: data.input_currency || "JPY",
     receipt_image_url: null,
     notion_page_id: null,
     created_at: new Date().toISOString(),

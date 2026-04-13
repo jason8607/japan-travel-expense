@@ -21,6 +21,7 @@ export interface Trip {
   end_date: string;
   currency: string;
   cash_budget: number | null;
+  budget_jpy: number | null;
   notion_database_id: string | null;
   created_by: string;
   created_at: string;
@@ -59,6 +60,7 @@ export interface Expense {
   split_type: SplitType;
   owner_id: string | null;
   credit_card_id: string | null;
+  input_currency: "JPY" | "TWD";
   receipt_image_url: string | null;
   notion_page_id: string | null;
   created_at: string;

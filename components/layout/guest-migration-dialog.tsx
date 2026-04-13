@@ -40,6 +40,7 @@ export function GuestMigrationDialog() {
           start_date: guestTrip?.start_date,
           end_date: guestTrip?.end_date,
           cash_budget: guestTrip?.cash_budget,
+          budget_jpy: guestTrip?.budget_jpy,
         }),
       });
       const tripData = await tripRes.json();

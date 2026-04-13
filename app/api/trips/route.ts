@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     const { data: trips } = await admin
       .from("trips")
-      .select("id, name, start_date, end_date, currency, cash_budget, notion_database_id, created_by, created_at")
+      .select("id, name, start_date, end_date, currency, cash_budget, budget_jpy, notion_database_id, created_by, created_at")
       .in("id", tripIds)
       .order("start_date", { ascending: false });
 
@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, name, start_date, end_date, cash_budget } = body;
+    const { id, name, start_date, end_date, cash_budget, budget_jpy } = body;
 
     if (!id) {
       return NextResponse.json({ error: "缺少旅程 ID" }, { status: 400 });
@@ -72,6 +72,7 @@ export async function PUT(req: NextRequest) {
     if (start_date !== undefined) updates.start_date = start_date;
     if (end_date !== undefined) updates.end_date = end_date;
     if (cash_budget !== undefined) updates.cash_budget = cash_budget || null;
+    if (budget_jpy !== undefined) updates.budget_jpy = budget_jpy || null;
 
     const { data: trip, error } = await admin
       .from("trips")
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, start_date, end_date, cash_budget } = body;
+    const { name, start_date, end_date, cash_budget, budget_jpy } = body;
 
     if (!name || !start_date || !end_date) {
       return NextResponse.json({ error: "缺少必要欄位" }, { status: 400 });
@@ -119,6 +120,7 @@ export async function POST(req: NextRequest) {
         start_date,
         end_date,
         cash_budget: cash_budget || null,
+        budget_jpy: budget_jpy || null,
         created_by: user.id,
       })
       .select()
