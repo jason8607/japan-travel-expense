@@ -11,16 +11,25 @@ import {
   deleteCategory as deleteLocalCategory,
 } from "@/lib/categories";
 
+// Module-level cache
+let catCache: CategoryItem[] | null = null;
+let catCacheUserId: string | null = null;
+
 export function useCategories() {
   const { user, isGuest } = useApp();
-  const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
-  const [loading, setLoading] = useState(true);
+  const uid = user?.id || null;
+
+  const cached = uid && catCacheUserId === uid ? catCache : null;
+  const [categories, setCategories] = useState<CategoryItem[]>(cached || DEFAULT_CATEGORIES);
+  const [loading, setLoading] = useState(!cached);
   const [isDefault, setIsDefault] = useState(true);
   const isDefaultRef = useRef(true);
+  const mountedRef = useRef(true);
 
   const fetchCategories = useCallback(async () => {
     if (isGuest || !user) {
-      setCategories(getLocalCategories());
+      const local = getLocalCategories();
+      setCategories(local);
       setIsDefault(false);
       isDefaultRef.current = false;
       setLoading(false);
@@ -31,21 +40,39 @@ export function useCategories() {
       const res = await fetch("/api/categories");
       if (res.ok) {
         const data = await res.json();
-        setCategories(data.categories || DEFAULT_CATEGORIES);
+        const fetched = data.categories || DEFAULT_CATEGORIES;
         const def = data.is_default ?? true;
-        setIsDefault(def);
-        isDefaultRef.current = def;
+        catCache = fetched;
+        catCacheUserId = user.id;
+        if (mountedRef.current) {
+          setCategories(fetched);
+          setIsDefault(def);
+          isDefaultRef.current = def;
+        }
       }
     } catch {
       // fallback to defaults
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [user?.id, isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    if (!isGuest && uid && catCacheUserId === uid && catCache) {
+      setCategories(catCache);
+      setLoading(false);
+      fetchCategories(); // background refresh
+    } else {
+      fetchCategories();
+    }
+  }, [fetchCategories, isGuest, uid]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const initUserCategories = useCallback(async () => {
     if (isGuest || !user || !isDefaultRef.current) return;

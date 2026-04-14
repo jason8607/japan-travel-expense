@@ -167,7 +167,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
           setIsGuest(false);
 
-          // Parallel: profile + trips
+          // Speculatively start members fetch if we have a saved trip ID
+          const savedTripId = localStorage.getItem("current_trip_id");
+          const membersFetchPromise = savedTripId
+            ? fetch(`/api/trip-members?trip_id=${savedTripId}`)
+                .then((res) => (res.ok ? res.json() : null))
+                .catch(() => null)
+            : null;
+
+          // Parallel: profile + trips (+ speculative members)
           const [profileResult, tripsResult] = await Promise.all([
             supabase
               .from("profiles")
@@ -186,24 +194,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
           let selectedTrip: Trip | null = null;
           if (fetchedTrips.length > 0) {
-            const savedId = localStorage.getItem("current_trip_id");
-            const saved = savedId
-              ? fetchedTrips.find((t: Trip) => t.id === savedId)
+            const saved = savedTripId
+              ? fetchedTrips.find((t: Trip) => t.id === savedTripId)
               : null;
             selectedTrip = saved || fetchedTrips[0];
             setCurrentTrip(selectedTrip);
           }
 
-          // Fetch trip members immediately (skip re-render cycle)
+          // Use speculative fetch if trip matched, otherwise fetch fresh
           if (selectedTrip) {
             try {
-              const membersRes = await fetch(
-                `/api/trip-members?trip_id=${selectedTrip.id}`
-              );
-              if (membersRes.ok) {
-                const data = await membersRes.json();
-                if (data.members) setTripMembers(data.members);
+              let membersData;
+              if (savedTripId === selectedTrip.id && membersFetchPromise) {
+                membersData = await membersFetchPromise;
+              } else {
+                const membersRes = await fetch(
+                  `/api/trip-members?trip_id=${selectedTrip.id}`
+                );
+                membersData = membersRes.ok ? await membersRes.json() : null;
               }
+              if (membersData?.members) setTripMembers(membersData.members);
             } catch {
               // ignore
             }

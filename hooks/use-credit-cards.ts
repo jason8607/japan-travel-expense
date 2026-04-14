@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useApp } from "@/lib/context";
 import {
   getCreditCards as getLocalCards,
@@ -10,10 +10,19 @@ import {
 } from "@/lib/credit-cards";
 import type { CreditCard } from "@/types";
 
+// Module-level cache
+let cardCache: CreditCard[] | null = null;
+let cardCacheUserId: string | null = null;
+
 export function useCreditCards() {
   const { user, isGuest } = useApp();
-  const [cards, setCards] = useState<CreditCard[]>([]);
-  const [loading, setLoading] = useState(true);
+  const uid = user?.id || null;
+
+  // Use cache if available and for same user
+  const cached = uid && cardCacheUserId === uid ? cardCache : null;
+  const [cards, setCards] = useState<CreditCard[]>(cached || []);
+  const [loading, setLoading] = useState(!cached);
+  const mountedRef = useRef(true);
 
   const fetchCards = useCallback(async () => {
     if (isGuest || !user) {
@@ -26,18 +35,36 @@ export function useCreditCards() {
       const res = await fetch("/api/credit-cards");
       if (res.ok) {
         const data = await res.json();
-        setCards(data.cards || []);
+        const fetched = data.cards || [];
+        cardCache = fetched;
+        cardCacheUserId = user.id;
+        if (mountedRef.current) {
+          setCards(fetched);
+        }
       }
     } catch {
       // ignore
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [user?.id, isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    fetchCards();
-  }, [fetchCards]);
+    if (!isGuest && uid && cardCacheUserId === uid && cardCache) {
+      setCards(cardCache);
+      setLoading(false);
+      fetchCards(); // background refresh
+    } else {
+      fetchCards();
+    }
+  }, [fetchCards, isGuest, uid]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const addCard = useCallback(
     async (data: Omit<CreditCard, "id">): Promise<CreditCard | null> => {

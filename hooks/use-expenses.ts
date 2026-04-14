@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useApp } from "@/lib/context";
 import { createClient } from "@/lib/supabase/client";
 import { getGuestExpenses } from "@/lib/guest-storage";
@@ -14,15 +14,23 @@ function getLocalDateString() {
   return `${y}-${m}-${d}`;
 }
 
+// Module-level cache: persist across page navigations
+const expenseCache = new Map<string, Expense[]>();
+
 export function useExpenses() {
   const { currentTrip, isGuest } = useApp();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
+  const tripId = currentTrip?.id || "";
+  const cached = tripId ? expenseCache.get(tripId) : undefined;
+
+  const [expenses, setExpenses] = useState<Expense[]>(cached || []);
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
 
   const fetchExpenses = useCallback(async () => {
     if (isGuest) {
-      setExpenses(getGuestExpenses());
+      const data = getGuestExpenses();
+      setExpenses(data);
       setLoading(false);
       setError(null);
       return;
@@ -43,19 +51,47 @@ export function useExpenses() {
         throw new Error(data.error || "載入失敗");
       }
       const data = await res.json();
-      setExpenses(data.expenses || []);
+      const fetched = data.expenses || [];
+      expenseCache.set(currentTrip.id, fetched);
+      if (mountedRef.current) {
+        setExpenses(fetched);
+      }
     } catch (err) {
       console.error("Failed to load expenses:", err);
-      setError(err instanceof Error ? err.message : "載入失敗");
+      if (mountedRef.current) {
+        setError(err instanceof Error ? err.message : "載入失敗");
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [currentTrip?.id, isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // On trip change: use cache if available, then refresh in background
   useEffect(() => {
-    fetchExpenses();
-  }, [fetchExpenses]);
+    if (isGuest) {
+      fetchExpenses();
+      return;
+    }
+    if (tripId && expenseCache.has(tripId)) {
+      setExpenses(expenseCache.get(tripId)!);
+      setLoading(false);
+      // Background refresh
+      fetchExpenses();
+    } else {
+      setLoading(true);
+      fetchExpenses();
+    }
+  }, [tripId, fetchExpenses, isGuest]);
 
+  // Cleanup
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  // Realtime subscription
   useEffect(() => {
     if (!currentTrip || isGuest) return;
 
