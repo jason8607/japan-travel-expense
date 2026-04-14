@@ -1,28 +1,31 @@
 # 旅帳 — 日本旅遊記帳 App
 
-AI 收據辨識、即時統計、多人分帳的日本旅遊記帳 PWA。
+AI 收據辨識、即時統計、多人分帳、信用卡回饋追蹤的日本旅遊記帳 PWA。
 
 ## 功能
 
 - **AI 收據辨識** — 拍照上傳日文收據，Gemini AI 自動擷取店名、金額、品項、稅別，翻譯成繁體中文
 - **逐條分帳** — 掃描後每個品項可獨立指定歸屬（自己 / 幫付 / 均分），也可一鍵全部指定
-- **手動記帳** — 快速新增消費，支援 9 種類別（餐飲、交通、購物、住宿、門票、藥品、美妝、衣服、其他）、多種支付方式
-- **分帳模式** — 每筆消費可選「只記自己」或「均分」，按成員檢視個人花費
-- **即時 Dashboard** — 今日花費、旅程累計、預算進度（含金額顯示）、即時匯率
-- **統計分析** — 每日趨勢、分類佔比、支付方式分布、TOP 10 消費
+- **手動記帳** — 快速新增消費，支援 9 種預設類別 + 自訂類別、多種支付方式
+- **分帳模式** — 每筆消費可選「只記自己」或「均分」，按成員檢視個人花費與結算
+- **結算摘要** — 自動計算誰欠誰多少，最小化轉帳次數
+- **信用卡回饋追蹤** — 設定多張卡片及可切方案（如台新 Richart、國泰 Cube），追蹤各卡回饋進度與上限
+- **即時 Dashboard** — 今日花費、旅程累計、預算進度、即時匯率
+- **統計分析** — 每日趨勢、分類佔比、支付方式分布、TOP 10 消費、信用卡回饋明細
 - **多旅程管理** — 建立多個旅程並自由切換，全站資料隨當前旅程變動
 - **成員管理** — 透過邀請連結邀請旅伴，旅程建立者可移除成員（消費紀錄自動轉移）
 - **Google 登入** — 支援 Google OAuth 與 Email 註冊登入
 - **個人化頭像** — 預設 Google 頭像，可自訂上傳或選擇動物 emoji
+- **Notion 同步** — 可選將消費紀錄同步至 Notion 資料庫
 - **OCR 用量管控** — 每人每日 50 次辨識上限，防止 API 濫用
-- **PWA** — 安裝到手機桌面，支援離線使用
+- **PWA** — 安裝到手機桌面，支援離線使用（Guest 模式）
 
 ## 技術棧
 
 - Next.js 16 + React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui
 - Supabase (PostgreSQL + Auth + RLS + Realtime + Storage)
 - Google Gemini 3 Flash (AI 收據辨識)
-- Recharts (圖表)
+- Recharts (圖表) + Notion API (同步)
 - Vercel (部署)
 
 ## 快速開始
@@ -55,6 +58,15 @@ supabase/migrations/003_add_owner_id.sql
 supabase/migrations/004_find_user_by_email.sql
 supabase/migrations/005_fix_trip_members_rls.sql
 supabase/migrations/006_ocr_usage.sql
+supabase/migrations/007_security_hardening.sql
+supabase/migrations/008_add_credit_card_id.sql
+supabase/migrations/009_custom_categories.sql
+supabase/migrations/011_trip_budget.sql
+supabase/migrations/012_input_currency.sql
+supabase/migrations/013_add_note.sql
+supabase/migrations/014_receipts_bucket.sql
+supabase/migrations/015_credit_card_plans.sql
+supabase/migrations/016_seed_default_credit_cards.sql
 ```
 
 ### 4. 設定 Supabase Auth
@@ -69,7 +81,8 @@ supabase/migrations/006_ocr_usage.sql
 ### 5. 設定 Supabase Storage
 
 1. **Storage → New bucket**：建立名為 `avatars` 的 bucket（Public）
-2. 設定 bucket policy 允許 authenticated 用戶上傳
+2. **Storage → New bucket**：建立名為 `receipts` 的 bucket（Private）
+3. 設定 bucket policy 允許 authenticated 用戶上傳
 
 ### 6. 啟動開發伺服器
 
@@ -93,6 +106,7 @@ npx vercel --prod
 |------|---------|------|
 | Supabase | [supabase.com](https://supabase.com) 建立專案 | 免費 |
 | Gemini API | [aistudio.google.com](https://aistudio.google.com) 取得 Key | 免費額度（每日有上限）|
+| Notion API | [developers.notion.com](https://developers.notion.com)（可選）| 免費 |
 
 ## 專案結構
 
@@ -101,27 +115,34 @@ app/
 ├── (main)/            # 主要頁面（含底部導覽）
 │   ├── page.tsx       # Dashboard 首頁
 │   ├── scan/          # AI 收據掃描
-│   ├── records/       # 記帳紀錄列表
+│   ├── records/       # 記帳紀錄列表 + 新增
 │   ├── stats/         # 統計分析
-│   ├── settings/      # 設定（旅程、成員、個人資料）
-│   └── trip/          # 旅程管理、邀請、加入
+│   ├── summary/       # 結算摘要
+│   ├── settings/      # 設定（旅程、成員、信用卡、個人資料）
+│   └── trip/          # 旅程管理、邀請、加入、行程
 ├── api/               # API Routes
 │   ├── ocr/           # Gemini 收據辨識（含用量限制）
 │   ├── expenses/      # 消費 CRUD（含分頁）
 │   ├── trips/         # 旅程管理
 │   ├── trip-members/  # 成員管理（含移除與消費轉移）
+│   ├── credit-cards/  # 信用卡 + 方案 CRUD
+│   ├── categories/    # 自訂類別 CRUD
 │   ├── avatar/        # 頭像上傳
-│   └── exchange-rate/ # 即時匯率
+│   ├── receipt-image/ # 收據圖片
+│   ├── exchange-rate/ # 即時匯率
+│   └── notion-sync/   # Notion 同步
 ├── auth/              # 登入、OAuth callback
 components/
-├── expense/           # 消費相關（表單、卡片、類別選擇、支付方式）
-├── scan/              # 收據掃描（上傳、確認、分帳）
-├── stats/             # 圖表（分類、支付、每日趨勢）
-├── layout/            # 頁面框架（Header、Nav、載入畫面、安裝提示）
+├── dashboard/         # Dashboard（預算進度、旅程摘要）
+├── expense/           # 消費相關（表單、卡片、分帳、結算）
+├── scan/              # 收據掃描（上傳、確認、逐條分帳）
+├── settings/          # 設定（類別管理、信用卡管理）
+├── stats/             # 圖表（分類、支付、趨勢、回饋進度）
+├── layout/            # 頁面框架（Header、Nav、載入、PWA 安裝提示）
 └── ui/                # shadcn/ui 基礎元件
-hooks/                 # 自訂 Hooks（消費資料、匯率）
-lib/                   # Supabase client、Gemini、匯率、Context
+hooks/                 # 自訂 Hooks（消費、類別、信用卡）
+lib/                   # Supabase client、Gemini、匯率、Context、結算、匯出
 types/                 # TypeScript 型別定義
-supabase/migrations/   # 資料庫 schema 與 RLS policy
+supabase/migrations/   # 資料庫 schema 與 RLS policy（001-016）
 proxy.ts               # Next.js 16 Proxy（路由保護、session 管理）
 ```
