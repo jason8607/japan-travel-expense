@@ -151,11 +151,11 @@ export default function RecordsPage() {
         <ExpenseList expenses={filtered} groupBy={groupBy} onDelete={handleDelete} />
       )}
 
-      <div className="sticky bottom-20 z-40 flex justify-end pr-4 pointer-events-none">
+      <div className="fixed bottom-20 right-4 z-40">
         <Link
           href="/records/new"
           aria-label="新增消費"
-          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all active:scale-95"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all active:scale-95"
         >
           <Plus className="h-6 w-6" />
         </Link>
