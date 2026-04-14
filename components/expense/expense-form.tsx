@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { getExchangeRate, jpyToTwd, twdToJpy } from "@/lib/exchange-rate";
 import { addGuestExpense, updateGuestExpense, deleteGuestExpense } from "@/lib/guest-storage";
 import type { Category, PaymentMethod, SplitType, Expense } from "@/types";
-import { Trash2, MapPin, Store, Users } from "lucide-react";
+import { Trash2, MapPin, Store, Users, Image as ImageIcon } from "lucide-react";
 import { cn, getPreTripDate, isPreTripDate } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CategoryGrid } from "./category-grid";
@@ -73,6 +73,8 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   const [creditCardId, setCreditCardId] = useState<string | null>(
     editExpense?.credit_card_id || null
   );
+  const [note, setNote] = useState(editExpense?.note || "");
+  const [showReceiptImage, setShowReceiptImage] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -111,6 +113,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             expense_date: expenseDate,
             credit_card_id: cardId,
             input_currency: currency,
+            note: note || null,
           });
           if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
           toast.success("已更新消費紀錄");
@@ -127,6 +130,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             expense_date: expenseDate,
             credit_card_id: cardId,
             input_currency: currency,
+            note: note || null,
           });
           if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
           toast.success("已新增消費紀錄");
@@ -155,6 +159,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             split_type: splitType,
             credit_card_id: cardId,
             input_currency: currency,
+            note: note || null,
           }),
         });
 
@@ -181,6 +186,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             split_type: splitType,
             credit_card_id: cardId,
             input_currency: currency,
+            note: note || null,
           }),
         });
 
@@ -227,6 +233,30 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 p-4">
+      {/* 收據照片預覽 (編輯時) */}
+      {isEditing && editExpense?.receipt_image_url && (
+        <div className="space-y-1.5">
+          <button
+            type="button"
+            onClick={() => setShowReceiptImage(!showReceiptImage)}
+            className="flex items-center gap-1.5 text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors"
+          >
+            <ImageIcon className="h-4 w-4" />
+            {showReceiptImage ? "收起收據照片" : "查看收據照片"}
+          </button>
+          {showReceiptImage && (
+            <div className="relative w-full aspect-3/4 max-h-80 rounded-xl overflow-hidden bg-gray-50 border border-slate-200">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={editExpense.receipt_image_url}
+                alt="收據照片"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 品名 */}
       <div className="space-y-1.5">
         <Label htmlFor="title" className="text-sm font-medium text-slate-600">品名</Label>
@@ -357,6 +387,18 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             className="h-11 rounded-xl border-slate-200 focus-visible:ring-blue-500"
           />
         </div>
+      </div>
+
+      {/* 備註 */}
+      <div className="space-y-1.5">
+        <Label htmlFor="note" className="text-sm font-medium text-slate-600">備註</Label>
+        <Input
+          id="note"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="選填"
+          className="h-11 rounded-xl border-slate-200 focus-visible:ring-blue-500"
+        />
       </div>
 
       {/* 這筆是誰的 */}

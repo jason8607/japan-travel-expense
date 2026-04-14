@@ -12,6 +12,7 @@ import {
   TrendingUp,
   CalendarDays,
   Wallet,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { differenceInDays, parseISO } from "date-fns";
@@ -213,6 +214,19 @@ export default function HomePage() {
           {todayExpenses.slice(0, 5).map((expense) => (
             <ExpenseCard key={expense.id} expense={expense} />
           ))}
+        </div>
+      )}
+
+      {/* Trip summary link */}
+      {expenses.length > 0 && (
+        <div className="mt-4 px-4">
+          <Link
+            href="/summary"
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 shadow-sm transition-colors"
+          >
+            <ClipboardList className="h-4 w-4 text-blue-500" />
+            查看旅行總結
+          </Link>
         </div>
       )}
 

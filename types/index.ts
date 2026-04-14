@@ -61,6 +61,7 @@ export interface Expense {
   owner_id: string | null;
   credit_card_id: string | null;
   input_currency: "JPY" | "TWD";
+  note: string | null;
   receipt_image_url: string | null;
   notion_page_id: string | null;
   created_at: string;

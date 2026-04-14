@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, Users, ArrowRight } from "lucide-react";
+import { Pencil, Trash2, Users, ArrowRight, Image as ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
@@ -29,6 +29,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
   const { tripMembers } = useApp();
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
   const categoryInfo = categories.find((c) => c.value === expense.category);
   const paymentInfo = PAYMENT_METHODS.find((p) => p.value === expense.payment_method);
 
@@ -73,11 +74,27 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
               {ownerMember.profile?.avatar_emoji || "🧑"} {ownerMember.profile?.display_name || "成員"}
             </span>
           )}
+          {expense.receipt_image_url && (
+            <button
+              onClick={() => setShowReceipt(true)}
+              className="inline-flex items-center gap-0.5 text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0 rounded-full font-medium hover:bg-blue-100 transition-colors"
+            >
+              <ImageIcon className="h-2.5 w-2.5" />收據
+            </button>
+          )}
           {expense.store_name && (
             <>
               <span className="text-[10px] text-muted-foreground">·</span>
               <span className="text-[10px] text-muted-foreground truncate">
                 🏪 {expense.store_name}
+              </span>
+            </>
+          )}
+          {expense.note && (
+            <>
+              <span className="text-[10px] text-muted-foreground">·</span>
+              <span className="text-[10px] text-slate-400 truncate italic">
+                {expense.note}
               </span>
             </>
           )}
@@ -112,6 +129,25 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
           </button>
         )}
       </div>
+
+      {expense.receipt_image_url && (
+        <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
+          <DialogContent className="max-w-sm p-2">
+            <DialogHeader>
+              <DialogTitle className="text-sm">收據照片</DialogTitle>
+              <DialogDescription className="sr-only">收據照片預覽</DialogDescription>
+            </DialogHeader>
+            <div className="relative w-full aspect-3/4 rounded-lg overflow-hidden bg-gray-50">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={expense.receipt_image_url}
+                alt="收據照片"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent showCloseButton={false}>

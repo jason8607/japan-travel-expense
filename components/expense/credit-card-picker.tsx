@@ -45,8 +45,8 @@ export function CreditCardPicker({ value, onChange }: CreditCardPickerProps) {
           )}
         >
           <span className="text-base leading-none">💳</span>
-          <span>{card.name}</span>
-          <span className="text-[10px] text-slate-400">
+          <span className="leading-none">{card.name}</span>
+          <span className="text-[10px] text-slate-400 leading-none self-center">
             {card.cashback_rate}%
           </span>
         </button>

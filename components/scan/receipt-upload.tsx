@@ -7,7 +7,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface ReceiptUploadProps {
-  onImageSelected: (base64: string, mimeType: string) => void;
+  onImageSelected: (base64: string, mimeType: string, file: File) => void;
   isProcessing: boolean;
 }
 
@@ -29,7 +29,7 @@ export function ReceiptUpload({
         return;
       }
       setPreview(result);
-      onImageSelected(base64, file.type);
+      onImageSelected(base64, file.type, file);
     };
     reader.onerror = () => {
       toast.error("讀取圖片失敗，請重新選擇");

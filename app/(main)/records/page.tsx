@@ -5,22 +5,24 @@ import { useApp } from "@/lib/context";
 import { useExpenses } from "@/hooks/use-expenses";
 import { ExpenseList } from "@/components/expense/expense-list";
 import { MemberSummary } from "@/components/expense/member-summary";
+import { SettlementView } from "@/components/expense/settlement-view";
 import { ExpenseFilter, EMPTY_FILTER } from "@/components/expense/expense-filter";
 import type { ExpenseFilterState } from "@/components/expense/expense-filter";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 import { deleteGuestExpense } from "@/lib/guest-storage";
+import { exportExpensesToCSV } from "@/lib/export";
 import Link from "next/link";
 
 export default function RecordsPage() {
-  const { currentTrip, tripMembers, isGuest, loading: ctxLoading } = useApp();
+  const { currentTrip, tripMembers, isGuest, loading: ctxLoading, profile } = useApp();
   const { expenses, loading, error, refresh } = useExpenses();
-  const [groupBy, setGroupBy] = useState<"date" | "category" | "member">("date");
+  const [groupBy, setGroupBy] = useState<"date" | "category" | "member" | "settlement">("date");
   const [filter, setFilter] = useState<ExpenseFilterState>(EMPTY_FILTER);
 
   useEffect(() => {
-    if (isGuest && groupBy === "member") setGroupBy("date");
+    if (isGuest && (groupBy === "member" || groupBy === "settlement")) setGroupBy("date");
   }, [isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
@@ -92,6 +94,18 @@ export default function RecordsPage() {
           >
             ← 返回首頁
           </Link>
+          {expenses.length > 0 && (
+            <button
+              onClick={() => {
+                exportExpensesToCSV(filtered, currentTrip?.name || "旅程", tripMembers);
+                toast.success("CSV 已下載");
+              }}
+              className="flex items-center gap-1 text-sm text-slate-500 hover:text-blue-500 transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              匯出
+            </button>
+          )}
         </div>
       </div>
 
@@ -106,7 +120,7 @@ export default function RecordsPage() {
       <div className="px-4 mb-4">
         <Tabs
           value={groupBy}
-          onValueChange={(v) => setGroupBy(v as "date" | "category" | "member")}
+          onValueChange={(v) => setGroupBy(v as "date" | "category" | "member" | "settlement")}
         >
           <TabsList className="w-full">
             <TabsTrigger value="date" className="flex-1">
@@ -120,11 +134,18 @@ export default function RecordsPage() {
                 按成員
               </TabsTrigger>
             )}
+            {!isGuest && (
+              <TabsTrigger value="settlement" className="flex-1">
+                結算
+              </TabsTrigger>
+            )}
           </TabsList>
         </Tabs>
       </div>
 
-      {groupBy === "member" ? (
+      {groupBy === "settlement" ? (
+        <SettlementView expenses={filtered} tripMembers={tripMembers} />
+      ) : groupBy === "member" ? (
         <MemberSummary expenses={filtered} tripMembers={tripMembers} onDelete={handleDelete} />
       ) : (
         <ExpenseList expenses={filtered} groupBy={groupBy} onDelete={handleDelete} />

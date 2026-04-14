@@ -167,30 +167,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
           setIsGuest(false);
 
-          const { data: p } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", u.id)
-            .single();
-          if (p) setProfile(p);
+          // Parallel: profile + trips
+          const [profileResult, tripsResult] = await Promise.all([
+            supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", u.id)
+              .single(),
+            fetch("/api/trips")
+              .then((res) => (res.ok ? res.json() : null))
+              .catch(() => null),
+          ]);
 
-          try {
-            const res = await fetch("/api/trips");
-            if (res.ok) {
-              const data = await res.json();
-              const fetchedTrips = data.trips || [];
-              setTrips(fetchedTrips);
+          if (profileResult.data) setProfile(profileResult.data);
 
-              if (fetchedTrips.length > 0) {
-                const savedId = localStorage.getItem("current_trip_id");
-                const saved = savedId
-                  ? fetchedTrips.find((t: Trip) => t.id === savedId)
-                  : null;
-                setCurrentTrip(saved || fetchedTrips[0]);
+          const fetchedTrips: Trip[] = tripsResult?.trips || [];
+          setTrips(fetchedTrips);
+
+          let selectedTrip: Trip | null = null;
+          if (fetchedTrips.length > 0) {
+            const savedId = localStorage.getItem("current_trip_id");
+            const saved = savedId
+              ? fetchedTrips.find((t: Trip) => t.id === savedId)
+              : null;
+            selectedTrip = saved || fetchedTrips[0];
+            setCurrentTrip(selectedTrip);
+          }
+
+          // Fetch trip members immediately (skip re-render cycle)
+          if (selectedTrip) {
+            try {
+              const membersRes = await fetch(
+                `/api/trip-members?trip_id=${selectedTrip.id}`
+              );
+              if (membersRes.ok) {
+                const data = await membersRes.json();
+                if (data.members) setTripMembers(data.members);
               }
+            } catch {
+              // ignore
             }
-          } catch {
-            // ignore fetch error
           }
         } else {
           if (isGuestMode()) {

@@ -19,9 +19,11 @@ export default function ScanPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
+  const [receiptImageFile, setReceiptImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const handleImageSelected = async (base64: string, mimeType: string) => {
+  const handleImageSelected = async (base64: string, mimeType: string, file: File) => {
+    setReceiptImageFile(file);
     if (!currentTrip) {
       toast.error("請先建立一個旅程");
       return;
@@ -67,6 +69,26 @@ export default function ScanPage() {
       const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const expenseDate = data.date || localToday;
 
+      // Upload receipt image
+      let receiptImageUrl: string | null = null;
+      if (receiptImageFile) {
+        try {
+          const formData = new FormData();
+          formData.append("file", receiptImageFile);
+          const uploadRes = await fetch("/api/receipt-image", { method: "POST", body: formData });
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            receiptImageUrl = uploadData.imageUrl;
+          } else {
+            console.error("Receipt upload failed:", uploadRes.status);
+            toast.warning("收據照片上傳失敗，消費紀錄仍會保存");
+          }
+        } catch (err) {
+          console.error("Receipt upload error:", err);
+          toast.warning("收據照片上傳失敗，消費紀錄仍會保存");
+        }
+      }
+
       const results = await Promise.all(
         data.items.map(async (item) => {
           const jpy = item.quantity * item.unit_price;
@@ -91,6 +113,7 @@ export default function ScanPage() {
               expense_date: expenseDate,
               split_type: item.split_type,
               credit_card_id: data.creditCardId,
+              receipt_image_url: receiptImageUrl,
             }),
           });
 
