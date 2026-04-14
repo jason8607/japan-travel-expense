@@ -41,8 +41,6 @@ create table public.trips (
   end_date date not null,
   currency text not null default 'JPY',
   cash_budget numeric,
-  notion_database_id text,
-  notion_token text,
   created_by uuid references public.profiles(id) not null,
   created_at timestamptz not null default now()
 );
@@ -118,7 +116,6 @@ create table public.expenses (
   store_name_ja text,
   expense_date date not null default current_date,
   receipt_image_url text,
-  notion_page_id text,
   created_at timestamptz not null default now()
 );
 
