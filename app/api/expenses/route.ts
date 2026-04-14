@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
       split_type,
       owner_id,
       credit_card_id,
+      credit_card_plan_id,
       input_currency,
       note,
     } = body;
@@ -198,6 +199,7 @@ export async function POST(req: NextRequest) {
         split_type,
         owner_id,
         credit_card_id: credit_card_id || null,
+        credit_card_plan_id: credit_card_plan_id || null,
         input_currency: input_currency || "JPY",
         note: note || null,
       })
@@ -282,6 +284,7 @@ export async function PUT(req: NextRequest) {
       "category", "payment_method", "location", "store_name", "store_name_ja",
       "expense_date", "receipt_image_url", "split_type", "owner_id", "paid_by",
       "credit_card_id",
+      "credit_card_plan_id",
       "input_currency",
       "note",
     ];

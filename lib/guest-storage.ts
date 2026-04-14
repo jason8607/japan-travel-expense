@@ -94,6 +94,7 @@ export function addGuestExpense(data: {
   expense_date: string;
   split_type?: SplitType;
   credit_card_id?: string | null;
+  credit_card_plan_id?: string | null;
   input_currency?: "JPY" | "TWD";
   note?: string | null;
 }): Expense | null {
@@ -116,6 +117,7 @@ export function addGuestExpense(data: {
     split_type: data.split_type || "personal",
     owner_id: null,
     credit_card_id: data.credit_card_id ?? null,
+    credit_card_plan_id: data.credit_card_plan_id ?? null,
     input_currency: data.input_currency || "JPY",
     note: data.note ?? null,
     receipt_image_url: null,

@@ -60,6 +60,7 @@ export interface Expense {
   split_type: SplitType;
   owner_id: string | null;
   credit_card_id: string | null;
+  credit_card_plan_id: string | null;
   input_currency: "JPY" | "TWD";
   note: string | null;
   receipt_image_url: string | null;
@@ -90,11 +91,19 @@ export interface CategoryItem {
   color: string;
 }
 
+export interface CreditCardPlan {
+  id: string;
+  credit_card_id: string;
+  name: string;
+  cashback_rate: number;
+}
+
 export interface CreditCard {
   id: string;
   name: string;
   cashback_rate: number;
   cashback_limit: number;
+  plans?: CreditCardPlan[];
 }
 
 export interface OCRResult {
