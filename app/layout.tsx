@@ -39,7 +39,7 @@ export default function RootLayout({
     <html lang="zh-Hant" className={`${geistSans.variable} h-full`}>
       <body className="h-full font-sans antialiased bg-gray-50">
         <AppProvider>
-          <div className="mx-auto max-w-lg min-h-full bg-white shadow-sm">
+          <div className="relative mx-auto max-w-lg min-h-full bg-white shadow-sm">
             {children}
           </div>
           <InstallPrompt />
