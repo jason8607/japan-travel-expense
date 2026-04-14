@@ -98,6 +98,10 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       const twd = currency === "TWD" ? inputAmount : jpyToTwd(inputAmount, rate);
 
       const cardId = paymentMethod === "信用卡" ? creditCardId : null;
+      const resolvedOwnerId =
+        splitType === "personal" && ownerId === null
+          ? (user?.id ?? paidBy)
+          : ownerId;
 
       if (isGuest) {
         if (isEditing && editExpense) {
@@ -146,7 +150,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           body: JSON.stringify({
             id: editExpense.id,
             paid_by: paidBy || user!.id,
-            owner_id: ownerId,
+            owner_id: resolvedOwnerId,
             title,
             amount_jpy: jpy,
             amount_twd: twd,
@@ -173,7 +177,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           body: JSON.stringify({
             trip_id: currentTrip.id,
             paid_by: paidBy || user!.id,
-            owner_id: ownerId,
+            owner_id: resolvedOwnerId,
             title,
             amount_jpy: jpy,
             amount_twd: twd,
@@ -410,7 +414,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               const isMe = m.user_id === user?.id;
               const isSelected =
                 splitType === "personal" &&
-                (isMe ? ownerId === null : ownerId === m.user_id);
+                (isMe
+                  ? ownerId === null || ownerId === user?.id
+                  : ownerId === m.user_id);
               return (
                 <button
                   key={m.user_id}
