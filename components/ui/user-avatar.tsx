@@ -49,7 +49,6 @@ export function UserAvatar({
           width={imgSizeMap[size]}
           height={imgSizeMap[size]}
           className="w-full h-full object-cover"
-          unoptimized
         />
       ) : (
         <span>{avatarEmoji || "🧑"}</span>

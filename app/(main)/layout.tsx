@@ -8,7 +8,7 @@ export default function MainLayout({
 }) {
   return (
     <>
-      <main className="pb-16">{children}</main>
+      <main className="pb-[calc(4rem+env(safe-area-inset-bottom))]">{children}</main>
       <BottomNav />
       <GuestMigrationDialog />
     </>

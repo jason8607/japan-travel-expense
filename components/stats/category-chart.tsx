@@ -3,7 +3,12 @@
 import { formatCompactJPY } from "@/lib/exchange-rate";
 import type { Expense } from "@/types";
 import { useCategories } from "@/hooks/use-categories";
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import dynamic from "next/dynamic";
+
+const LazyPieChart = dynamic(
+  () => import("./lazy-pie-chart").then((m) => ({ default: m.LazyPieChart })),
+  { ssr: false, loading: () => <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" /> }
+);
 
 interface CategoryChartProps {
   expenses: Expense[];
@@ -56,26 +61,7 @@ export function CategoryChart({ expenses, title = "分類支出" }: CategoryChar
       </div>
       <div className="flex items-center gap-4">
         <div className="shrink-0 w-28 h-28">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={filtered}
-                cx="50%"
-                cy="50%"
-                innerRadius={30}
-                outerRadius={50}
-                dataKey="value"
-                startAngle={90}
-                endAngle={-270}
-                strokeWidth={2}
-                stroke="#fff"
-              >
-                {filtered.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
+          <LazyPieChart data={filtered} />
         </div>
         <div className="flex-1 space-y-1.5">
           {filtered.map((item) => (
