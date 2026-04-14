@@ -49,7 +49,7 @@ export function InstallPrompt() {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-lg">
+    <div className="fixed bottom-20 z-50 left-1/2 w-full max-w-lg -translate-x-1/2 px-4">
       <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-lg border">
         <div className="text-2xl">📱</div>
         <div className="flex-1">
