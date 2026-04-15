@@ -4,19 +4,41 @@ import { getRequestUser } from "@/lib/supabase/auth-helper";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 const DAILY_LIMIT_PER_USER = 50;
+const DAILY_LIMIT_PER_GUEST_IP = 10;
 const MINUTE_LIMIT = 5;
 // Warm-instance burst protection only; resets on cold start in serverless.
 // Primary protection is the DB-backed daily limit in checkAndRecordUsage.
 const rateLimitMap = new Map<string, number[]>();
 
-function isMinuteRateLimited(userId: string): boolean {
+// Server-side daily counter per guest IP (defense-in-depth alongside client localStorage limit).
+// Resets on cold start, but combined with per-minute limit provides reasonable protection.
+const guestDailyMap = new Map<string, { date: string; count: number }>();
+
+function isMinuteRateLimited(key: string): boolean {
   const now = Date.now();
-  const timestamps = rateLimitMap.get(userId) || [];
+  const timestamps = rateLimitMap.get(key) || [];
   const recent = timestamps.filter((t) => now - t < 60_000);
   if (recent.length >= MINUTE_LIMIT) return true;
   recent.push(now);
-  rateLimitMap.set(userId, recent);
+  rateLimitMap.set(key, recent);
   return false;
+}
+
+function checkGuestDailyLimit(ip: string): { allowed: boolean; count: number } {
+  const today = new Date().toISOString().slice(0, 10);
+  const entry = guestDailyMap.get(ip);
+
+  if (!entry || entry.date !== today) {
+    guestDailyMap.set(ip, { date: today, count: 1 });
+    return { allowed: true, count: 1 };
+  }
+
+  if (entry.count >= DAILY_LIMIT_PER_GUEST_IP) {
+    return { allowed: false, count: entry.count };
+  }
+
+  entry.count++;
+  return { allowed: true, count: entry.count };
 }
 
 async function checkAndRecordUsage(admin: ReturnType<typeof getAdminClient>, userId: string): Promise<{ allowed: boolean; count: number }> {
@@ -50,9 +72,7 @@ async function checkAndRecordUsage(admin: ReturnType<typeof getAdminClient>, use
 export async function POST(request: NextRequest) {
   try {
     const user = await getRequestUser(request);
-    if (!user) {
-      return NextResponse.json({ error: "請先登入" }, { status: 401 });
-    }
+    const isGuest = !user;
 
     const { image, mimeType } = await request.json();
 
@@ -86,21 +106,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (isMinuteRateLimited(user.id)) {
+    const rateLimitKey = user?.id ?? `guest_${request.headers.get("x-forwarded-for") ?? "unknown"}`;
+    if (isMinuteRateLimited(rateLimitKey)) {
       return NextResponse.json(
         { error: "辨識太頻繁，請稍後再試" },
         { status: 429 }
       );
     }
 
-    const admin = getAdminClient();
-
-    const { allowed, count } = await checkAndRecordUsage(admin, user.id);
-    if (!allowed) {
-      const msg = count === -1
-        ? "系統忙碌中，請稍後再試"
-        : `今日辨識已達上限（${DAILY_LIMIT_PER_USER} 次），明天再試`;
-      return NextResponse.json({ error: msg }, { status: 429 });
+    if (isGuest) {
+      const guestIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+      const { allowed } = checkGuestDailyLimit(guestIp);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: `訪客掃描已達上限（${DAILY_LIMIT_PER_GUEST_IP} 次），登入後可享每日 ${DAILY_LIMIT_PER_USER} 次` },
+          { status: 429 }
+        );
+      }
+    } else {
+      const admin = getAdminClient();
+      const { allowed, count } = await checkAndRecordUsage(admin, user.id);
+      if (!allowed) {
+        const msg = count === -1
+          ? "系統忙碌中，請稍後再試"
+          : `今日辨識已達上限（${DAILY_LIMIT_PER_USER} 次），明天再試`;
+        return NextResponse.json({ error: msg }, { status: 429 });
+      }
     }
 
     const result = await recognizeReceipt(image, mimeType);

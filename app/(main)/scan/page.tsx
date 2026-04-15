@@ -10,8 +10,8 @@ import type { ReceiptItemWithOwner } from "@/components/scan/receipt-confirm";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
 import { toast } from "sonner";
 import type { OCRResult, PaymentMethod } from "@/types";
-import Link from "next/link";
 import { Camera as CameraIcon } from "lucide-react";
+import { addGuestExpense, getGuestOcrCount, getGuestOcrLimit, incrementGuestOcrCount } from "@/lib/guest-storage";
 
 export default function ScanPage() {
   const { user, currentTrip, isGuest } = useApp();
@@ -29,6 +29,15 @@ export default function ScanPage() {
       return;
     }
 
+    if (isGuest) {
+      const count = getGuestOcrCount();
+      const limit = getGuestOcrLimit();
+      if (count >= limit) {
+        toast.error(`訪客模式掃描已達上限（${limit} 次），登入後可享每日 50 次`);
+        return;
+      }
+    }
+
     setIsProcessing(true);
     try {
       const res = await fetch("/api/ocr", {
@@ -43,6 +52,7 @@ export default function ScanPage() {
       }
 
       const result: OCRResult = await res.json();
+      if (isGuest) incrementGuestOcrCount();
       setOcrResult(result);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "辨識失敗";
@@ -61,7 +71,8 @@ export default function ScanPage() {
     storeNameJa: string;
     date: string;
   }) => {
-    if (!currentTrip || !user) return;
+    if (!currentTrip) return;
+    if (!isGuest && !user) return;
     setSaving(true);
 
     try {
@@ -70,63 +81,91 @@ export default function ScanPage() {
       const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const expenseDate = data.date || localToday;
 
-      // Upload receipt image
-      let receiptImageUrl: string | null = null;
-      if (receiptImageFile) {
-        try {
-          const formData = new FormData();
-          formData.append("file", receiptImageFile);
-          const uploadRes = await fetch("/api/receipt-image", { method: "POST", body: formData });
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            receiptImageUrl = uploadData.imageUrl;
-          } else {
-            console.error("Receipt upload failed:", uploadRes.status);
-            toast.warning("收據照片上傳失敗，消費紀錄仍會保存");
-          }
-        } catch (err) {
-          console.error("Receipt upload error:", err);
-          toast.warning("收據照片上傳失敗，消費紀錄仍會保存");
-        }
-      }
-
-      const results = await Promise.all(
-        data.items.map(async (item) => {
+      if (isGuest) {
+        let savedCount = 0;
+        for (const item of data.items) {
           const jpy = item.quantity * item.unit_price;
           const twd = jpyToTwd(jpy, rate);
-
-          const res = await fetch("/api/expenses", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              trip_id: currentTrip.id,
-              paid_by: user.id,
-              owner_id: item.owner_id,
-              title: item.name,
-              title_ja: item.name_ja || null,
-              amount_jpy: jpy,
-              amount_twd: twd,
-              exchange_rate: rate,
-              category: item.category,
-              payment_method: data.paymentMethod,
-              store_name: data.storeName,
-              store_name_ja: data.storeNameJa || null,
-              expense_date: expenseDate,
-              split_type: item.split_type,
-              credit_card_id: data.creditCardId,
-              credit_card_plan_id: data.creditCardPlanId,
-              receipt_image_url: receiptImageUrl,
-            }),
+          const result = addGuestExpense({
+            title: item.name,
+            amount_jpy: jpy,
+            amount_twd: twd,
+            exchange_rate: rate,
+            category: item.category,
+            payment_method: data.paymentMethod,
+            store_name: data.storeName || null,
+            expense_date: expenseDate,
+            credit_card_id: data.creditCardId,
+            credit_card_plan_id: data.creditCardPlanId,
           });
+          if (!result) {
+            toast.error("儲存空間不足，請清理部分紀錄");
+            break;
+          }
+          savedCount++;
+        }
+        if (savedCount > 0) {
+          toast.success(`已儲存 ${savedCount} 筆消費`);
+          router.push("/records");
+        }
+      } else {
+        let receiptImageUrl: string | null = null;
+        if (receiptImageFile) {
+          try {
+            const formData = new FormData();
+            formData.append("file", receiptImageFile);
+            const uploadRes = await fetch("/api/receipt-image", { method: "POST", body: formData });
+            if (uploadRes.ok) {
+              const uploadData = await uploadRes.json();
+              receiptImageUrl = uploadData.imageUrl;
+            } else {
+              console.error("Receipt upload failed:", uploadRes.status);
+              toast.warning("收據照片上傳失敗，消費紀錄仍會保存");
+            }
+          } catch (err) {
+            console.error("Receipt upload error:", err);
+            toast.warning("收據照片上傳失敗，消費紀錄仍會保存");
+          }
+        }
 
-          const result = await res.json();
-          if (!res.ok) throw new Error(result.error || "儲存失敗");
-          return result;
-        })
-      );
+        const results = await Promise.all(
+          data.items.map(async (item) => {
+            const jpy = item.quantity * item.unit_price;
+            const twd = jpyToTwd(jpy, rate);
 
-      toast.success(`已儲存 ${results.length} 筆消費`);
-      router.push("/records");
+            const res = await fetch("/api/expenses", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                trip_id: currentTrip.id,
+                paid_by: user!.id,
+                owner_id: item.owner_id,
+                title: item.name,
+                title_ja: item.name_ja || null,
+                amount_jpy: jpy,
+                amount_twd: twd,
+                exchange_rate: rate,
+                category: item.category,
+                payment_method: data.paymentMethod,
+                store_name: data.storeName,
+                store_name_ja: data.storeNameJa || null,
+                expense_date: expenseDate,
+                split_type: item.split_type,
+                credit_card_id: data.creditCardId,
+                credit_card_plan_id: data.creditCardPlanId,
+                receipt_image_url: receiptImageUrl,
+              }),
+            });
+
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error || "儲存失敗");
+            return result;
+          })
+        );
+
+        toast.success(`已儲存 ${results.length} 筆消費`);
+        router.push("/records");
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "儲存失敗";
       toast.error(message);
@@ -139,7 +178,7 @@ export default function ScanPage() {
     setOcrResult(null);
   };
 
-  if (isGuest || !user) {
+  if (!isGuest && !user) {
     return (
       <div className="pb-4">
         <PageHeader title="掃描收據" />
@@ -148,38 +187,45 @@ export default function ScanPage() {
             <CameraIcon className="h-8 w-8 text-blue-400" />
           </div>
           <h2 className="text-lg font-bold text-slate-800 mb-2">
-            AI 收據辨識需要登入才能使用
+            請先登入或以訪客模式使用
           </h2>
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            登入後可拍照上傳日文收據，<br />
-            AI 自動辨識店名、金額、品項並翻譯成中文
-          </p>
-          <Link
-            href="/auth/login"
-            className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-medium transition-colors"
-          >
-            登入 / 註冊
-          </Link>
-          <Link
-            href="/"
-            className="mt-3 text-sm text-muted-foreground hover:text-slate-700 transition-colors"
-          >
-            返回首頁
-          </Link>
         </div>
       </div>
     );
   }
 
+  const guestOcrCount = isGuest ? getGuestOcrCount() : 0;
+  const guestOcrLimit = getGuestOcrLimit();
+  const guestOcrRemaining = guestOcrLimit - guestOcrCount;
+
   return (
     <div className="pb-4">
       <PageHeader
         title="掃描收據"
-        subtitle="拍照或上傳收據圖片"
+        subtitle={isGuest ? `訪客模式・剩餘 ${guestOcrRemaining} 次掃描` : "拍照或上傳收據圖片"}
         showBack={!!ocrResult}
       />
 
-      {ocrResult ? (
+      {isGuest && guestOcrRemaining <= 0 && !ocrResult ? (
+        <div className="flex flex-col items-center justify-center min-h-[40vh] px-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mb-4">
+            <CameraIcon className="h-8 w-8 text-amber-400" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800 mb-2">
+            訪客掃描次數已用完
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            訪客模式最多可掃描 {guestOcrLimit} 張收據<br />
+            登入後可享每日 50 次掃描額度
+          </p>
+          <a
+            href="/auth/login"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-medium transition-colors"
+          >
+            登入 / 註冊
+          </a>
+        </div>
+      ) : ocrResult ? (
         <>
           <div className="px-4 mb-4">
             <h2 className="text-lg font-bold">確認收據內容</h2>

@@ -41,7 +41,8 @@ export async function updateSession(request: NextRequest) {
     p === "/settings" ||
     p.match(/^\/trip\/[^/]+\/join$/) ||
     p.match(/^\/api\/trips\/[^/]+\/public$/) ||
-    p === "/api/exchange-rate";
+    p === "/api/exchange-rate" ||
+    p === "/api/ocr";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

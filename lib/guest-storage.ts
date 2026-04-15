@@ -3,6 +3,8 @@ import type { Trip, Expense, Category, PaymentMethod, SplitType } from "@/types"
 const GUEST_TRIP_KEY = "guest_trip";
 const GUEST_EXPENSES_KEY = "guest_expenses";
 const GUEST_MODE_KEY = "guest_mode";
+const GUEST_OCR_COUNT_KEY = "guest_ocr_count";
+const GUEST_OCR_LIMIT = 10;
 
 function getLocalDateString(offset = 0): string {
   const d = new Date();
@@ -153,8 +155,27 @@ export function isGuestMode(): boolean {
   return localStorage.getItem(GUEST_MODE_KEY) === "true";
 }
 
+export function getGuestOcrCount(): number {
+  try {
+    return parseInt(localStorage.getItem(GUEST_OCR_COUNT_KEY) || "0", 10);
+  } catch {
+    return 0;
+  }
+}
+
+export function incrementGuestOcrCount(): number {
+  const count = getGuestOcrCount() + 1;
+  localStorage.setItem(GUEST_OCR_COUNT_KEY, String(count));
+  return count;
+}
+
+export function getGuestOcrLimit(): number {
+  return GUEST_OCR_LIMIT;
+}
+
 export function clearGuestData() {
   localStorage.removeItem(GUEST_TRIP_KEY);
   localStorage.removeItem(GUEST_EXPENSES_KEY);
   localStorage.removeItem(GUEST_MODE_KEY);
+  localStorage.removeItem(GUEST_OCR_COUNT_KEY);
 }
