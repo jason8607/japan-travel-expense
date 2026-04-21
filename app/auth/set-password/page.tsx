@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { UserIdentity } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,10 +27,10 @@ export default function SetPasswordPage() {
         return;
       }
       const hasGoogle = user.identities?.some(
-        (i) => i.provider === "google"
+        (i: UserIdentity) => i.provider === "google"
       );
       const hasEmail = user.identities?.some(
-        (i) => i.provider === "email"
+        (i: UserIdentity) => i.provider === "email"
       );
       if (!hasGoogle || hasEmail) {
         router.replace("/");
