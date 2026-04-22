@@ -16,6 +16,13 @@ export const metadata: Metadata = {
   title: "旅帳 — 日本旅遊記帳",
   description: "AI 收據辨識、即時統計、多人記帳的日本旅遊記帳 App",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
