@@ -13,14 +13,14 @@ export function LoadingScreen() {
             width={80}
             height={80}
             priority
-            className="animate-bounce drop-shadow-sm"
+            className="animate-pulse drop-shadow-sm"
           />
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-primary/20 rounded-full animate-pulse" />
         </div>
         <div className="flex items-center justify-center gap-1 mt-5">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce [animation-delay:0ms]" />
-          <div className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce [animation-delay:150ms]" />
-          <div className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce [animation-delay:300ms]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-pulse [animation-delay:200ms]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-pulse [animation-delay:400ms]" />
         </div>
       </div>
     </div>

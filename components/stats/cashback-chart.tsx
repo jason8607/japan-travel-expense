@@ -11,6 +11,8 @@ interface CashbackChartProps {
   expenses: Expense[];
 }
 
+const maxedColor = "text-amber-500";
+
 export function CashbackChart({ expenses }: CashbackChartProps) {
   const { cards, loading } = useCreditCards();
 
@@ -136,7 +138,7 @@ export function CashbackChart({ expenses }: CashbackChartProps) {
                 <span
                   className={cn(
                     "text-sm font-bold",
-                    isMaxed ? "text-amber-500" : "text-primary"
+                    isMaxed ? maxedColor : "text-primary"
                   )}
                 >
                   NT${cashbackEarned.toLocaleString()}
@@ -150,19 +152,19 @@ export function CashbackChart({ expenses }: CashbackChartProps) {
             <div className="h-2.5 rounded-full bg-muted overflow-hidden">
               <div
                 className={cn(
-                  "h-full rounded-full transition-all duration-500",
+                  "h-full w-full rounded-full transition-[transform] duration-500 origin-left",
                   isMaxed
                     ? "bg-linear-to-r from-amber-400 to-amber-500"
                     : "bg-linear-to-r from-primary/70 to-primary"
                 )}
-                style={{ width: `${progress}%` }}
+                style={{ transform: `scaleX(${progress / 100})` }}
               />
             </div>
 
             <div className="flex items-center justify-between text-[11px] text-muted-foreground">
               <span>消費 NT${totalTwd.toLocaleString()} · {txCount} 筆</span>
               {isMaxed ? (
-                <span className="text-amber-500 font-medium">已達上限</span>
+                <span className={cn(maxedColor, "font-medium")}>已達上限</span>
               ) : (
                 <span>
                   還差 NT${(card.cashback_limit - cashbackEarned).toLocaleString()}
@@ -172,7 +174,7 @@ export function CashbackChart({ expenses }: CashbackChartProps) {
 
             {/* Plan breakdown */}
             {hasPlans && planBreakdown.length > 0 && (
-              <div className="pl-2 space-y-1 border-l-2 border-border/60 ml-1">
+              <div className="pl-3 space-y-1 ml-1">
                 {planBreakdown
                   .filter((p) => p.totalTwd > 0)
                   .map((p) => (

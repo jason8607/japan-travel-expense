@@ -45,7 +45,7 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="zh-Hant"
+      lang="zh-TW"
       className={`${geistSans.variable} h-full`}
       data-theme="light"
       suppressHydrationWarning
@@ -55,9 +55,15 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="h-full font-sans antialiased bg-muted">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:text-sm focus:font-medium"
+        >
+          跳至主要內容
+        </a>
         <ThemeProvider>
           <AppProvider>
-            <div className="mx-auto max-w-lg min-h-full bg-background shadow-sm">
+            <div id="main-content" className="mx-auto max-w-lg min-h-full bg-background shadow-sm">
               {children}
             </div>
             <InstallPrompt />

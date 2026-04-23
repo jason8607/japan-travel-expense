@@ -110,11 +110,11 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
       </div>
 
       {/* Actions */}
-      <div className="shrink-0 flex items-center gap-0.5">
+      <div className="shrink-0 flex items-center">
         <Link
           href={`/records/new?edit=${expense.id}`}
           aria-label="編輯消費"
-          className="p-1.5 text-muted-foreground/60 hover:text-primary transition-colors"
+          className="min-h-11 min-w-11 flex items-center justify-center text-muted-foreground/60 hover:text-primary transition-colors"
         >
           <Pencil className="h-3.5 w-3.5" />
         </Link>
@@ -123,7 +123,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
             aria-label="刪除消費"
             onClick={() => setShowDeleteDialog(true)}
             disabled={deleting}
-            className="p-1.5 text-muted-foreground/60 hover:text-red-500 transition-colors disabled:opacity-50"
+            className="min-h-11 min-w-11 flex items-center justify-center text-muted-foreground/60 hover:text-red-500 transition-colors disabled:opacity-50"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>

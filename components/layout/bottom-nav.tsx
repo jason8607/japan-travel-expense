@@ -23,7 +23,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="shrink-0 border-t bg-card/80 backdrop-blur-lg pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label="主要導覽" className="shrink-0 border-t bg-card/80 backdrop-blur-lg pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const isActive =

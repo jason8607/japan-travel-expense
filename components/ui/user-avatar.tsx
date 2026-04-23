@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 interface UserAvatarProps {
   avatarUrl?: string | null;
   avatarEmoji?: string | null;
+  name?: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
 }
@@ -29,6 +30,7 @@ const imgSizeMap = {
 export function UserAvatar({
   avatarUrl,
   avatarEmoji,
+  name,
   size = "md",
   className,
 }: UserAvatarProps) {
@@ -45,7 +47,7 @@ export function UserAvatar({
       {hasImage ? (
         <Image
           src={avatarUrl}
-          alt="avatar"
+          alt={name ? `${name}的頭像` : ""}
           width={imgSizeMap[size]}
           height={imgSizeMap[size]}
           className="w-full h-full object-cover"

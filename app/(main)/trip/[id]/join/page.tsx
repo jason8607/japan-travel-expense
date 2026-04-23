@@ -92,7 +92,7 @@ export default function JoinTripPage() {
   if (loading || appLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-4xl animate-bounce">✈️</div>
+        <div className="text-4xl animate-pulse">✈️</div>
       </div>
     );
   }

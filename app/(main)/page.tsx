@@ -56,7 +56,7 @@ export default function HomePage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="mb-2 animate-bounce inline-flex">
+          <div className="mb-2 animate-pulse inline-flex">
             <Image src="/icon-transparent.png" alt="旅帳" width={48} height={48} priority />
           </div>
           <p className="text-sm text-muted-foreground">載入中...</p>
@@ -224,11 +224,11 @@ export default function HomePage() {
       </section>
 
       {/* FAB */}
-      <div className="sticky bottom-4 z-40 flex justify-end px-4 pointer-events-none">
+      <div className="fixed bottom-20 right-4 z-40">
         <Link
           href="/records/new"
           aria-label="新增消費"
-          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all active:scale-95"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all active:scale-95"
         >
           <Plus className="h-6 w-6" />
         </Link>
