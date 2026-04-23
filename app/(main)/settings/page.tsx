@@ -34,6 +34,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { updateGuestTrip } from "@/lib/guest-storage";
 import { CreditCardManager } from "@/components/settings/credit-card-manager";
 import { CategoryManager } from "@/components/settings/category-manager";
+import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 import type { Trip, TripMember, Profile } from "@/types";
 
 export default function SettingsPage() {
@@ -294,7 +295,7 @@ export default function SettingsPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Link
           href="/auth/login"
-          className="bg-blue-500 text-white px-6 py-2 rounded-xl"
+          className="bg-primary text-white px-6 py-2 rounded-xl"
         >
           請先登入
         </Link>
@@ -309,16 +310,16 @@ export default function SettingsPage() {
 
         {/* Guest trip editing */}
         {currentTrip && (
-          <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+          <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
               <h2 className="text-sm font-bold flex items-center gap-2">
-                <Plane className="h-4 w-4 text-blue-500" />
+                <Plane className="h-4 w-4 text-primary" />
                 試用旅程
               </h2>
               {!editingTrip ? (
                 <button
                   onClick={() => setEditingTrip(true)}
-                  className="text-xs text-blue-500 flex items-center gap-1"
+                  className="text-xs text-primary flex items-center gap-1"
                 >
                   <Pencil className="h-3 w-3" />
                   編輯
@@ -337,7 +338,7 @@ export default function SettingsPage() {
             {editingTrip ? (
               <div className="p-4 space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">旅程名稱</Label>
+                  <Label className="text-xs text-muted-foreground">旅程名稱</Label>
                   <Input
                     value={tripName}
                     onChange={(e) => setTripName(e.target.value)}
@@ -346,7 +347,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-500">開始日期</Label>
+                    <Label className="text-xs text-muted-foreground">開始日期</Label>
                     <Input
                       type="date"
                       value={tripStart}
@@ -355,7 +356,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-500">結束日期</Label>
+                    <Label className="text-xs text-muted-foreground">結束日期</Label>
                     <Input
                       type="date"
                       value={tripEnd}
@@ -365,7 +366,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">旅程預算 (¥)</Label>
+                  <Label className="text-xs text-muted-foreground">旅程預算 (¥)</Label>
                   <Input
                     type="number"
                     value={tripBudget}
@@ -376,7 +377,7 @@ export default function SettingsPage() {
                 </div>
                 <Button
                   onClick={handleSaveGuestTrip}
-                  className="w-full h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm"
+                  className="w-full h-10 bg-primary hover:bg-primary/90 rounded-lg text-sm"
                   disabled={saving}
                 >
                   {saving ? "儲存中..." : "儲存變更"}
@@ -398,14 +399,15 @@ export default function SettingsPage() {
 
         <CreditCardManager />
         <CategoryManager />
+        <ThemeSwitcher />
 
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-center">
-          <p className="text-sm text-blue-800 mb-3">
+        <div className="rounded-2xl border border-primary/25 bg-primary/10 p-4 text-center">
+          <p className="text-sm text-primary mb-3">
             登入後可永久保存資料、多人分帳、AI 收據辨識
           </p>
           <Link
             href="/auth/login"
-            className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-colors"
+            className="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-colors"
           >
             登入 / 註冊
           </Link>
@@ -430,14 +432,14 @@ export default function SettingsPage() {
       <h1 className="text-xl font-bold">設定</h1>
 
       {/* ===== 旅程切換 ===== */}
-      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-100">
+      <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-border/60">
           <h2 className="text-sm font-bold flex items-center gap-2">
-            <Plane className="h-4 w-4 text-blue-500" />
+            <Plane className="h-4 w-4 text-primary" />
             我的旅程
           </h2>
         </div>
-        <div className="divide-y divide-slate-50">
+        <div className="divide-y divide-border/60">
           {trips.map((trip) => {
             const isActive = trip.id === currentTrip?.id;
             return (
@@ -446,13 +448,13 @@ export default function SettingsPage() {
                 onClick={() => handleSwitchTrip(trip)}
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
-                  isActive ? "bg-blue-50" : "hover:bg-slate-50"
+                  isActive ? "bg-primary/10" : "hover:bg-muted"
                 )}
               >
                 <div className="flex-1 min-w-0">
                   <p className={cn(
                     "text-sm font-medium truncate",
-                    isActive ? "text-blue-700" : "text-slate-700"
+                    isActive ? "text-primary" : "text-foreground"
                   )}>
                     {trip.name}
                   </p>
@@ -461,13 +463,13 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 {isActive && (
-                  <Check className="h-4 w-4 text-blue-500 shrink-0" />
+                  <Check className="h-4 w-4 text-primary shrink-0" />
                 )}
               </button>
             );
           })}
         </div>
-        <div className="px-4 py-3 border-t border-slate-100">
+        <div className="px-4 py-3 border-t border-border/60">
           <Link href="/trip/new">
             <Button variant="outline" size="sm" className="w-full text-sm rounded-lg">
               + 建立新旅程
@@ -478,13 +480,13 @@ export default function SettingsPage() {
 
       {/* ===== 當前旅程編輯 + 成員 ===== */}
       {currentTrip && (
-        <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
             <h2 className="text-sm font-bold">旅程設定</h2>
             {!editingTrip ? (
               <button
                 onClick={() => setEditingTrip(true)}
-                className="text-xs text-blue-500 flex items-center gap-1"
+                className="text-xs text-primary flex items-center gap-1"
               >
                 <Pencil className="h-3 w-3" />
                 編輯
@@ -503,7 +505,7 @@ export default function SettingsPage() {
           {editingTrip ? (
             <div className="p-4 space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">旅程名稱</Label>
+                <Label className="text-xs text-muted-foreground">旅程名稱</Label>
                 <Input
                   value={tripName}
                   onChange={(e) => setTripName(e.target.value)}
@@ -512,7 +514,7 @@ export default function SettingsPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">開始日期</Label>
+                  <Label className="text-xs text-muted-foreground">開始日期</Label>
                   <Input
                     type="date"
                     value={tripStart}
@@ -521,7 +523,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">結束日期</Label>
+                  <Label className="text-xs text-muted-foreground">結束日期</Label>
                   <Input
                     type="date"
                     value={tripEnd}
@@ -531,7 +533,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">旅程預算 (¥)</Label>
+                <Label className="text-xs text-muted-foreground">旅程預算 (¥)</Label>
                 <Input
                   type="number"
                   value={tripBudget}
@@ -542,7 +544,7 @@ export default function SettingsPage() {
               </div>
               <Button
                 onClick={handleSaveTrip}
-                className="w-full h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm"
+                className="w-full h-10 bg-primary hover:bg-primary/90 rounded-lg text-sm"
                 disabled={saving}
               >
                 {saving ? "儲存中..." : "儲存變更"}
@@ -561,14 +563,14 @@ export default function SettingsPage() {
           )}
 
           {/* 成員列表 */}
-          <div className="border-t border-slate-100">
+          <div className="border-t border-border/60">
             <div className="px-4 py-3 flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-muted-foreground">
                 成員 ({members.length || tripMembers.length})
               </span>
               <button
                 onClick={() => setShowInvite(!showInvite)}
-                className="text-xs text-blue-500 flex items-center gap-1"
+                className="text-xs text-primary flex items-center gap-1"
               >
                 <UserPlus className="h-3 w-3" />
                 {showInvite ? "收起" : "邀請"}
@@ -587,7 +589,7 @@ export default function SettingsPage() {
                   {isOwner && m.role !== "owner" && (
                     <button
                       onClick={() => setRemoveTarget({ userId: m.user_id, name: m.profile?.display_name || "成員" })}
-                      className="p-1 text-slate-300 hover:text-red-500 transition-colors"
+                      className="p-1 text-muted-foreground/60 hover:text-red-500 transition-colors"
                       aria-label={`移除${m.profile?.display_name || "成員"}`}
                     >
                       <X className="h-3.5 w-3.5" />
@@ -598,7 +600,7 @@ export default function SettingsPage() {
             </div>
 
             {showInvite && (
-              <div className="px-4 pb-4 space-y-2 border-t border-slate-50 pt-3">
+              <div className="px-4 pb-4 space-y-2 border-t border-border/60 pt-3">
                 <form onSubmit={handleInvite} className="flex gap-2">
                   <Input
                     type="email"
@@ -610,7 +612,7 @@ export default function SettingsPage() {
                   <Button
                     type="submit"
                     size="sm"
-                    className="bg-blue-500 hover:bg-blue-600 rounded-lg h-9 px-3"
+                    className="bg-primary hover:bg-primary/90 rounded-lg h-9 px-3"
                     disabled={inviting}
                   >
                     {inviting ? "..." : "邀請"}
@@ -637,11 +639,14 @@ export default function SettingsPage() {
       {/* ===== 分類管理 ===== */}
       <CategoryManager />
 
+      {/* ===== 外觀主題 ===== */}
+      <ThemeSwitcher />
+
       {/* ===== 個人資料 ===== */}
-      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-100">
+      <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-border/60">
           <h2 className="text-sm font-bold flex items-center gap-2">
-            <User className="h-4 w-4 text-blue-500" />
+            <User className="h-4 w-4 text-primary" />
             個人資料
           </h2>
         </div>
@@ -655,7 +660,7 @@ export default function SettingsPage() {
               onUpload={handleUploadAvatar}
             />
             <div className="flex-1 space-y-1.5">
-              <Label className="text-xs text-slate-500">暱稱</Label>
+              <Label className="text-xs text-muted-foreground">暱稱</Label>
               <Input
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
@@ -667,7 +672,7 @@ export default function SettingsPage() {
           </div>
           <Button
             onClick={handleSaveProfile}
-            className="w-full h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm"
+            className="w-full h-10 bg-primary hover:bg-primary/90 rounded-lg text-sm"
             disabled={saving}
           >
             儲存個人資料

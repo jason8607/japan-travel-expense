@@ -80,7 +80,7 @@ export function AvatarPicker({
 
         {/* Preview */}
         <div className="flex justify-center py-2">
-          <UserAvatar avatarUrl={avatarUrl} avatarEmoji={avatarEmoji} size="xl" className="border-2 border-blue-200" />
+          <UserAvatar avatarUrl={avatarUrl} avatarEmoji={avatarEmoji} size="xl" className="border-2 border-primary/25" />
         </div>
 
         {/* Upload button */}
@@ -88,7 +88,7 @@ export function AvatarPicker({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-slate-200 text-sm text-slate-500 hover:border-blue-300 hover:text-blue-500 transition disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground hover:border-primary/30 hover:text-primary transition disabled:opacity-50"
         >
           <ImageIcon className="h-4 w-4" />
           {uploading ? "上傳中..." : "上傳自訂頭像"}
@@ -111,8 +111,8 @@ export function AvatarPicker({
               className={cn(
                 "flex items-center justify-center p-2.5 rounded-xl border-2 transition-all",
                 !avatarUrl && avatarEmoji === emoji
-                  ? "border-blue-400 bg-blue-50 scale-105"
-                  : "border-transparent bg-slate-50 hover:bg-slate-100"
+                  ? "border-primary/50 bg-primary/10 scale-105"
+                  : "border-transparent bg-muted hover:bg-muted"
               )}
             >
               <span className="text-2xl leading-none">{emoji}</span>

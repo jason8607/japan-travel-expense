@@ -64,18 +64,18 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
       {/* Search row */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜尋品名、店名..."
-            className="w-full h-10 pl-9 pr-8 rounded-xl border border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300 transition-all"
+            className="w-full h-10 pl-9 pr-8 rounded-xl border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
           />
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-muted-foreground"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -86,13 +86,13 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
           className={cn(
             "relative shrink-0 h-10 w-10 rounded-xl border flex items-center justify-center transition-all",
             showFilters || chipCount > 0
-              ? "bg-blue-50 border-blue-200 text-blue-500"
-              : "bg-white border-slate-200 text-slate-400 hover:bg-slate-50"
+              ? "bg-primary/10 border-primary/25 text-primary"
+              : "bg-card border-border text-muted-foreground hover:bg-muted"
           )}
         >
           <SlidersHorizontal className="h-4 w-4" />
           {chipCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 rounded-full bg-blue-500 text-[10px] text-white font-bold flex items-center justify-center px-1">
+            <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 rounded-full bg-primary text-[10px] text-white font-bold flex items-center justify-center px-1">
               {chipCount}
             </span>
           )}
@@ -104,11 +104,11 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
             找到 {filtered} 筆
-            {total !== filtered && <span className="text-slate-300"> / {total}</span>}
+            {total !== filtered && <span className="text-muted-foreground/60"> / {total}</span>}
           </p>
           <button
             onClick={clearAll}
-            className="text-xs text-blue-500 hover:text-blue-600 font-medium"
+            className="text-xs text-primary hover:text-primary font-medium"
           >
             清除篩選
           </button>
@@ -117,9 +117,9 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3 space-y-3">
+        <div className="rounded-xl border border-border/60 bg-muted/60 p-3 space-y-3">
           <div>
-            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1.5">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
               分類
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -133,7 +133,7 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
                       "px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
                       active
                         ? "text-white shadow-sm"
-                        : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-150"
+                        : "bg-card text-muted-foreground hover:bg-muted border border-border/60"
                     )}
                     style={active ? { backgroundColor: cat.color } : undefined}
                   >
@@ -144,8 +144,8 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
             </div>
           </div>
 
-          <div className="border-t border-slate-200/60 pt-3">
-            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1.5">
+          <div className="border-t border-border/60 pt-3">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
               支付方式
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -159,7 +159,7 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
                       "px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
                       active
                         ? "text-white shadow-sm"
-                        : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-150"
+                        : "bg-card text-muted-foreground hover:bg-muted border border-border/60"
                     )}
                     style={active ? { backgroundColor: pm.color } : undefined}
                   >

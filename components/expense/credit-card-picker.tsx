@@ -19,11 +19,11 @@ export function CreditCardPicker({ value, onChange, planValue, onPlanChange }: C
 
   if (cards.length === 0) {
     return (
-      <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 flex items-center justify-between">
-        <p className="text-xs text-blue-600">尚未設定信用卡</p>
+      <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 flex items-center justify-between">
+        <p className="text-xs text-primary">尚未設定信用卡</p>
         <Link
           href="/settings"
-          className="text-xs text-blue-500 font-medium flex items-center gap-1 hover:underline"
+          className="text-xs text-primary font-medium flex items-center gap-1 hover:underline"
         >
           <Settings className="h-3 w-3" />
           前往設定
@@ -71,13 +71,13 @@ export function CreditCardPicker({ value, onChange, planValue, onPlanChange }: C
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-full border-2 transition-all duration-200 text-sm",
                 isSelected
-                  ? "border-blue-400 bg-blue-50 text-blue-700 font-medium"
-                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+                  ? "border-primary/50 bg-primary/10 text-primary font-medium"
+                  : "border-border/60 bg-card text-muted-foreground hover:bg-muted"
               )}
             >
               <span className="text-base leading-none">💳</span>
               <span className="leading-none">{card.name}</span>
-              <span className="text-[10px] text-slate-400 leading-none self-center">
+              <span className="text-[10px] text-muted-foreground leading-none self-center">
                 {displayRate}
               </span>
             </button>
@@ -96,8 +96,8 @@ export function CreditCardPicker({ value, onChange, planValue, onPlanChange }: C
               className={cn(
                 "px-2.5 py-1.5 rounded-lg border transition-all duration-200 text-xs",
                 planValue === plan.id
-                  ? "border-teal-400 bg-teal-50 text-teal-700 font-medium"
-                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+                  ? "border-amber-400 bg-amber-50 text-amber-800 font-medium"
+                  : "border-border/60 bg-card text-muted-foreground hover:bg-muted"
               )}
             >
               {plan.name}

@@ -251,13 +251,13 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           <button
             type="button"
             onClick={() => setShowReceiptImage(!showReceiptImage)}
-            className="flex items-center gap-1.5 text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors"
+            className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary transition-colors"
           >
             <ImageIcon className="h-4 w-4" />
             {showReceiptImage ? "收起收據照片" : "查看收據照片"}
           </button>
           {showReceiptImage && (
-            <div className="relative w-full aspect-3/4 max-h-80 rounded-xl overflow-hidden bg-gray-50 border border-slate-200">
+            <div className="relative w-full aspect-3/4 max-h-80 rounded-xl overflow-hidden bg-muted border border-border">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={editExpense.receipt_image_url}
@@ -271,20 +271,20 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
 
       {/* 品名 */}
       <div className="space-y-1.5">
-        <Label htmlFor="title" className="text-sm font-medium text-slate-600">品名</Label>
+        <Label htmlFor="title" className="text-sm font-medium text-muted-foreground">品名</Label>
         <Input
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="例：拉麵、新幹線車票"
           required
-          className="h-12 rounded-xl border-slate-200 text-base focus-visible:ring-blue-500"
+          className="h-12 rounded-xl border-border text-base focus-visible:ring-primary"
         />
       </div>
 
       {/* 幣別 */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-slate-600">幣別</Label>
+        <Label className="text-sm font-medium text-muted-foreground">幣別</Label>
         <div className="flex gap-2">
           {([["JPY", "🇯🇵 ¥ 日幣"], ["TWD", "🇹🇼 NT$ 台幣"]] as const).map(([val, label]) => (
             <button
@@ -294,8 +294,8 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               className={cn(
                 "flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all",
                 currency === val
-                  ? "border-blue-400 bg-blue-50 text-blue-700"
-                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border/60 bg-card text-muted-foreground hover:bg-muted"
               )}
             >
               {label}
@@ -307,7 +307,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       {/* 金額 + 日期 */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="amount" className="text-sm font-medium text-slate-600">
+          <Label htmlFor="amount" className="text-sm font-medium text-muted-foreground">
             金額 ({currency === "JPY" ? "¥" : "NT$"})
           </Label>
           <Input
@@ -318,17 +318,17 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             placeholder="0"
             required
             min={0}
-            className="h-12 rounded-xl border-slate-200 text-xl font-bold focus-visible:ring-blue-500"
+            className="h-12 rounded-xl border-border text-xl font-bold focus-visible:ring-primary"
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="date" className="text-sm font-medium text-slate-600">日期</Label>
+          <Label htmlFor="date" className="text-sm font-medium text-muted-foreground">日期</Label>
           <Input
             id="date"
             type="date"
             value={expenseDate}
             onChange={(e) => setExpenseDate(e.target.value)}
-            className="h-12 rounded-xl border-slate-200 focus-visible:ring-blue-500"
+            className="h-12 rounded-xl border-border focus-visible:ring-primary"
           />
           {currentTrip && (
             <button
@@ -341,7 +341,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                 "text-xs px-2.5 py-1 rounded-full transition-colors",
                 currentTrip && isPreTripDate(expenseDate, currentTrip.start_date)
                   ? "bg-amber-100 text-amber-700 font-medium"
-                  : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                  : "bg-muted text-muted-foreground hover:bg-muted"
               )}
             >
               ✈️ 行前
@@ -352,13 +352,13 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
 
       {/* 類別選擇 - 圖示網格 */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-slate-600">類別</Label>
+        <Label className="text-sm font-medium text-muted-foreground">類別</Label>
         <CategoryGrid value={category} onChange={setCategory} />
       </div>
 
       {/* 支付方式 - 橫排 chips */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-slate-600">支付方式</Label>
+        <Label className="text-sm font-medium text-muted-foreground">支付方式</Label>
         <PaymentChips
           value={paymentMethod}
           onChange={(m) => {
@@ -382,8 +382,8 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       {/* 店家 + 地點 */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="store" className="text-sm font-medium text-slate-600">
-            <Store className="inline h-3.5 w-3.5 mr-1 text-slate-400" />
+          <Label htmlFor="store" className="text-sm font-medium text-muted-foreground">
+            <Store className="inline h-3.5 w-3.5 mr-1 text-muted-foreground" />
             店家名稱
           </Label>
           <Input
@@ -391,12 +391,12 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             value={storeName}
             onChange={(e) => setStoreName(e.target.value)}
             placeholder="選填"
-            className="h-11 rounded-xl border-slate-200 focus-visible:ring-blue-500"
+            className="h-11 rounded-xl border-border focus-visible:ring-primary"
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="location" className="text-sm font-medium text-slate-600">
-            <MapPin className="inline h-3.5 w-3.5 mr-1 text-slate-400" />
+          <Label htmlFor="location" className="text-sm font-medium text-muted-foreground">
+            <MapPin className="inline h-3.5 w-3.5 mr-1 text-muted-foreground" />
             地點
           </Label>
           <Input
@@ -404,27 +404,27 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="選填"
-            className="h-11 rounded-xl border-slate-200 focus-visible:ring-blue-500"
+            className="h-11 rounded-xl border-border focus-visible:ring-primary"
           />
         </div>
       </div>
 
       {/* 備註 */}
       <div className="space-y-1.5">
-        <Label htmlFor="note" className="text-sm font-medium text-slate-600">備註</Label>
+        <Label htmlFor="note" className="text-sm font-medium text-muted-foreground">備註</Label>
         <Input
           id="note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="選填"
-          className="h-11 rounded-xl border-slate-200 focus-visible:ring-blue-500"
+          className="h-11 rounded-xl border-border focus-visible:ring-primary"
         />
       </div>
 
       {/* 這筆是誰的 */}
       {!isGuest && tripMembers.length > 1 && (
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-slate-600">這筆是誰的</Label>
+          <Label className="text-sm font-medium text-muted-foreground">這筆是誰的</Label>
           <div className="flex flex-wrap gap-2">
             {tripMembers.map((m) => {
               const isMe = m.user_id === user?.id;
@@ -444,8 +444,8 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all duration-200 text-sm font-medium",
                     isSelected
-                      ? "border-blue-400 bg-blue-50 text-blue-700"
-                      : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+                      ? "border-primary/50 bg-primary/10 text-primary"
+                      : "border-border/60 bg-card text-muted-foreground hover:bg-muted"
                   )}
                 >
                   <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
@@ -462,8 +462,8 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2.5 rounded-xl border-2 transition-all duration-200 text-sm font-medium",
                 splitType === "split"
-                  ? "border-teal-400 bg-teal-50 text-teal-700"
-                  : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+                  ? "border-amber-400 bg-amber-50 text-amber-800"
+                  : "border-border/60 bg-card text-muted-foreground hover:bg-muted"
               )}
             >
               <Users className="h-4 w-4" />
@@ -471,7 +471,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             </button>
           </div>
           {splitType === "split" && amount && (
-            <p className="text-xs text-teal-500 bg-teal-50 rounded-lg px-3 py-2">
+            <p className="text-xs text-amber-800 bg-amber-50 rounded-lg px-3 py-2">
               每人 {currency === "JPY" ? "¥" : "NT$"}{Math.round(Number(amount) / tripMembers.length).toLocaleString()}
             </p>
           )}
@@ -481,9 +481,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       {/* 誰付的 */}
       {!isGuest && tripMembers.length > 1 && (
         <div className="space-y-1.5">
-          <Label className="text-sm font-medium text-slate-600">誰付的</Label>
+          <Label className="text-sm font-medium text-muted-foreground">誰付的</Label>
           <Select value={paidBy} onValueChange={(v) => { if (v) setPaidBy(v); }}>
-            <SelectTrigger className="h-11 rounded-xl border-slate-200 focus:ring-blue-500">
+            <SelectTrigger className="h-11 rounded-xl border-border focus:ring-primary">
               <SelectValue>
                 {(value: string) => {
                   const member = tripMembers.find((m) => m.user_id === value);
@@ -517,7 +517,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       <div className="pt-2 space-y-3">
         <Button
           type="submit"
-          className="w-full bg-blue-500 hover:bg-blue-600 h-13 text-base font-semibold rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98]"
+          className="w-full bg-primary hover:bg-primary/90 h-13 text-base font-semibold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
           disabled={saving || deleting}
         >
           {saving

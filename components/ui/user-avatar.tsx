@@ -37,7 +37,7 @@ export function UserAvatar({
   return (
     <div
       className={cn(
-        "rounded-full bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden",
+        "rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden",
         sizeMap[size],
         className
       )}

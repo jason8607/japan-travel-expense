@@ -84,12 +84,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 bg-gray-50">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 bg-muted">
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
         <div className="text-center">
           <div className="text-5xl mb-3">🗾</div>
-          <h1 className="text-2xl font-bold text-slate-800">旅帳</h1>
+          <h1 className="text-2xl font-bold text-foreground">旅帳</h1>
           <p className="text-sm text-muted-foreground mt-1">
             日本旅遊智慧記帳
           </p>
@@ -99,7 +99,7 @@ export default function LoginPage() {
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="w-full h-12 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center gap-3 font-medium text-sm text-slate-700 transition-colors shadow-sm disabled:opacity-60"
+          className="w-full h-12 rounded-xl border border-border bg-card hover:bg-muted flex items-center justify-center gap-3 font-medium text-sm text-foreground transition-colors shadow-sm disabled:opacity-60"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
@@ -162,17 +162,17 @@ export default function LoginPage() {
         {!showEmail ? (
           <button
             onClick={() => setShowEmail(true)}
-            className="w-full h-11 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center gap-2 text-sm text-slate-600 transition-colors"
+            className="w-full h-11 rounded-xl border border-border bg-card hover:bg-muted flex items-center justify-center gap-2 text-sm text-muted-foreground transition-colors"
           >
             <Mail className="h-4 w-4" />
             使用 Email 登入
           </button>
         ) : (
-          <div className="rounded-2xl border bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border bg-card p-4 shadow-sm">
             <form onSubmit={handleEmailSubmit} className="space-y-3">
               {isSignUp && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="name" className="text-xs text-slate-500">暱稱</Label>
+                  <Label htmlFor="name" className="text-xs text-muted-foreground">暱稱</Label>
                   <Input
                     id="name"
                     value={displayName}
@@ -183,7 +183,7 @@ export default function LoginPage() {
                 </div>
               )}
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs text-slate-500">Email</Label>
+                <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -195,7 +195,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-xs text-slate-500">密碼</Label>
+                <Label htmlFor="password" className="text-xs text-muted-foreground">密碼</Label>
                 <Input
                   id="password"
                   type="password"
@@ -209,7 +209,7 @@ export default function LoginPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm"
+                className="w-full h-10 bg-primary hover:bg-primary/90 rounded-lg text-sm"
                 disabled={loading}
               >
                 {loading ? "處理中..." : isSignUp ? "註冊" : "登入"}
@@ -219,7 +219,7 @@ export default function LoginPage() {
             <div className="mt-3 text-center text-xs">
               <button
                 onClick={() => { setIsSignUp(!isSignUp); setDuplicateEmail(false); }}
-                className="text-blue-500 hover:underline"
+                className="text-primary hover:underline"
               >
                 {isSignUp ? "已有帳號？登入" : "還沒有帳號？註冊"}
               </button>

@@ -79,7 +79,7 @@ export default function RecordsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <p className="text-sm text-red-500">載入消費紀錄失敗</p>
-        <button onClick={refresh} className="text-sm text-blue-500 underline">重新載入</button>
+        <button onClick={refresh} className="text-sm text-primary underline">重新載入</button>
       </div>
     );
   }
@@ -90,7 +90,7 @@ export default function RecordsPage() {
         <div className="flex items-center justify-between mb-1">
           <Link
             href="/"
-            className="text-sm text-blue-500"
+            className="text-sm text-primary"
           >
             ← 返回首頁
           </Link>
@@ -100,7 +100,7 @@ export default function RecordsPage() {
                 exportExpensesToCSV(filtered, currentTrip?.name || "旅程", tripMembers);
                 toast.success("CSV 已下載");
               }}
-              className="flex items-center gap-1 text-sm text-slate-500 hover:text-blue-500 transition-colors"
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               匯出
@@ -158,7 +158,7 @@ export default function RecordsPage() {
         <Link
           href="/records/new"
           aria-label="新增消費"
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all active:scale-95"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all active:scale-95"
         >
           <Plus className="h-6 w-6" />
         </Link>

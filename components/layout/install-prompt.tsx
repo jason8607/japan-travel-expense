@@ -53,7 +53,7 @@ export function InstallPrompt() {
       className="fixed left-4 right-4 z-50 mx-auto max-w-lg"
       style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
     >
-      <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-lg border">
+      <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-lg border">
         <div className="text-2xl">📱</div>
         <div className="flex-1">
           <p className="text-sm font-medium">安裝到手機桌面</p>
@@ -64,7 +64,7 @@ export function InstallPrompt() {
         <Button
           size="sm"
           onClick={handleInstall}
-          className="bg-blue-500 hover:bg-blue-600"
+          className="bg-primary hover:bg-primary/90"
         >
           <Download className="h-3.5 w-3.5 mr-1" />
           安裝

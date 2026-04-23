@@ -27,10 +27,11 @@ import dynamic from "next/dynamic";
 
 const LazyPieChart = dynamic(
   () => import("@/components/stats/lazy-pie-chart").then((m) => ({ default: m.LazyPieChart })),
-  { ssr: false, loading: () => <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" /> }
+  { ssr: false, loading: () => <div className="w-28 h-28 rounded-full bg-muted animate-pulse" /> }
 );
 import { toast } from "sonner";
 import Link from "next/link";
+import { shareOrDownloadImage } from "@/lib/share-image";
 
 export default function SummaryPage() {
   const { currentTrip, tripMembers, isGuest, loading: ctxLoading } = useApp();
@@ -239,22 +240,12 @@ export default function SummaryPage() {
       const res = await fetch(dataUrl);
       const blob = await res.blob();
 
-      if (navigator.share && navigator.canShare) {
-        const file = new File([blob], "trip-summary.png", { type: "image/png" });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: `${currentTrip.name} 旅行總結` });
-          setCapturing(false);
-          return;
-        }
-      }
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.download = `${currentTrip.name}-總結.png`;
-      link.href = url;
-      link.click();
-      URL.revokeObjectURL(url);
-      toast.success("圖片已儲存");
+      const result = await shareOrDownloadImage(
+        blob,
+        `${currentTrip.name}-總結.png`,
+        `${currentTrip.name} 旅行總結`
+      );
+      if (result === "downloaded") toast.success("圖片已儲存");
     } catch (err) {
       console.error("Summary capture error:", err);
       const msg = err instanceof Error ? err.message : typeof err === "string" ? err : JSON.stringify(err);
@@ -296,18 +287,18 @@ export default function SummaryPage() {
     <div className="space-y-4 p-4 pb-8">
       {/* Back button — outside capturable area */}
       <div className="text-center relative">
-        <Link href="/" className="text-sm text-blue-500 absolute left-0 top-0">
+        <Link href="/" className="text-sm text-primary absolute left-0 top-0">
           ← 返回
         </Link>
         <div className="h-5" />
       </div>
 
       {/* Capturable content area */}
-      <div ref={captureRef} className="space-y-4 bg-slate-50 rounded-2xl p-4">
+      <div ref={captureRef} className="space-y-4 bg-muted rounded-2xl p-4">
       {/* Header */}
       <div className="text-center">
         <div className="flex items-center justify-center gap-2">
-          <Plane className="h-5 w-5 text-blue-500" />
+          <Plane className="h-5 w-5 text-primary" />
           <h1 className="text-xl font-bold">{currentTrip.name}</h1>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
@@ -316,7 +307,7 @@ export default function SummaryPage() {
       </div>
 
       {/* Total spending hero card */}
-      <div className="rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-5 text-white shadow-lg">
+      <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/90 p-5 text-white shadow-lg">
         <p className="text-sm opacity-80 mb-1">旅程總花費</p>
         <p className="text-3xl font-bold">{formatJPY(stats.totalJpy)}</p>
         <p className="text-sm opacity-80 mt-1">
@@ -328,9 +319,9 @@ export default function SummaryPage() {
               <span>預算使用</span>
               <span>{stats.budgetUsed}% · {formatJPY(stats.budgetJpy!)}</span>
             </div>
-            <div className="h-2 rounded-full bg-white/20">
+            <div className="h-2 rounded-full bg-card/20">
               <div
-                className={`h-2 rounded-full transition-all ${stats.budgetUsed > 100 ? "bg-red-300" : "bg-white/80"}`}
+                className={`h-2 rounded-full transition-all ${stats.budgetUsed > 100 ? "bg-red-300" : "bg-card/80"}`}
                 style={{ width: `${Math.min(stats.budgetUsed, 100)}%` }}
               />
             </div>
@@ -340,17 +331,17 @@ export default function SummaryPage() {
 
       {/* Quick stats grid */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl bg-white border border-slate-100 p-3 shadow-sm text-center">
-          <Receipt className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+        <div className="rounded-xl bg-card border border-border/60 p-3 shadow-sm text-center">
+          <Receipt className="h-4 w-4 text-primary mx-auto mb-1" />
           <p className="text-lg font-bold">{stats.count}</p>
           <p className="text-[10px] text-muted-foreground">筆消費</p>
         </div>
-        <div className="rounded-xl bg-white border border-slate-100 p-3 shadow-sm text-center">
-          <CalendarDays className="h-4 w-4 text-violet-500 mx-auto mb-1" />
+        <div className="rounded-xl bg-card border border-border/60 p-3 shadow-sm text-center">
+          <CalendarDays className="h-4 w-4 text-orange-600 mx-auto mb-1" />
           <p className="text-lg font-bold">{stats.activeDays}</p>
           <p className="text-[10px] text-muted-foreground">天有消費</p>
         </div>
-        <div className="rounded-xl bg-white border border-slate-100 p-3 shadow-sm text-center">
+        <div className="rounded-xl bg-card border border-border/60 p-3 shadow-sm text-center">
           <TrendingUp className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
           <p className="text-lg font-bold">{formatJPY(stats.dailyAvgJpy)}</p>
           <p className="text-[10px] text-muted-foreground">日均花費</p>
@@ -358,7 +349,7 @@ export default function SummaryPage() {
       </div>
 
       {/* Top expense */}
-      <div className="rounded-2xl border bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border bg-card p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <Crown className="h-4 w-4 text-amber-500" />
           <h3 className="font-bold text-sm">最大筆消費</h3>
@@ -371,32 +362,32 @@ export default function SummaryPage() {
               {stats.topExpense.store_name && ` · ${stats.topExpense.store_name}`}
             </p>
           </div>
-          <p className="font-bold text-lg text-slate-800">{formatJPY(stats.topExpense.amount_jpy)}</p>
+          <p className="font-bold text-lg text-foreground">{formatJPY(stats.topExpense.amount_jpy)}</p>
         </div>
       </div>
 
       {/* Highest spending day */}
       {stats.maxDaySpend.date && (
-        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <CalendarDays className="h-4 w-4 text-red-500" />
             <h3 className="font-bold text-sm">花最多的一天</h3>
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted-foreground">
               {(() => {
                 const d = parseISO(stats.maxDaySpend.date);
                 return `${format(d, "M/d")}(${DAY_LABELS[d.getDay()]})`;
               })()}
             </p>
-            <p className="font-bold text-lg text-slate-800">{formatJPY(stats.maxDaySpend.amount)}</p>
+            <p className="font-bold text-lg text-foreground">{formatJPY(stats.maxDaySpend.amount)}</p>
           </div>
         </div>
       )}
 
       {/* Category breakdown */}
       {stats.catData.length > 0 && (
-        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
           <h3 className="font-bold text-sm mb-3">分類支出</h3>
           <div className="flex items-center gap-4">
             <div className="shrink-0 w-28 h-28">
@@ -422,7 +413,7 @@ export default function SummaryPage() {
       )}
 
       {/* Payment method breakdown */}
-      <div className="rounded-2xl border bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border bg-card p-4 shadow-sm">
         <h3 className="font-bold text-sm mb-3">支付方式</h3>
         <div className="space-y-2">
           {[...stats.payMap.entries()]
@@ -435,9 +426,9 @@ export default function SummaryPage() {
                     <span>{method}</span>
                     <span className="font-medium">{formatJPY(amount)} ({pct}%)</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-slate-100">
+                  <div className="h-1.5 rounded-full bg-muted">
                     <div
-                      className="h-1.5 rounded-full bg-blue-400"
+                      className="h-1.5 rounded-full bg-primary/70"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -449,7 +440,7 @@ export default function SummaryPage() {
 
       {/* Daily spending chart (text-based bars) */}
       {stats.dailyEntries.length > 1 && (
-        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
           <h3 className="font-bold text-sm mb-3">每日花費</h3>
           <div className="space-y-1.5">
             {stats.dailyEntries.map(([date, amount]) => {
@@ -460,12 +451,12 @@ export default function SummaryPage() {
                   <span className="text-[11px] text-muted-foreground w-12 shrink-0">
                     {format(d, "M/d")}
                   </span>
-                  <div className="flex-1 h-4 rounded bg-slate-50">
+                  <div className="flex-1 h-4 rounded bg-muted">
                     <div
-                      className="h-4 rounded bg-blue-100 flex items-center justify-end px-1"
+                      className="h-4 rounded bg-primary/15 flex items-center justify-end px-1"
                       style={{ width: `${Math.max(pct, 8)}%` }}
                     >
-                      <span className="text-[9px] font-medium text-blue-700 whitespace-nowrap">
+                      <span className="text-[9px] font-medium text-primary whitespace-nowrap">
                         {formatJPY(amount)}
                       </span>
                     </div>
@@ -479,7 +470,7 @@ export default function SummaryPage() {
 
       {/* Per-member spending (only for multi-member trips) */}
       {!isGuest && tripMembers.length > 1 && (
-        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
           <h3 className="font-bold text-sm mb-3">成員應付金額</h3>
           <div className="space-y-2">
             {stats.memberSpend.map((m) => (
@@ -515,11 +506,11 @@ export default function SummaryPage() {
 
       {/* Credit card cashback */}
       {stats.cardStats.length > 0 && (
-        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <CreditCardIcon className="h-4 w-4 text-blue-500" />
+            <CreditCardIcon className="h-4 w-4 text-primary" />
             <h3 className="font-bold text-sm">信用卡回饋</h3>
-            <span className="ml-auto font-bold text-sm text-blue-600">
+            <span className="ml-auto font-bold text-sm text-primary">
               {formatTWD(stats.totalCashback)}
             </span>
           </div>
@@ -527,7 +518,7 @@ export default function SummaryPage() {
             {stats.cardStats.map((card) => (
               <div key={card.name} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-700">{card.name}</span>
+                  <span className="text-foreground">{card.name}</span>
                   <span className="font-medium text-emerald-600">
                     +{formatTWD(card.cashback)}
                   </span>
@@ -542,7 +533,7 @@ export default function SummaryPage() {
                   )}
                 </div>
                 {card.limit > 0 && (
-                  <div className="h-1.5 rounded-full bg-slate-100">
+                  <div className="h-1.5 rounded-full bg-muted">
                     <div
                       className={`h-1.5 rounded-full transition-all ${card.cashback >= card.limit ? "bg-amber-400" : "bg-emerald-400"}`}
                       style={{ width: `${Math.min(Math.round((card.cashback / card.limit) * 100), 100)}%` }}
@@ -561,7 +552,7 @@ export default function SummaryPage() {
       <button
         onClick={handleCaptureImage}
         disabled={capturing}
-        className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 shadow-sm transition-colors disabled:opacity-60"
+        className="w-full flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 text-sm font-medium text-muted-foreground hover:bg-muted shadow-sm transition-colors disabled:opacity-60"
       >
         {capturing ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -574,7 +565,7 @@ export default function SummaryPage() {
       {/* Recap link */}
       <Link
         href="/recap"
-        className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 py-3 text-sm font-medium text-white shadow-sm transition-colors"
+        className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-primary py-3 text-sm font-medium text-white shadow-sm transition-colors"
       >
         ✨ 查看旅後回顧
       </Link>
@@ -585,7 +576,7 @@ export default function SummaryPage() {
           exportExpensesToCSV(expenses, currentTrip.name, tripMembers);
           toast.success("CSV 已下載");
         }}
-        className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 shadow-sm transition-colors"
+        className="w-full flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 text-sm font-medium text-muted-foreground hover:bg-muted shadow-sm transition-colors"
       >
         <Download className="h-4 w-4" />
         匯出 CSV

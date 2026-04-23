@@ -78,7 +78,7 @@ export default function InvitePage() {
       <PageHeader title="邀請成員" subtitle="邀請旅伴加入記帳" showBack />
 
       <div className="p-4 space-y-4">
-        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
           <h3 className="font-bold flex items-center gap-2 mb-3">
             <Users className="h-4 w-4" />
             目前成員 ({members.length})
@@ -112,7 +112,7 @@ export default function InvitePage() {
           </div>
           <Button
             type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600"
+            className="w-full bg-primary hover:bg-primary/90"
             disabled={inviting}
           >
             <UserPlus className="h-4 w-4 mr-2" />

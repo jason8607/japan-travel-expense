@@ -16,7 +16,7 @@ export function TopExpenses({ expenses, title = "花費排名" }: TopExpensesPro
   if (sorted.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border bg-card p-4 shadow-sm">
       <h3 className="font-bold mb-3">{title}</h3>
       <div className="space-y-2">
         {sorted.map((expense, index) => (

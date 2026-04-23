@@ -83,13 +83,13 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
     <div className="space-y-3 px-4">
       {/* Split info banner */}
       {totalSplitJpy > 0 && (
-        <div className="rounded-xl bg-teal-50 border border-teal-100 p-3">
-          <div className="flex items-center gap-2 text-teal-700 text-sm font-medium mb-1">
+        <div className="rounded-xl bg-accent border border-accent-foreground/10 p-3">
+          <div className="flex items-center gap-2 text-accent-foreground text-sm font-medium mb-1">
             <Users className="h-4 w-4" />
             均分費用總計
           </div>
-          <p className="text-lg font-bold text-teal-800">{formatJPY(totalSplitJpy)}</p>
-          <p className="text-xs text-teal-500">
+          <p className="text-lg font-bold text-accent-foreground">{formatJPY(totalSplitJpy)}</p>
+          <p className="text-xs text-accent-foreground/75">
             每人 {formatJPY(perPersonSplitJpy)} ≈ {formatTWD(perPersonSplitTwd)}
           </p>
         </div>
@@ -100,7 +100,7 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
         const isExpanded = expandedMember === m.userId;
 
         return (
-          <div key={m.userId} className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+          <div key={m.userId} className="rounded-2xl border bg-card shadow-sm overflow-hidden">
             <button
               onClick={() => setExpandedMember(isExpanded ? null : m.userId)}
               aria-expanded={isExpanded}
@@ -108,29 +108,29 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
             >
               <UserAvatar avatarUrl={m.avatarUrl} avatarEmoji={m.avatar} size="md" />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-slate-800">{m.name}</p>
+                <p className="font-semibold text-sm text-foreground">{m.name}</p>
                 <div className="flex items-center gap-3 mt-0.5">
                   {m.personalJpy > 0 && (
-                    <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                       <User className="h-3 w-3" />個人 {formatJPY(m.personalJpy)}
                     </span>
                   )}
                   {m.splitShareJpy > 0 && (
-                    <span className="flex items-center gap-1 text-[11px] text-teal-500">
+                    <span className="flex items-center gap-1 text-[11px] text-primary">
                       <Users className="h-3 w-3" />均分 {formatJPY(m.splitShareJpy)}
                     </span>
                   )}
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="font-bold text-sm text-slate-800">
+                <p className="font-bold text-sm text-foreground">
                   {formatJPY(m.totalJpy)}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
                   ≈ {formatTWD(m.totalTwd)}
                 </p>
               </div>
-              <div className="shrink-0 text-slate-400">
+              <div className="shrink-0 text-muted-foreground">
                 {isExpanded ? (
                   <ChevronUp className="h-4 w-4" />
                 ) : (
@@ -141,7 +141,7 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
 
             {isExpanded && (
               <div className={cn(
-                "border-t border-slate-100 px-4 pb-4 space-y-2",
+                "border-t border-border/60 px-4 pb-4 space-y-2",
                 m.ownedExpenses.length > 0 ? "pt-3" : "pt-4"
               )}>
                 {m.ownedExpenses.length > 0 ? (

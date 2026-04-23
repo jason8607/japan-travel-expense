@@ -45,8 +45,8 @@ export function ReceiptUpload({
   return (
     <div className="space-y-4">
       {preview ? (
-        <div className="relative mx-4 rounded-2xl border bg-white p-4 shadow-sm">
-          <div className="relative w-full aspect-3/4 rounded-xl overflow-hidden bg-gray-50">
+        <div className="relative mx-4 rounded-2xl border bg-card p-4 shadow-sm">
+          <div className="relative w-full aspect-3/4 rounded-xl overflow-hidden bg-muted">
             <Image
               src={preview}
               alt="收據"
@@ -56,8 +56,8 @@ export function ReceiptUpload({
           </div>
           {isProcessing && (
             <div className="flex flex-col items-center gap-2 mt-4 py-2">
-              <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-              <p className="text-sm font-medium text-blue-500">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p className="text-sm font-medium text-primary">
                 AI 正在辨識收據...
               </p>
               <p className="text-xs text-muted-foreground">
@@ -67,10 +67,10 @@ export function ReceiptUpload({
           )}
         </div>
       ) : (
-        <div className="mx-4 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 p-10">
+        <div className="mx-4 rounded-2xl border-2 border-dashed border-border bg-muted p-10">
           <div className="flex flex-col items-center gap-4">
-            <div className="rounded-full bg-blue-50 p-4">
-              <Camera className="h-8 w-8 text-blue-500" />
+            <div className="rounded-full bg-primary/10 p-4">
+              <Camera className="h-8 w-8 text-primary" />
             </div>
             <div className="text-center">
               <p className="font-medium">拍照或上傳收據圖片</p>
@@ -94,7 +94,7 @@ export function ReceiptUpload({
         </Button>
         <Button
           onClick={() => fileInputRef.current?.click()}
-          className="flex-1 h-11 bg-blue-500 hover:bg-blue-600"
+          className="flex-1 h-11 bg-primary hover:bg-primary/90"
           disabled={isProcessing}
         >
           <Upload className="h-4 w-4 mr-2" />

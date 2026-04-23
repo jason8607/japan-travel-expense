@@ -118,14 +118,14 @@ export default function JoinTripPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border bg-white p-4 shadow-sm text-sm text-center text-muted-foreground">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm text-sm text-center text-muted-foreground">
           你被邀請加入這趟旅程的記帳，加入後可以一起記錄消費。
         </div>
 
         {!user ? (
           <button
             onClick={handleJoin}
-            className="w-full h-12 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium"
+            className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-medium"
           >
             登入後加入旅程
           </button>
@@ -133,7 +133,7 @@ export default function JoinTripPage() {
           <button
             onClick={handleJoin}
             disabled={joining}
-            className="w-full h-12 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium disabled:opacity-60"
+            className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-medium disabled:opacity-60"
           >
             {joining ? "加入中..." : "加入旅程"}
           </button>

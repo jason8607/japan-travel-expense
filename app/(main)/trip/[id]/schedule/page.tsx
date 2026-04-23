@@ -132,7 +132,7 @@ export default function SchedulePage() {
         <PageHeader title="旅程日程" showBack />
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-2">
           <p className="text-sm text-red-500">載入日程失敗，請返回重試</p>
-          <button onClick={() => router.back()} className="text-sm text-blue-500 underline">返回</button>
+          <button onClick={() => router.back()} className="text-sm text-primary underline">返回</button>
         </div>
       </div>
     );
@@ -144,12 +144,12 @@ export default function SchedulePage() {
 
       <div className="p-4 space-y-4">
         {/* 說明卡片 */}
-        <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
+        <div className="rounded-2xl bg-primary/10 border border-primary/20 p-4">
           <div className="flex items-start gap-3">
-            <MapPin className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
+            <MapPin className="h-5 w-5 text-primary mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-blue-800">設定每天的旅行地點</p>
-              <p className="text-xs text-blue-600 mt-1">
+              <p className="text-sm font-medium text-primary">設定每天的旅行地點</p>
+              <p className="text-xs text-primary mt-1">
                 填寫後，新增消費時會自動帶入當天地點，方便記錄在哪裡花的錢。
               </p>
             </div>
@@ -165,10 +165,10 @@ export default function SchedulePage() {
             return (
               <div
                 key={item.id || index}
-                className="flex items-center gap-2 p-3 rounded-xl bg-white border border-slate-100 shadow-sm"
+                className="flex items-center gap-2 p-3 rounded-xl bg-card border border-border/60 shadow-sm"
               >
                 <div className="shrink-0 w-14 text-center">
-                  <p className="text-sm font-semibold text-slate-700">
+                  <p className="text-sm font-semibold text-foreground">
                     {format(date, "M/d")}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
@@ -181,12 +181,12 @@ export default function SchedulePage() {
                     updateScheduleItem(index, "location", e.target.value)
                   }
                   placeholder="地點，例：東京、金澤"
-                  className="flex-1 h-9 text-sm rounded-lg border-slate-200 focus-visible:ring-blue-500"
+                  className="flex-1 h-9 text-sm rounded-lg border-border focus-visible:ring-primary"
                 />
                 <button
                   onClick={() => removeScheduleItem(index)}
                   aria-label="刪除此日行程"
-                  className="p-1.5 text-slate-300 hover:text-red-500 transition-colors"
+                  className="p-1.5 text-muted-foreground/60 hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -198,7 +198,7 @@ export default function SchedulePage() {
         {schedule.length > 0 && (
           <Button
             onClick={handleSave}
-            className="w-full h-12 bg-blue-500 hover:bg-blue-600 rounded-xl text-base font-semibold shadow-lg shadow-blue-200"
+            className="w-full h-12 bg-primary hover:bg-primary/90 rounded-xl text-base font-semibold shadow-lg shadow-primary/20"
             disabled={saving}
           >
             {saving ? "儲存中..." : "儲存日程"}

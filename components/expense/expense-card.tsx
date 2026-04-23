@@ -38,7 +38,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
     : null;
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+    <div className="flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow">
       {/* Avatar */}
       <UserAvatar
         avatarUrl={expense.profile?.avatar_url}
@@ -48,7 +48,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-slate-800 truncate">{expense.title}</p>
+        <p className="font-semibold text-sm text-foreground truncate">{expense.title}</p>
         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
           <Badge
             variant="secondary"
@@ -64,12 +64,12 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
             {paymentInfo?.icon} {expense.payment_method}
           </span>
           {expense.split_type === "split" && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] text-teal-500 bg-teal-50 px-1.5 py-0 rounded-full font-medium">
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0 rounded-full font-medium">
               <Users className="h-2.5 w-2.5" />均分
             </span>
           )}
           {ownerMember && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] text-purple-500 bg-purple-50 px-1.5 py-0 rounded-full font-medium">
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-rose-600 bg-rose-50 px-1.5 py-0 rounded-full font-medium">
               <ArrowRight className="h-2.5 w-2.5" />
               {ownerMember.profile?.avatar_emoji || "🧑"} {ownerMember.profile?.display_name || "成員"}
             </span>
@@ -77,7 +77,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
           {expense.receipt_image_url && (
             <button
               onClick={() => setShowReceipt(true)}
-              className="inline-flex items-center gap-0.5 text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0 rounded-full font-medium hover:bg-blue-100 transition-colors"
+              className="inline-flex items-center gap-0.5 text-[10px] text-primary bg-primary/10 px-1.5 py-0 rounded-full font-medium hover:bg-primary/15 transition-colors"
             >
               <ImageIcon className="h-2.5 w-2.5" />收據
             </button>
@@ -93,7 +93,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
           {expense.note && (
             <>
               <span className="text-[10px] text-muted-foreground">·</span>
-              <span className="text-[10px] text-slate-400 truncate italic">
+              <span className="text-[10px] text-muted-foreground truncate italic">
                 {expense.note}
               </span>
             </>
@@ -103,7 +103,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
 
       {/* Amount */}
       <div className="shrink-0 text-right">
-        <p className="font-bold text-sm text-slate-800">{formatJPY(expense.amount_jpy)}</p>
+        <p className="font-bold text-sm text-foreground">{formatJPY(expense.amount_jpy)}</p>
         <p className="text-[10px] text-muted-foreground">
           {formatTWD(expense.amount_twd)}
         </p>
@@ -114,7 +114,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
         <Link
           href={`/records/new?edit=${expense.id}`}
           aria-label="編輯消費"
-          className="p-1.5 text-slate-300 hover:text-blue-500 transition-colors"
+          className="p-1.5 text-muted-foreground/60 hover:text-primary transition-colors"
         >
           <Pencil className="h-3.5 w-3.5" />
         </Link>
@@ -123,7 +123,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
             aria-label="刪除消費"
             onClick={() => setShowDeleteDialog(true)}
             disabled={deleting}
-            className="p-1.5 text-slate-300 hover:text-red-500 transition-colors disabled:opacity-50"
+            className="p-1.5 text-muted-foreground/60 hover:text-red-500 transition-colors disabled:opacity-50"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -137,7 +137,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
               <DialogTitle className="text-sm">收據照片</DialogTitle>
               <DialogDescription className="sr-only">收據照片預覽</DialogDescription>
             </DialogHeader>
-            <div className="relative w-full aspect-3/4 rounded-lg overflow-hidden bg-gray-50">
+            <div className="relative w-full aspect-3/4 rounded-lg overflow-hidden bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={expense.receipt_image_url}

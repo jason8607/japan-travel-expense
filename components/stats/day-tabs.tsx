@@ -47,8 +47,8 @@ export function DayTabs({ dates, selected, onChange, tripStartDate }: DayTabsPro
         className={cn(
           "shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all",
           selected === null
-            ? "bg-slate-800 text-white shadow-sm"
-            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+            ? "bg-foreground text-white shadow-sm"
+            : "bg-muted text-muted-foreground hover:bg-muted"
         )}
       >
         全部
@@ -63,8 +63,8 @@ export function DayTabs({ dates, selected, onChange, tripStartDate }: DayTabsPro
             className={cn(
               "shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all",
               isActive
-                ? "bg-slate-800 text-white shadow-sm"
-                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                ? "bg-foreground text-white shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted"
             )}
           >
             {tab.label}

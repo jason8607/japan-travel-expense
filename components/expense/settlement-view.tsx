@@ -43,17 +43,17 @@ export function SettlementView({ expenses, tripMembers, exchangeRate = FALLBACK_
     <div className="space-y-4 px-4">
       {/* Balance summary */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-slate-700">各成員餘額</h3>
+        <h3 className="text-sm font-semibold text-foreground">各成員餘額</h3>
         {balances.map((b) => (
-          <div key={b.userId} className="flex items-center gap-3 rounded-xl bg-white border border-slate-100 p-3 shadow-sm">
+          <div key={b.userId} className="flex items-center gap-3 rounded-xl bg-card border border-border/60 p-3 shadow-sm">
             <UserAvatar avatarUrl={b.avatarUrl} avatarEmoji={b.emoji} size="md" />
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-slate-800">{b.name}</p>
+              <p className="font-medium text-sm text-foreground">{b.name}</p>
               <div className="flex items-center gap-3 mt-0.5">
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-muted-foreground">
                   已付 {formatJPY(b.paid)}
                 </span>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-muted-foreground">
                   應付 {formatJPY(b.owed)}
                 </span>
               </div>
@@ -66,7 +66,7 @@ export function SettlementView({ expenses, tripMembers, exchangeRate = FALLBACK_
                   <TrendingDown className="h-3.5 w-3.5 text-red-500" />
                 ) : null}
                 <p className={`font-bold text-sm ${
-                  b.balance > 0 ? "text-emerald-600" : b.balance < 0 ? "text-red-500" : "text-slate-400"
+                  b.balance > 0 ? "text-emerald-600" : b.balance < 0 ? "text-red-500" : "text-muted-foreground"
                 }`}>
                   {b.balance > 0 ? "+" : ""}{formatJPY(b.balance)}
                 </p>
@@ -81,7 +81,7 @@ export function SettlementView({ expenses, tripMembers, exchangeRate = FALLBACK_
 
       {/* Settlement transfers */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-slate-700">結算方式</h3>
+        <h3 className="text-sm font-semibold text-foreground">結算方式</h3>
         {allSettled ? (
           <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4 text-center">
             <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
@@ -96,19 +96,19 @@ export function SettlementView({ expenses, tripMembers, exchangeRate = FALLBACK_
             {settlements.map((s, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 rounded-xl bg-white border border-slate-100 p-3 shadow-sm"
+                className="flex items-center gap-2 rounded-xl bg-card border border-border/60 p-3 shadow-sm"
               >
                 <UserAvatar avatarUrl={s.fromAvatarUrl} avatarEmoji={s.fromEmoji} size="sm" />
-                <span className="text-sm font-medium text-slate-700 truncate">{s.fromName}</span>
+                <span className="text-sm font-medium text-foreground truncate">{s.fromName}</span>
                 <div className="flex-1 flex items-center justify-center gap-1 px-1">
-                  <div className="flex-1 h-px bg-slate-200" />
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 border border-amber-100">
-                    <span className="text-xs font-bold text-amber-700">{formatJPY(s.amount)}</span>
-                    <ArrowRight className="h-3 w-3 text-amber-500" />
+                  <div className="flex-1 h-px bg-muted" />
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/15 border border-primary/25">
+                    <span className="text-xs font-bold text-primary">{formatJPY(s.amount)}</span>
+                    <ArrowRight className="h-3 w-3 text-primary" />
                   </div>
-                  <div className="flex-1 h-px bg-slate-200" />
+                  <div className="flex-1 h-px bg-muted" />
                 </div>
-                <span className="text-sm font-medium text-slate-700 truncate">{s.toName}</span>
+                <span className="text-sm font-medium text-foreground truncate">{s.toName}</span>
                 <UserAvatar avatarUrl={s.toAvatarUrl} avatarEmoji={s.toEmoji} size="sm" />
               </div>
             ))}

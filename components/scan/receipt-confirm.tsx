@@ -133,7 +133,7 @@ export function ReceiptConfirm({
   return (
     <div className="space-y-4 px-4">
       {/* Store info */}
-      <div className="rounded-2xl border bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border bg-card p-4 shadow-sm">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-bold text-lg">{storeName}</h3>
           <span className="text-sm text-muted-foreground">{date}</span>
@@ -142,7 +142,7 @@ export function ReceiptConfirm({
       </div>
 
       {/* Quick assign buttons */}
-      <div className="rounded-2xl border bg-white p-3 shadow-sm space-y-2.5">
+      <div className="rounded-2xl border bg-card p-3 shadow-sm space-y-2.5">
         <p className="text-xs text-muted-foreground font-medium">快速指定全部品項</p>
         {/* Quick assign category */}
         <div>
@@ -156,8 +156,8 @@ export function ReceiptConfirm({
                 className={cn(
                   "flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium transition-all",
                   items.every((it) => it.category === cat.value)
-                    ? "border-blue-300 bg-blue-50 text-blue-700"
-                    : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:bg-muted"
                 )}
               >
                 <span className="text-sm">{cat.icon}</span>
@@ -174,7 +174,7 @@ export function ReceiptConfirm({
               <button
                 type="button"
                 onClick={() => setAllOwner(null, "personal")}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium bg-blue-50 border-blue-200 text-blue-700"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium bg-primary/10 border-primary/25 text-primary"
               >
                 <UserAvatar avatarUrl={myProfile?.avatar_url} avatarEmoji={myProfile?.avatar_emoji} size="xs" />
                 全部我的
@@ -186,7 +186,7 @@ export function ReceiptConfirm({
                     key={m.user_id}
                     type="button"
                     onClick={() => setAllOwner(m.user_id, "personal")}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-slate-200 text-slate-600 hover:bg-slate-50"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-border text-muted-foreground hover:bg-muted"
                   >
                     <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
                     全部{m.profile?.display_name || "成員"}的
@@ -195,7 +195,7 @@ export function ReceiptConfirm({
               <button
                 type="button"
                 onClick={() => setAllOwner(null, "split")}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-teal-200 text-teal-700 bg-teal-50"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-amber-300 text-amber-800 bg-amber-50"
               >
                 <Users className="h-3 w-3" /> 全部均分
               </button>
@@ -205,12 +205,12 @@ export function ReceiptConfirm({
       </div>
 
       {/* Items with per-item owner */}
-      <div className="rounded-2xl border bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border bg-card p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-bold">購買明細</h4>
           <button
             onClick={addItem}
-            className="flex items-center gap-1 text-sm text-blue-500"
+            className="flex items-center gap-1 text-sm text-primary"
           >
             <Plus className="h-3.5 w-3.5" />
             新增品項
@@ -223,9 +223,9 @@ export function ReceiptConfirm({
             const isExpanded = expandedCategoryId === item._id;
 
             return (
-              <div key={item._id} className="rounded-xl bg-gray-50 overflow-hidden">
+              <div key={item._id} className="rounded-xl bg-muted overflow-hidden">
                 <div className="flex items-start gap-3 p-3">
-                  <div className="shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                  <div className="shrink-0 w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-bold">
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
@@ -260,12 +260,12 @@ export function ReceiptConfirm({
                     onClick={() => setExpandedCategoryId(isExpanded ? null : item._id)}
                     className={cn(
                       "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
-                      "border border-slate-200 hover:border-slate-300"
+                      "border border-border hover:border-border"
                     )}
                   >
                     <span className="text-sm leading-none">{currentCat.icon}</span>
                     {currentCat.label}
-                    <ChevronDown className={cn("h-3 w-3 text-slate-400 transition-transform", isExpanded && "rotate-180")} />
+                    <ChevronDown className={cn("h-3 w-3 text-muted-foreground transition-transform", isExpanded && "rotate-180")} />
                   </button>
                   {isExpanded && (
                     <div className="flex flex-wrap gap-1 mt-1.5">
@@ -277,8 +277,8 @@ export function ReceiptConfirm({
                           className={cn(
                             "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
                             item.category === cat.value
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-white text-slate-500 hover:bg-slate-100"
+                              ? "bg-primary/15 text-primary"
+                              : "bg-card text-muted-foreground hover:bg-muted"
                           )}
                         >
                           <span className="text-sm leading-none">{cat.icon}</span>
@@ -298,8 +298,8 @@ export function ReceiptConfirm({
                       className={cn(
                         "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
                         item.split_type === "personal" && item.owner_id === null
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-white text-slate-400 hover:text-slate-600"
+                          ? "bg-primary/15 text-primary"
+                          : "bg-card text-muted-foreground hover:text-muted-foreground"
                       )}
                     >
                       <UserAvatar avatarUrl={myProfile?.avatar_url} avatarEmoji={myProfile?.avatar_emoji} size="xs" />
@@ -315,8 +315,8 @@ export function ReceiptConfirm({
                           className={cn(
                             "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
                             item.split_type === "personal" && item.owner_id === m.user_id
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-white text-slate-400 hover:text-slate-600"
+                              ? "bg-primary/15 text-primary"
+                              : "bg-card text-muted-foreground hover:text-muted-foreground"
                           )}
                         >
                           <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
@@ -329,8 +329,8 @@ export function ReceiptConfirm({
                       className={cn(
                         "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
                         item.split_type === "split"
-                          ? "bg-teal-100 text-teal-700"
-                          : "bg-white text-slate-400 hover:text-slate-600"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-card text-muted-foreground hover:text-muted-foreground"
                       )}
                     >
                       👥 均分
@@ -344,7 +344,7 @@ export function ReceiptConfirm({
       </div>
 
       {/* Payment method picker */}
-      <div className="rounded-2xl border bg-white p-4 shadow-sm space-y-3">
+      <div className="rounded-2xl border bg-card p-4 shadow-sm space-y-3">
         <h4 className="font-bold text-sm">支付方式</h4>
         <PaymentChips
           value={paymentMethod}
@@ -378,7 +378,7 @@ export function ReceiptConfirm({
             date,
           })
         }
-        className="w-full h-12 text-base bg-blue-500 hover:bg-blue-600"
+        className="w-full h-12 text-base bg-primary hover:bg-primary/90"
         disabled={saving}
       >
         {saving ? "儲存中..." : `確認儲存 (${items.length} 筆)`}

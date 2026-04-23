@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { AppProvider } from "@/lib/context";
+import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
 import { ServiceWorkerRegister } from "@/components/layout/sw-register";
 import { InstallPrompt } from "@/components/layout/install-prompt";
 import { Analytics } from "@vercel/analytics/next";
@@ -35,7 +36,6 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover",
-  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -44,16 +44,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh-Hant" className={`${geistSans.variable} h-full`}>
-      <body className="h-full font-sans antialiased bg-gray-50">
-        <AppProvider>
-          <div className="mx-auto max-w-lg min-h-full bg-white shadow-sm">
-            {children}
-          </div>
-          <InstallPrompt />
-          <Toaster position="top-center" />
-          <ServiceWorkerRegister />
-        </AppProvider>
+    <html
+      lang="zh-Hant"
+      className={`${geistSans.variable} h-full`}
+      data-theme="warm"
+      suppressHydrationWarning
+    >
+      <head>
+        {/* Apply the user's saved theme before React hydrates to avoid FOUC. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="h-full font-sans antialiased bg-muted">
+        <ThemeProvider>
+          <AppProvider>
+            <div className="mx-auto max-w-lg min-h-full bg-background shadow-sm">
+              {children}
+            </div>
+            <InstallPrompt />
+            <Toaster position="top-center" />
+            <ServiceWorkerRegister />
+          </AppProvider>
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

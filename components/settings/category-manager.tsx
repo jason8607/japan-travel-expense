@@ -111,10 +111,10 @@ export function CategoryManager() {
   };
 
   return (
-    <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+    <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+      <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
         <h2 className="text-sm font-bold flex items-center gap-2">
-          <LayoutGrid className="h-4 w-4 text-blue-500" />
+          <LayoutGrid className="h-4 w-4 text-primary" />
           分類管理
         </h2>
         <button
@@ -122,14 +122,14 @@ export function CategoryManager() {
             resetForm();
             setShowForm(true);
           }}
-          className="text-xs text-blue-500 flex items-center gap-1"
+          className="text-xs text-primary flex items-center gap-1"
         >
           <Plus className="h-3 w-3" />
           新增
         </button>
       </div>
 
-      <div className="divide-y divide-slate-50">
+      <div className="divide-y divide-border/60">
         {categories.map((item) => (
           <div
             key={item.id}
@@ -147,13 +147,13 @@ export function CategoryManager() {
             <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={() => openEdit(item)}
-                className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setDeleteTarget(item)}
-                className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -163,9 +163,9 @@ export function CategoryManager() {
       </div>
 
       {showForm && (
-        <div className="border-t border-slate-100 p-4 space-y-3 bg-slate-50/50">
+        <div className="border-t border-border/60 p-4 space-y-3 bg-muted/50">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">
+            <span className="text-xs font-medium text-muted-foreground">
               {editingItem ? "編輯分類" : "新增分類"}
             </span>
             <button
@@ -181,13 +181,13 @@ export function CategoryManager() {
             <button
               type="button"
               onClick={() => setShowIcons(!showIcons)}
-              className="w-10 h-10 rounded-lg border border-slate-200 flex items-center justify-center text-xl shrink-0 hover:bg-white transition-colors"
+              className="w-10 h-10 rounded-lg border border-border flex items-center justify-center text-xl shrink-0 hover:bg-card transition-colors"
               style={{ backgroundColor: color + "18" }}
             >
               {icon}
             </button>
             <div className="flex-1 space-y-1.5">
-              <Label className="text-xs text-slate-500">名稱</Label>
+              <Label className="text-xs text-muted-foreground">名稱</Label>
               <Input
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
@@ -206,8 +206,8 @@ export function CategoryManager() {
                   onClick={() => { setIcon(ic); setShowIcons(false); }}
                   className={`w-full aspect-square rounded-lg text-lg flex items-center justify-center transition-all ${
                     icon === ic
-                      ? "bg-blue-100 ring-2 ring-blue-400"
-                      : "bg-white hover:bg-slate-100"
+                      ? "bg-primary/15 ring-2 ring-primary/50"
+                      : "bg-card hover:bg-muted"
                   }`}
                 >
                   {ic}
@@ -217,7 +217,7 @@ export function CategoryManager() {
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-500">顏色</Label>
+            <Label className="text-xs text-muted-foreground">顏色</Label>
             <div className="flex flex-wrap gap-2">
               {COLOR_OPTIONS.map((c) => (
                 <button
@@ -225,7 +225,7 @@ export function CategoryManager() {
                   type="button"
                   onClick={() => setColor(c)}
                   className={`w-7 h-7 rounded-full transition-all ${
-                    color === c ? "ring-2 ring-offset-2 ring-blue-400 scale-110" : "hover:scale-110"
+                    color === c ? "ring-2 ring-offset-2 ring-primary/50 scale-110" : "hover:scale-110"
                   }`}
                   style={{ backgroundColor: c }}
                 />
@@ -235,7 +235,7 @@ export function CategoryManager() {
 
           <Button
             onClick={handleSave}
-            className="w-full h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm"
+            className="w-full h-10 bg-primary hover:bg-primary/90 rounded-lg text-sm"
             disabled={saving}
           >
             {saving

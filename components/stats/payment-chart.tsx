@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 
 const LazyPieChart = dynamic(
   () => import("./lazy-pie-chart").then((m) => ({ default: m.LazyPieChart })),
-  { ssr: false, loading: () => <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" /> }
+  { ssr: false, loading: () => <div className="w-28 h-28 rounded-full bg-muted animate-pulse" /> }
 );
 
 interface PaymentChartProps {
@@ -35,7 +35,7 @@ export function PaymentChart({ expenses, title = "支付方式" }: PaymentChartP
     .sort((a, b) => b.value - a.value);
 
   return (
-    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border bg-card p-4 shadow-sm">
       <h3 className="font-bold mb-3">{title}</h3>
       <div className="flex items-center gap-4">
         <div className="shrink-0 w-28 h-28">

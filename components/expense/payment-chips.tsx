@@ -20,8 +20,8 @@ export function PaymentChips({ value, onChange }: PaymentChipsProps) {
           className={cn(
             "flex items-center gap-1.5 px-3 py-2 rounded-full border-2 transition-all duration-200 text-sm",
             value === pm.value
-              ? "border-blue-400 bg-blue-50 text-blue-700 font-medium"
-              : "border-slate-100 bg-white text-slate-500 hover:bg-slate-50"
+              ? "border-primary/50 bg-primary/10 text-primary font-medium"
+              : "border-border/60 bg-card text-muted-foreground hover:bg-muted"
           )}
         >
           <span className="text-base leading-none">{pm.icon}</span>

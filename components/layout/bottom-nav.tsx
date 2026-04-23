@@ -23,7 +23,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-white/80 backdrop-blur-lg pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/80 backdrop-blur-lg pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto flex max-w-lg items-center justify-around">
         {navItems.map((item) => {
           const isActive =
@@ -40,7 +40,7 @@ export function BottomNav() {
               className={cn(
                 "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors",
                 isActive
-                  ? "text-blue-500"
+                  ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

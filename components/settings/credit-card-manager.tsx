@@ -165,10 +165,10 @@ export function CreditCardManager() {
   };
 
   return (
-    <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+    <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+      <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
         <h2 className="text-sm font-bold flex items-center gap-2">
-          <CreditCardIcon className="h-4 w-4 text-blue-500" />
+          <CreditCardIcon className="h-4 w-4 text-primary" />
           信用卡管理
         </h2>
         <button
@@ -176,7 +176,7 @@ export function CreditCardManager() {
             resetForm();
             setShowForm(true);
           }}
-          className="text-xs text-blue-500 flex items-center gap-1"
+          className="text-xs text-primary flex items-center gap-1"
         >
           <Plus className="h-3 w-3" />
           新增
@@ -191,13 +191,13 @@ export function CreditCardManager() {
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-slate-50">
+        <div className="divide-y divide-border/60">
           {cards.map((card) => (
             <div
               key={card.id}
               className="px-4 py-3 flex items-center gap-3"
             >
-              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <span className="text-base">💳</span>
               </div>
               <div className="flex-1 min-w-0">
@@ -210,7 +210,7 @@ export function CreditCardManager() {
                     {card.plans.map((plan) => (
                       <span
                         key={plan.id}
-                        className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600"
+                        className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary/10 text-primary"
                       >
                         {plan.name} {plan.cashback_rate}%
                       </span>
@@ -221,13 +221,13 @@ export function CreditCardManager() {
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => openEdit(card)}
-                  className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors"
+                  className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={() => setDeleteTarget(card)}
-                  className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                  className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -238,9 +238,9 @@ export function CreditCardManager() {
       )}
 
       {showForm && (
-        <div className="border-t border-slate-100 p-4 space-y-3 bg-slate-50/50">
+        <div className="border-t border-border/60 p-4 space-y-3 bg-muted/50">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">
+            <span className="text-xs font-medium text-muted-foreground">
               {editingCard ? "編輯信用卡" : "新增信用卡"}
             </span>
             <button
@@ -252,7 +252,7 @@ export function CreditCardManager() {
             </button>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-500">卡片名稱</Label>
+            <Label className="text-xs text-muted-foreground">卡片名稱</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -264,7 +264,7 @@ export function CreditCardManager() {
           {plans.length === 0 && (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">回饋 %</Label>
+                <Label className="text-xs text-muted-foreground">回饋 %</Label>
                 <Input
                   type="number"
                   value={rate}
@@ -276,7 +276,7 @@ export function CreditCardManager() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">回饋上限 (NT$)</Label>
+                <Label className="text-xs text-muted-foreground">回饋上限 (NT$)</Label>
                 <Input
                   type="number"
                   value={limit}
@@ -291,7 +291,7 @@ export function CreditCardManager() {
 
           {plans.length > 0 && (
             <div className="space-y-1.5">
-              <Label className="text-xs text-slate-500">回饋上限 (NT$，所有方案共用)</Label>
+              <Label className="text-xs text-muted-foreground">回饋上限 (NT$，所有方案共用)</Label>
               <Input
                 type="number"
                 value={limit}
@@ -306,13 +306,13 @@ export function CreditCardManager() {
           {/* Plans section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-slate-500">
+              <Label className="text-xs text-muted-foreground">
                 可切方案 {plans.length > 0 && `(${plans.length})`}
               </Label>
               <button
                 type="button"
                 onClick={addPlan}
-                className="text-[11px] text-blue-500 flex items-center gap-0.5"
+                className="text-[11px] text-primary flex items-center gap-0.5"
               >
                 <Plus className="h-3 w-3" />
                 新增方案
@@ -320,7 +320,7 @@ export function CreditCardManager() {
             </div>
 
             {plans.length === 0 && (
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-muted-foreground">
                 如果這張卡有多個回饋方案可切換，點新增方案來設定
               </p>
             )}
@@ -343,12 +343,12 @@ export function CreditCardManager() {
                     min="0"
                     className="h-9 rounded-lg text-sm pr-6"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => removePlan(i)}
-                  className="p-1 text-slate-400 hover:text-red-500 transition-colors shrink-0"
+                  className="p-1 text-muted-foreground hover:text-red-500 transition-colors shrink-0"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -358,7 +358,7 @@ export function CreditCardManager() {
 
           <Button
             onClick={handleSave}
-            className="w-full h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm"
+            className="w-full h-10 bg-primary hover:bg-primary/90 rounded-lg text-sm"
             disabled={saving}
           >
             {saving

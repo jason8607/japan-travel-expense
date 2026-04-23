@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 
 const LazyPieChart = dynamic(
   () => import("./lazy-pie-chart").then((m) => ({ default: m.LazyPieChart })),
-  { ssr: false, loading: () => <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" /> }
+  { ssr: false, loading: () => <div className="w-28 h-28 rounded-full bg-muted animate-pulse" /> }
 );
 
 interface CategoryChartProps {
@@ -55,7 +55,7 @@ export function CategoryChart({ expenses, title = "分類支出" }: CategoryChar
   if (filtered.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border bg-card p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold">{title}</h3>
       </div>

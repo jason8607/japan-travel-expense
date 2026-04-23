@@ -69,27 +69,27 @@ export default function SetPasswordPage() {
 
   if (checking) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-muted">
         <div className="text-sm text-muted-foreground">載入中...</div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 bg-gray-50">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 bg-muted">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <div className="text-5xl mb-3">🔐</div>
-          <h1 className="text-2xl font-bold text-slate-800">設定登入密碼</h1>
+          <h1 className="text-2xl font-bold text-foreground">設定登入密碼</h1>
           <p className="text-sm text-muted-foreground mt-1">
             設定密碼後，也可以用信箱和密碼登入
           </p>
         </div>
 
-        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs text-slate-500">密碼</Label>
+              <Label htmlFor="password" className="text-xs text-muted-foreground">密碼</Label>
               <Input
                 id="password"
                 type="password"
@@ -102,7 +102,7 @@ export default function SetPasswordPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword" className="text-xs text-slate-500">確認密碼</Label>
+              <Label htmlFor="confirmPassword" className="text-xs text-muted-foreground">確認密碼</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -126,7 +126,7 @@ export default function SetPasswordPage() {
 
         <button
           onClick={() => router.push("/")}
-          className="w-full text-sm text-muted-foreground hover:text-slate-600 transition-colors"
+          className="w-full text-sm text-muted-foreground hover:text-muted-foreground transition-colors"
         >
           稍後再說
         </button>

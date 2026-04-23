@@ -12,6 +12,7 @@ import { ShareableCard } from "@/components/recap/shareable-card";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { shareOrDownloadImage } from "@/lib/share-image";
 
 export default function RecapPage() {
   const { currentTrip, tripMembers, isGuest, loading: ctxLoading } = useApp();
@@ -144,24 +145,12 @@ export default function RecapPage() {
       const res = await fetch(dataUrl);
       const blob = await res.blob();
 
-      // Try Web Share API first (mobile)
-      if (navigator.share && navigator.canShare) {
-        const file = new File([blob], "travel-recap.png", { type: "image/png" });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: `${currentTrip.name} 旅後回顧` });
-          setCapturing(false);
-          return;
-        }
-      }
-
-      // Fallback: download
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.download = `${currentTrip.name}-回顧.png`;
-      link.href = url;
-      link.click();
-      URL.revokeObjectURL(url);
-      toast.success("圖片已儲存");
+      const result = await shareOrDownloadImage(
+        blob,
+        `${currentTrip.name}-回顧.png`,
+        `${currentTrip.name} 旅後回顧`
+      );
+      if (result === "downloaded") toast.success("圖片已儲存");
     } catch (err) {
       console.error("Recap capture error:", err);
       toast.error(`圖片產生失敗：${err instanceof Error ? err.message : "未知錯誤"}`);
@@ -202,7 +191,7 @@ export default function RecapPage() {
       <PageHeader title="旅後回顧" showBack />
       <div className="space-y-4 px-4 pb-8">
         {/* Trip overview — compact header */}
-        <StatCard gradient="from-indigo-500 to-blue-500" emoji="🗾" title={currentTrip.name}>
+        <StatCard gradient="from-rose-500 to-primary" emoji="🗾" title={currentTrip.name}>
           <div className="text-sm opacity-80">
             {format(parseISO(currentTrip.start_date), "M/d")} ~ {format(parseISO(currentTrip.end_date), "M/d")}
             {" · "}{stats.count} 筆消費 · {stats.activeDays} 天
@@ -248,9 +237,9 @@ export default function RecapPage() {
 
         {/* Max vs min day */}
         {stats.maxDay.date && stats.minDay.date && stats.maxDay.date !== stats.minDay.date && (
-          <StatCard gradient="from-sky-500 to-blue-600" emoji="📅" title="最花 vs 最省的一天">
+          <StatCard gradient="from-amber-500 to-primary/90" emoji="📅" title="最花 vs 最省的一天">
             <div className="flex gap-4">
-              <div className="flex-1 rounded-xl bg-white/15 p-3">
+              <div className="flex-1 rounded-xl bg-card/15 p-3">
                 <div className="text-xs opacity-80 mb-1">最花</div>
                 <div className="text-lg font-bold">
                   {format(parseISO(stats.maxDay.date), "M/d")}
@@ -259,7 +248,7 @@ export default function RecapPage() {
                   {formatJPY(stats.maxDay.amount)}
                 </div>
               </div>
-              <div className="flex-1 rounded-xl bg-white/15 p-3">
+              <div className="flex-1 rounded-xl bg-card/15 p-3">
                 <div className="text-xs opacity-80 mb-1">最省</div>
                 <div className="text-lg font-bold">
                   {format(parseISO(stats.minDay.date), "M/d")}
@@ -274,7 +263,7 @@ export default function RecapPage() {
 
         {/* Credit card cashback */}
         {stats.totalCashback > 0 && (
-          <StatCard gradient="from-blue-600 to-indigo-600" emoji="💳" title="信用卡回饋">
+          <StatCard gradient="from-primary/90 to-rose-600" emoji="💳" title="信用卡回饋">
             <div className="text-3xl font-bold">
               NT${stats.totalCashback.toLocaleString()}
             </div>
@@ -284,10 +273,10 @@ export default function RecapPage() {
 
         {/* Per-member fun stats */}
         {stats.memberStats.length > 0 && (
-          <StatCard gradient="from-orange-500 to-red-500" emoji="👥" title="成員趣味統計">
+          <StatCard gradient="from-rose-500 to-red-500" emoji="👥" title="成員趣味統計">
             <div className="space-y-3">
               {stats.memberStats.map((m) => (
-                <div key={m.userId} className="rounded-xl bg-white/15 p-3">
+                <div key={m.userId} className="rounded-xl bg-card/15 p-3">
                   <div className="font-bold">
                     {m.emoji} {m.name}
                   </div>
@@ -310,7 +299,7 @@ export default function RecapPage() {
         <button
           onClick={handleCapture}
           disabled={capturing}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 py-3 text-sm font-medium text-white shadow-sm transition-colors disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-primary py-3 text-sm font-medium text-white shadow-sm transition-colors disabled:opacity-60"
         >
           {capturing ? (
             <Loader2 className="h-4 w-4 animate-spin" />

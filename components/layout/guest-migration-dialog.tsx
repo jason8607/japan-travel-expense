@@ -124,7 +124,7 @@ export function GuestMigrationDialog() {
             不用了
           </Button>
           <Button
-            className="bg-blue-500 hover:bg-blue-600 text-white"
+            className="bg-primary hover:bg-primary/90 text-white"
             onClick={handleMigrate}
             disabled={migrating}
           >
