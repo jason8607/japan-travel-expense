@@ -50,7 +50,16 @@ export const ShareableCard = forwardRef<HTMLDivElement, ShareableCardProps>(
           borderRadius: 24,
         }}
       >
-        <div style={{ fontSize: 40, marginBottom: 4 }}>🗾</div>
+        <div style={{ marginBottom: 4 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icon-transparent.png"
+            alt=""
+            width={48}
+            height={48}
+            style={{ display: "block" }}
+          />
+        </div>
         <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
           {tripName}
         </div>

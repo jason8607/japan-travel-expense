@@ -80,11 +80,17 @@ export const WrappedCard = forwardRef<HTMLDivElement, WrappedCardProps>(
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 28,
               boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
             }}
           >
-            🗾
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icon-transparent.png"
+              alt=""
+              width={40}
+              height={40}
+              style={{ display: "block" }}
+            />
           </div>
           <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.2 }}>
             {tripName}

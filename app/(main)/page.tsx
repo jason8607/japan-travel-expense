@@ -12,6 +12,7 @@ import { formatJPY, formatTWD, getExchangeRate, FALLBACK_RATE } from "@/lib/exch
 import { deleteGuestExpense } from "@/lib/guest-storage";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { differenceInDays, parseISO } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -55,7 +56,9 @@ export default function HomePage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="text-4xl mb-2 animate-bounce">🗾</div>
+          <div className="mb-2 animate-bounce inline-flex">
+            <Image src="/icon-192.png" alt="旅帳" width={48} height={48} priority />
+          </div>
           <p className="text-sm text-muted-foreground">載入中...</p>
         </div>
       </div>
@@ -65,10 +68,17 @@ export default function HomePage() {
   if (!user && !isGuest) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
-        <div className="text-5xl mb-4">🗾</div>
+        <Image
+          src="/icon-192.png"
+          alt="旅帳"
+          width={72}
+          height={72}
+          className="mb-4"
+          priority
+        />
         <h1 className="text-2xl font-bold mb-2">旅帳</h1>
         <p className="text-muted-foreground text-sm mb-6 text-center">
-          日本旅遊智慧記帳 App
+          旅遊智慧記帳 App
           <br />
           AI 收據辨識 · 即時統計 · 多人記帳
         </p>

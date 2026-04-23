@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 interface StatCardProps {
   gradient: string;
-  emoji: string;
+  emoji: ReactNode;
   title: string;
   children: ReactNode;
 }

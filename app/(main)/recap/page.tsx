@@ -11,6 +11,7 @@ import { StatCard } from "@/components/recap/stat-card";
 import { ShareableCard } from "@/components/recap/shareable-card";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { Camera, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { toast } from "sonner";
 import { shareOrDownloadImage } from "@/lib/share-image";
 
@@ -171,7 +172,7 @@ export default function RecapPage() {
   if (!currentTrip) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-2 text-muted-foreground">
-        <span className="text-4xl">🗾</span>
+        <Image src="/icon-192.png" alt="旅帳" width={56} height={56} />
         <span className="text-sm">請先選擇旅程</span>
       </div>
     );
@@ -191,7 +192,19 @@ export default function RecapPage() {
       <PageHeader title="旅後回顧" showBack />
       <div className="space-y-4 px-4 pb-8">
         {/* Trip overview — compact header */}
-        <StatCard gradient="from-rose-500 to-primary" emoji="🗾" title={currentTrip.name}>
+        <StatCard
+          gradient="from-rose-500 to-primary"
+          emoji={
+            <Image
+              src="/icon-transparent.png"
+              alt=""
+              width={32}
+              height={32}
+              className="drop-shadow-sm"
+            />
+          }
+          title={currentTrip.name}
+        >
           <div className="text-sm opacity-80">
             {format(parseISO(currentTrip.start_date), "M/d")} ~ {format(parseISO(currentTrip.end_date), "M/d")}
             {" · "}{stats.count} 筆消費 · {stats.activeDays} 天

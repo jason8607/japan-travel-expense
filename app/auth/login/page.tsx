@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Mail } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [showEmail, setShowEmail] = useState(false);
@@ -88,10 +89,12 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
         <div className="text-center">
-          <div className="text-5xl mb-3">🗾</div>
+          <div className="mb-3 inline-flex">
+            <Image src="/icon-192.png" alt="旅帳" width={64} height={64} priority />
+          </div>
           <h1 className="text-2xl font-bold text-foreground">旅帳</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            日本旅遊智慧記帳
+            旅遊智慧記帳
           </p>
         </div>
 
