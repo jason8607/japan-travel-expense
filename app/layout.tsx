@@ -47,7 +47,7 @@ export default function RootLayout({
     <html
       lang="zh-Hant"
       className={`${geistSans.variable} h-full`}
-      data-theme="warm"
+      data-theme="light"
       suppressHydrationWarning
     >
       <head>

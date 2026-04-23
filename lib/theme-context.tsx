@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 
-export type Theme = "light" | "warm" | "dark";
+export type Theme = "light" | "dark";
 
 export const THEME_OPTIONS: {
   value: Theme;
@@ -24,12 +24,6 @@ export const THEME_OPTIONS: {
     swatches: ["#FFFFFF", "#2563EB", "#F1F5F9"],
   },
   {
-    value: "warm",
-    label: "日本",
-    description: "暖粉色調，溫柔療癒",
-    swatches: ["#FAF2EE", "#BC5568", "#F3D7D2"],
-  },
-  {
     value: "dark",
     label: "深色",
     description: "黑底＋靛藍，低調沉穩",
@@ -39,22 +33,21 @@ export const THEME_OPTIONS: {
 
 const THEME_BG: Record<Theme, string> = {
   light: "#FFFFFF",
-  warm: "#FAF2EE",
   dark: "#0B0B0F",
 };
 
-export const DEFAULT_THEME: Theme = "warm";
+export const DEFAULT_THEME: Theme = "light";
 const STORAGE_KEY = "theme";
 
 function isTheme(v: unknown): v is Theme {
-  return v === "light" || v === "warm" || v === "dark";
+  return v === "light" || v === "dark";
 }
 
 /**
  * Serialisable init script that sets the theme before React hydrates.
  * Inlined into <head> to avoid a flash of unstyled content.
  */
-export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('${STORAGE_KEY}');if(t!=='light'&&t!=='warm'&&t!=='dark')t='${DEFAULT_THEME}';var d=document.documentElement;d.setAttribute('data-theme',t);if(t==='dark')d.classList.add('dark');else d.classList.remove('dark');var bg=t==='light'?'#FFFFFF':t==='dark'?'#0B0B0F':'#FAF2EE';var m=document.querySelector('meta[name="theme-color"]');if(!m){m=document.createElement('meta');m.setAttribute('name','theme-color');document.head.appendChild(m);}m.setAttribute('content',bg);}catch(e){}})();`;
+export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('${STORAGE_KEY}');if(t!=='light'&&t!=='dark')t='${DEFAULT_THEME}';var d=document.documentElement;d.setAttribute('data-theme',t);if(t==='dark')d.classList.add('dark');else d.classList.remove('dark');var bg=t==='dark'?'#0B0B0F':'#FFFFFF';var m=document.querySelector('meta[name="theme-color"]');if(!m){m=document.createElement('meta');m.setAttribute('name','theme-color');document.head.appendChild(m);}m.setAttribute('content',bg);}catch(e){}})();`;
 
 function applyTheme(theme: Theme) {
   if (typeof document === "undefined") return;

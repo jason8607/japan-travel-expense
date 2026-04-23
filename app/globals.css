@@ -53,54 +53,15 @@
 /* ================================================================= */
 /* Theme system                                                      */
 /*                                                                   */
-/* Three themes live side by side. The active theme is selected via  */
+/* Two themes live side by side. The active theme is selected via    */
 /* the [data-theme] attribute on <html>, set by ThemeProvider.       */
 /*                                                                   */
-/*   - light : clean white + blue (original default)                 */
-/*   - warm  : rosy cream (Japan) — current default                  */
+/*   - light : clean white + blue — default                          */
 /*   - dark  : near-black + indigo accent                            */
 /*                                                                   */
-/* :root holds the `warm` palette as the SSR fallback so the first   */
-/* paint before hydration still feels on-brand.                      */
 /* ================================================================= */
 
 :root,
-[data-theme="warm"] {
-  /* Warm rose palette — WYSIWYG hex values, gentle rosy-cream (warm but pink-leaning) */
-  --background: #FAF2EE;
-  --foreground: #3E2E2E;
-  --card: #FFFBF8;
-  --card-foreground: #3E2E2E;
-  --popover: #FFFBF8;
-  --popover-foreground: #3E2E2E;
-  --primary: #BC5568;
-  --primary-foreground: #FDF5F4;
-  --secondary: #F0DDD7;
-  --secondary-foreground: #4A3636;
-  --muted: #F0E2DD;
-  --muted-foreground: #8E7472;
-  --accent: #F3D7D2;
-  --accent-foreground: #7A3541;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #E8D2CC;
-  --input: #E8D2CC;
-  --ring: #BC5568;
-  --chart-1: #BC5568;
-  --chart-2: oklch(0.72 0.14 30);
-  --chart-3: oklch(0.65 0.13 140);
-  --chart-4: oklch(0.7 0.15 340);
-  --chart-5: oklch(0.65 0.13 260);
-  --radius: 0.625rem;
-  --sidebar: #FAF2EE;
-  --sidebar-foreground: #3E2E2E;
-  --sidebar-primary: #BC5568;
-  --sidebar-primary-foreground: #FDF5F4;
-  --sidebar-accent: #F0E2DD;
-  --sidebar-accent-foreground: #3E2E2E;
-  --sidebar-border: #E8D2CC;
-  --sidebar-ring: #BC5568;
-}
-
 [data-theme="light"] {
   /* Light blue palette — clean white background with a calm professional blue */
   --background: #FFFFFF;
@@ -126,6 +87,7 @@
   --chart-3: oklch(0.65 0.13 150);
   --chart-4: oklch(0.70 0.15 340);
   --chart-5: oklch(0.65 0.13 40);
+  --radius: 0.625rem;
   --sidebar: #FFFFFF;
   --sidebar-foreground: #0F172A;
   --sidebar-primary: #2563EB;

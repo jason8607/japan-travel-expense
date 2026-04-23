@@ -54,7 +54,7 @@ export default function HomePage() {
 
   if (appLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="mb-2 animate-bounce inline-flex">
             <Image src="/icon-transparent.png" alt="旅帳" width={48} height={48} priority />
@@ -67,7 +67,7 @@ export default function HomePage() {
 
   if (!user && !isGuest) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4">
+      <div className="flex flex-col items-center justify-center h-full px-4">
         <Image
           src="/icon-transparent.png"
           alt="旅帳"
@@ -100,7 +100,7 @@ export default function HomePage() {
 
   if (!currentTrip) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4">
+      <div className="flex flex-col items-center justify-center h-full px-4">
         <div className="text-5xl mb-4">✈️</div>
         <h2 className="text-xl font-bold mb-2">建立你的第一趟旅程</h2>
         <p className="text-muted-foreground text-sm mb-6 text-center">
@@ -124,7 +124,7 @@ export default function HomePage() {
   const recent = expenses.slice(0, 3);
 
   return (
-    <div className="pb-24">
+    <div className="pb-4">
       {/* Guest Banner */}
       {isGuest && (
         <div className="mx-4 mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between">
@@ -224,14 +224,11 @@ export default function HomePage() {
       </section>
 
       {/* FAB */}
-      <div
-        className="fixed right-4 z-40"
-        style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
-      >
+      <div className="sticky bottom-4 z-40 flex justify-end px-4 pointer-events-none">
         <Link
           href="/records/new"
           aria-label="新增消費"
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all active:scale-95"
+          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all active:scale-95"
         >
           <Plus className="h-6 w-6" />
         </Link>

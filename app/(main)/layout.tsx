@@ -7,10 +7,10 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
-      <main className="pb-[calc(4rem+env(safe-area-inset-bottom))]">{children}</main>
+    <div className="flex h-dvh flex-col">
+      <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>
       <BottomNav />
       <GuestMigrationDialog />
-    </>
+    </div>
   );
 }

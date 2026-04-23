@@ -15,7 +15,7 @@ export function ThemeSwitcher() {
           外觀主題
         </h2>
       </div>
-      <div className="p-3 grid grid-cols-3 gap-2">
+      <div className="p-3 grid grid-cols-2 gap-2">
         {THEME_OPTIONS.map((opt) => {
           const isActive = theme === opt.value;
           return (
