@@ -152,14 +152,16 @@ export default function RecordsPage() {
       )}
 
       {/* FAB */}
-      <div className="sticky bottom-4 z-40 flex justify-end px-4 pointer-events-none">
-        <Link
-          href="/records/new"
-          aria-label="新增消費"
-          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all active:scale-95"
-        >
-          <Plus className="h-6 w-6" />
-        </Link>
+      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 flex justify-center">
+        <div className="relative w-full max-w-lg">
+          <Link
+            href="/records/new"
+            aria-label="新增消費"
+            className="pointer-events-auto absolute right-4 bottom-0 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all active:scale-95"
+          >
+            <Plus className="h-6 w-6" />
+          </Link>
+        </div>
       </div>
     </div>
   );
