@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Download } from "lucide-react";
+import { X, Download, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -9,70 +9,182 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+type Platform = "android" | "ios" | "other";
+
+function detectPlatform(): Platform {
+  if (typeof navigator === "undefined") return "other";
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/i.test(ua)) return "ios";
+  if (/Android/i.test(ua)) return "android";
+  return "other";
+}
+
+function isStandalone(): boolean {
+  if (typeof window === "undefined") return false;
+  if (window.matchMedia("(display-mode: standalone)").matches) return true;
+  // iOS Safari 專用 flag
+  if ((window.navigator as Navigator & { standalone?: boolean }).standalone) return true;
+  return false;
+}
+
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [showIosGuide, setShowIosGuide] = useState(false);
+  const [platform, setPlatform] = useState<Platform>("other");
 
   useEffect(() => {
+    if (isStandalone()) return;
+
     const dismissed = localStorage.getItem("install_prompt_dismissed");
-    if (dismissed) return;
+    if (dismissed) {
+      const ts = Number(dismissed);
+      const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+      if (!Number.isNaN(ts) && Date.now() - ts < THIRTY_DAYS) return;
+      localStorage.removeItem("install_prompt_dismissed");
+    }
+
+    setPlatform(detectPlatform());
+    setShowPrompt(true);
 
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowPrompt(true);
+    };
+
+    const installedHandler = () => {
+      setShowPrompt(false);
+      setDeferredPrompt(null);
+      localStorage.setItem("install_prompt_dismissed", String(Date.now()));
     };
 
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", installedHandler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installedHandler);
+    };
   }, []);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    try {
-      await deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-    } catch {
-      // browser cancelled or not supported
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+      } catch {
+        // browser cancelled or not supported
+      }
+      setShowPrompt(false);
+      setDeferredPrompt(null);
+      localStorage.setItem("install_prompt_dismissed", String(Date.now()));
+      return;
     }
-    setShowPrompt(false);
-    setDeferredPrompt(null);
-    localStorage.setItem("install_prompt_dismissed", "true");
+
+    // iOS / 尚未拿到 beforeinstallprompt 的瀏覽器 → 顯示教學
+    setShowIosGuide(true);
   };
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem("install_prompt_dismissed", "true");
+    setShowIosGuide(false);
+    localStorage.setItem("install_prompt_dismissed", String(Date.now()));
   };
 
   if (!showPrompt) return null;
 
   return (
-    <div
-      className="fixed left-4 right-4 z-50 mx-auto max-w-lg"
-      style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
-    >
-      <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-lg border">
-        <div className="text-2xl">📱</div>
-        <div className="flex-1">
-          <p className="text-sm font-medium">安裝到手機桌面</p>
-          <p className="text-xs text-muted-foreground">
-            隨時快速記帳，離線也能用
-          </p>
+    <>
+      <div
+        className="fixed left-4 right-4 z-50 mx-auto max-w-lg"
+        style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+      >
+        <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-lg border">
+          <div className="text-2xl">📱</div>
+          <div className="flex-1">
+            <p className="text-sm font-medium">安裝到手機桌面</p>
+            <p className="text-xs text-muted-foreground">
+              隨時快速記帳,離線也能用
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleInstall}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Download className="h-3.5 w-3.5 mr-1" />
+            安裝
+          </Button>
+          <button onClick={handleDismiss} aria-label="關閉" className="text-muted-foreground">
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <Button
-          size="sm"
-          onClick={handleInstall}
-          className="bg-primary hover:bg-primary/90"
-        >
-          <Download className="h-3.5 w-3.5 mr-1" />
-          安裝
-        </Button>
-        <button onClick={handleDismiss} aria-label="關閉" className="text-muted-foreground">
-          <X className="h-4 w-4" />
-        </button>
       </div>
-    </div>
+
+      {showIosGuide && (
+        <div
+          className="fixed inset-0 z-60 flex items-end justify-center bg-black/40 px-4 pb-6"
+          onClick={() => setShowIosGuide(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl"
+            style={{ marginBottom: "env(safe-area-inset-bottom)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-base font-semibold">加入主畫面</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {platform === "ios"
+                    ? "Safari 不支援一鍵安裝,請依下列步驟手動加入"
+                    : "請使用瀏覽器選單「加入主畫面」"}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowIosGuide(false)}
+                aria-label="關閉"
+                className="text-muted-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <ol className="space-y-3 text-sm">
+              <li className="flex items-start gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                  1
+                </span>
+                <span className="flex items-center gap-1.5 flex-wrap">
+                  點擊下方工具列的
+                  <Share className="h-4 w-4 text-primary" />
+                  <span className="font-medium">分享</span>
+                  按鈕
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                  2
+                </span>
+                <span>選擇「加入主畫面」</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                  3
+                </span>
+                <span>點右上角「新增」完成安裝</span>
+              </li>
+            </ol>
+
+            <Button
+              className="mt-5 w-full"
+              variant="outline"
+              onClick={() => setShowIosGuide(false)}
+            >
+              我知道了
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
