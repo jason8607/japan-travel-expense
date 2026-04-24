@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
 import { PAYMENT_METHODS, DEFAULT_CATEGORIES } from "@/types";
+import { PaymentIcon } from "@/components/expense/payment-icon";
 import type { Expense, CategoryItem } from "@/types";
 import { useApp } from "@/lib/context";
 import Link from "next/link";
@@ -67,8 +68,9 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
           >
             {categoryInfo?.icon} {expense.category}
           </Badge>
-          <span className="text-[10px] text-muted-foreground">
-            {paymentInfo?.icon} {expense.payment_method}
+          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+            <PaymentIcon method={expense.payment_method} size={12} />
+            {expense.payment_method}
           </span>
           {expense.split_type === "split" && (
             <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0 rounded-full font-medium">

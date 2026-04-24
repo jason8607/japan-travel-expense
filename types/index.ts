@@ -105,6 +105,7 @@ export interface CreditCard {
 }
 
 export interface OCRResult {
+  is_receipt: boolean;
   store_name_ja: string;
   store_name: string;
   date: string;

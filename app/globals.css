@@ -196,3 +196,9 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* OCR scanner laser sweep — ported verbatim from landing page mock */
+@keyframes scanSweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}

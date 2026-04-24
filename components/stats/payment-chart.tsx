@@ -3,6 +3,7 @@
 import { formatCompactJPY } from "@/lib/exchange-rate";
 import type { Expense } from "@/types";
 import { PAYMENT_METHODS } from "@/types";
+import { PaymentIcon } from "@/components/expense/payment-icon";
 import dynamic from "next/dynamic";
 
 const LazyPieChart = dynamic(
@@ -25,6 +26,7 @@ export function PaymentChart({ expenses, title = "支付方式" }: PaymentChartP
       .reduce((s, e) => s + e.amount_jpy, 0);
     return {
       name: pm.label,
+      method: pm.value,
       icon: pm.icon,
       value: amount,
       color: pm.color,
@@ -48,7 +50,10 @@ export function PaymentChart({ expenses, title = "支付方式" }: PaymentChartP
                 className="shrink-0 w-2.5 h-2.5 rounded-full"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="flex-1">{item.icon} {item.name}</span>
+              <span className="flex-1 inline-flex items-center gap-1.5">
+                <PaymentIcon method={item.method} size={14} />
+                {item.name}
+              </span>
               <span className="text-muted-foreground text-xs">
                 {item.percentage}%
               </span>

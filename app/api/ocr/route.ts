@@ -41,7 +41,18 @@ function checkGuestDailyLimit(ip: string): { allowed: boolean; count: number } {
   return { allowed: true, count: entry.count };
 }
 
-async function checkAndRecordUsage(admin: ReturnType<typeof getAdminClient>, userId: string): Promise<{ allowed: boolean; count: number }> {
+function refundGuestDailyLimit(ip: string): void {
+  const today = new Date().toISOString().slice(0, 10);
+  const entry = guestDailyMap.get(ip);
+  if (entry && entry.date === today && entry.count > 0) {
+    entry.count--;
+  }
+}
+
+async function checkAndRecordUsage(
+  admin: ReturnType<typeof getAdminClient>,
+  userId: string
+): Promise<{ allowed: boolean; count: number; rowId?: string }> {
   const today = new Date().toISOString().slice(0, 10);
 
   const { count, error: countError } = await admin
@@ -60,13 +71,27 @@ async function checkAndRecordUsage(admin: ReturnType<typeof getAdminClient>, use
     return { allowed: false, count: current };
   }
 
-  const { error: insertError } = await admin.from("ocr_usage").insert({ user_id: userId });
-  if (insertError) {
-    console.error("ocr_usage insert error:", insertError.message);
+  const { data, error: insertError } = await admin
+    .from("ocr_usage")
+    .insert({ user_id: userId })
+    .select("id")
+    .single();
+  if (insertError || !data) {
+    console.error("ocr_usage insert error:", insertError?.message);
     return { allowed: false, count: -1 };
   }
 
-  return { allowed: true, count: current + 1 };
+  return { allowed: true, count: current + 1, rowId: data.id as string };
+}
+
+async function refundUsage(
+  admin: ReturnType<typeof getAdminClient>,
+  rowId: string
+): Promise<void> {
+  const { error } = await admin.from("ocr_usage").delete().eq("id", rowId);
+  if (error) {
+    console.error("ocr_usage refund error:", error.message);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -114,8 +139,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let guestIp: string | null = null;
+    let usageRowId: string | null = null;
+    let admin: ReturnType<typeof getAdminClient> | null = null;
+
     if (isGuest) {
-      const guestIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+      guestIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
       const { allowed } = checkGuestDailyLimit(guestIp);
       if (!allowed) {
         return NextResponse.json(
@@ -124,17 +153,28 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      const admin = getAdminClient();
-      const { allowed, count } = await checkAndRecordUsage(admin, user.id);
+      admin = getAdminClient();
+      const { allowed, count, rowId } = await checkAndRecordUsage(admin, user.id);
       if (!allowed) {
         const msg = count === -1
           ? "系統忙碌中，請稍後再試"
           : `今日辨識已達上限（${DAILY_LIMIT_PER_USER} 次），明天再試`;
         return NextResponse.json({ error: msg }, { status: 429 });
       }
+      usageRowId = rowId ?? null;
     }
 
     const result = await recognizeReceipt(image, mimeType);
+
+    if (!result.is_receipt) {
+      if (admin && usageRowId) await refundUsage(admin, usageRowId);
+      if (guestIp) refundGuestDailyLimit(guestIp);
+      return NextResponse.json(
+        { error: "這張看起來不是收據，請重新拍一張日本消費收據", notReceipt: true },
+        { status: 422 }
+      );
+    }
+
     return NextResponse.json(result);
   } catch (error: unknown) {
     console.error("OCR error:", error);

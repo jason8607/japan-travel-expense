@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Camera, Loader2, Upload } from "lucide-react";
+import { Camera, Sparkles, Upload } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -53,17 +53,56 @@ export function ReceiptUpload({
               fill
               className="object-contain"
             />
+            {isProcessing && (
+              <>
+                <div
+                  className="pointer-events-none"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "100%",
+                    background:
+                      "linear-gradient(180deg, transparent 0%, rgba(209,75,61,0.3) 48%, transparent 50%)",
+                    animation: "scanSweep 2.2s linear infinite",
+                  }}
+                />
+                <div
+                  className="pointer-events-none"
+                  style={{
+                    position: "absolute",
+                    bottom: 10,
+                    left: 10,
+                    right: 10,
+                    textAlign: "center",
+                    fontSize: 10,
+                    color: "#fff",
+                    fontWeight: 600,
+                    textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "4px 10px",
+                      background: "rgba(209,75,61,0.9)",
+                      borderRadius: 999,
+                    }}
+                  >
+                    <Sparkles style={{ width: 10, height: 10 }} />
+                    辨識中…
+                  </span>
+                </div>
+              </>
+            )}
           </div>
           {isProcessing && (
-            <div className="flex flex-col items-center gap-2 mt-4 py-2">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <p className="text-sm font-medium text-primary">
-                AI 正在辨識收據...
-              </p>
-              <p className="text-xs text-muted-foreground">
-                請稍候，這可能需要幾秒鐘
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground text-center mt-3">
+              AI 正在辨識收據，請稍候幾秒
+            </p>
           )}
         </div>
       ) : (

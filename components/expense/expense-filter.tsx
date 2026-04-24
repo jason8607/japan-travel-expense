@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useCategories } from "@/hooks/use-categories";
 import { PAYMENT_METHODS } from "@/types";
+import { PaymentIcon } from "@/components/expense/payment-icon";
 import { cn } from "@/lib/utils";
 
 export interface ExpenseFilterState {
@@ -163,7 +164,10 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
                     )}
                     style={active ? { backgroundColor: pm.color } : undefined}
                   >
-                    {pm.icon} {pm.label}
+                    <span className="inline-flex items-center gap-1 align-middle">
+                      <PaymentIcon method={pm.value} size={14} />
+                      {pm.label}
+                    </span>
                   </button>
                 );
               })}

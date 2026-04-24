@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { PAYMENT_METHODS } from "@/types";
 import type { PaymentMethod } from "@/types";
+import { PaymentIcon } from "@/components/expense/payment-icon";
 
 interface PaymentChipsProps {
   value: PaymentMethod;
@@ -24,7 +25,7 @@ export function PaymentChips({ value, onChange }: PaymentChipsProps) {
               : "border-border/60 bg-card text-muted-foreground hover:bg-muted"
           )}
         >
-          <span className="text-base leading-none">{pm.icon}</span>
+          <PaymentIcon method={pm.value} size={16} />
           <span>{pm.label}</span>
         </button>
       ))}
