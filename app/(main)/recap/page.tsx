@@ -7,8 +7,11 @@ import { useCreditCards } from "@/hooks/use-credit-cards";
 import { useExpenses } from "@/hooks/use-expenses";
 import { useApp } from "@/lib/context";
 import {
+  canCopyImage,
   canShareImage,
+  copyImageToClipboard,
   downloadImage,
+  isTouchDevice,
   shareImageNative,
 } from "@/lib/share-image";
 import { format, parseISO } from "date-fns";
@@ -20,8 +23,21 @@ import {
   Share2,
 } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
+const ICON_SRC = "/icon-transparent.png";
+
+async function loadIconDataUrl(): Promise<string> {
+  const res = await fetch(ICON_SRC);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
 
 interface CardConfig {
   key: string;
@@ -43,6 +59,25 @@ export default function RecapPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [iconDataUrl, setIconDataUrl] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [touch, setTouch] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setTouch(isTouchDevice());
+    let cancelled = false;
+    loadIconDataUrl()
+      .then((url) => {
+        if (!cancelled) setIconDataUrl(url);
+      })
+      .catch((err) => {
+        console.error("Failed to preload icon:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const stats = useMemo(() => {
     if (!currentTrip || expenses.length === 0) return null;
@@ -224,7 +259,15 @@ export default function RecapPage() {
     const node = cardRefs.current[idx];
     if (!node) return null;
     const { toPng } = await import("html-to-image");
-    const dataUrl = await toPng(node, { pixelRatio: 2, quality: 1 });
+    // iOS Safari workaround: html-to-image sometimes skips embedded images
+    // on the first pass, so run it a few times before using the result.
+    await toPng(node, { pixelRatio: 2, quality: 1, cacheBust: true });
+    await toPng(node, { pixelRatio: 2, quality: 1, cacheBust: true });
+    const dataUrl = await toPng(node, {
+      pixelRatio: 2,
+      quality: 1,
+      cacheBust: true,
+    });
     const res = await fetch(dataUrl);
     return await res.blob();
   }
@@ -255,6 +298,17 @@ export default function RecapPage() {
     try {
       const blob = await captureBlob();
       if (!blob) return;
+      // Desktop: native share UI is awkward, copy to clipboard instead.
+      if (!isTouchDevice()) {
+        if (canCopyImage()) {
+          await copyImageToClipboard(blob);
+          toast.success("圖片已複製到剪貼簿");
+        } else {
+          downloadImage(blob, `${currentTrip.name}-${current.title}.png`);
+          toast.success("已下載圖片（瀏覽器不支援複製到剪貼簿）");
+        }
+        return;
+      }
       const result = await shareImageNative(
         blob,
         `${currentTrip.name}-${current.title}.png`,
@@ -301,7 +355,13 @@ export default function RecapPage() {
   }
 
   const total = wrapped.cards.length;
-  const shareSupported = canShareImage();
+  const touch = isTouchDevice();
+  // Mobile uses native share; desktop falls back to clipboard copy.
+  const shareSupported = touch ? canShareImage() : canCopyImage();
+  const shareLabel = touch ? "分享" : "複製圖片";
+  const shareDisabledHint = touch
+    ? "此裝置不支援原生分享"
+    : "此瀏覽器不支援複製圖片";
   const CARD_WIDTH = 340;
 
   return (
@@ -386,6 +446,7 @@ export default function RecapPage() {
                     note={c.note}
                     index={i}
                     total={total}
+                    iconSrc={iconDataUrl ?? ICON_SRC}
                   />
                 </div>
               ))}
@@ -431,14 +492,14 @@ export default function RecapPage() {
               onClick={handleShare}
               disabled={sharing || downloading || !shareSupported}
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60"
-              title={shareSupported ? undefined : "此裝置不支援原生分享"}
+              title={shareSupported ? undefined : shareDisabledHint}
             >
               {sharing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Share2 className="h-4 w-4" />
               )}
-              分享
+              {shareLabel}
             </button>
           </div>
         </div>

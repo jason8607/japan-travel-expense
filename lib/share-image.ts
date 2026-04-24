@@ -1,6 +1,18 @@
-function isTouchDevice(): boolean {
+export function isTouchDevice(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(pointer: coarse)").matches;
+}
+
+export function canCopyImage(): boolean {
+  if (typeof navigator === "undefined") return false;
+  if (typeof ClipboardItem === "undefined") return false;
+  return typeof navigator.clipboard?.write === "function";
+}
+
+export async function copyImageToClipboard(blob: Blob): Promise<void> {
+  const type = blob.type || "image/png";
+  const item = new ClipboardItem({ [type]: blob });
+  await navigator.clipboard.write([item]);
 }
 
 export function downloadImage(blob: Blob, filename: string): void {

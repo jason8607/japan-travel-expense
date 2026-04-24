@@ -20,11 +20,12 @@ interface WrappedCardProps {
   note?: string;
   index: number;
   total: number;
+  iconSrc: string;
 }
 
 export const WrappedCard = forwardRef<HTMLDivElement, WrappedCardProps>(
   function WrappedCard(
-    { tripName, year, title, big, sub, note, index, total },
+    { tripName, year, title, big, sub, note, index, total, iconSrc },
     ref
   ) {
     const gradient = GRADIENTS[index % GRADIENTS.length];
@@ -85,10 +86,11 @@ export const WrappedCard = forwardRef<HTMLDivElement, WrappedCardProps>(
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/icon-transparent.png"
+              src={iconSrc}
               alt=""
               width={40}
               height={40}
+              crossOrigin="anonymous"
               style={{ display: "block" }}
             />
           </div>
