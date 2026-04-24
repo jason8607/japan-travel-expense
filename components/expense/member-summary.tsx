@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { ExpenseCard } from "./expense-card";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
-import { ChevronDown, ChevronUp, User, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Expense, TripMember } from "@/types";
 
@@ -19,13 +19,9 @@ interface MemberBreakdown {
   name: string;
   avatar: string;
   avatarUrl: string | null;
-  personalJpy: number;
-  personalTwd: number;
-  splitShareJpy: number;
-  splitShareTwd: number;
   totalJpy: number;
   totalTwd: number;
-  ownedExpenses: Expense[];
+  items: Expense[];
 }
 
 function getExpenseOwner(expense: Expense): string | "split" {
@@ -51,18 +47,18 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
       const personalJpy = ownedExpenses.reduce((s, e) => s + e.amount_jpy, 0);
       const personalTwd = ownedExpenses.reduce((s, e) => s + e.amount_twd, 0);
 
+      const items = [...ownedExpenses, ...splitExps].sort((a, b) =>
+        b.expense_date.localeCompare(a.expense_date)
+      );
+
       return {
         userId: member.user_id,
         name: member.profile?.display_name || "成員",
         avatar: member.profile?.avatar_emoji || "🧑",
         avatarUrl: member.profile?.avatar_url || null,
-        personalJpy,
-        personalTwd,
-        splitShareJpy: perJpy,
-        splitShareTwd: perTwd,
         totalJpy: personalJpy + perJpy,
         totalTwd: personalTwd + perTwd,
-        ownedExpenses,
+        items,
       };
     });
 
@@ -109,18 +105,11 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
               <UserAvatar avatarUrl={m.avatarUrl} avatarEmoji={m.avatar} size="md" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-foreground">{m.name}</p>
-                <div className="flex items-center gap-3 mt-0.5">
-                  {m.personalJpy > 0 && (
-                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <User className="h-3 w-3" />個人 {formatJPY(m.personalJpy)}
-                    </span>
-                  )}
-                  {m.splitShareJpy > 0 && (
-                    <span className="flex items-center gap-1 text-[11px] text-primary">
-                      <Users className="h-3 w-3" />均分 {formatJPY(m.splitShareJpy)}
-                    </span>
-                  )}
-                </div>
+                {m.items.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    個人消費 {m.items.length} 筆
+                  </p>
+                )}
               </div>
               <div className="text-right shrink-0">
                 <p className="font-bold text-sm text-foreground">
@@ -142,14 +131,14 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
             {isExpanded && (
               <div className={cn(
                 "border-t border-border/60 px-4 pb-4 space-y-2",
-                m.ownedExpenses.length > 0 ? "pt-3" : "pt-4"
+                m.items.length > 0 ? "pt-3" : "pt-4"
               )}>
-                {m.ownedExpenses.length > 0 ? (
+                {m.items.length > 0 ? (
                   <>
                     <p className="text-xs text-muted-foreground font-medium mb-2">
-                      個人消費（{m.ownedExpenses.length} 筆）
+                      個人消費（{m.items.length} 筆）
                     </p>
-                    {m.ownedExpenses.map((expense) => (
+                    {m.items.map((expense) => (
                       <ExpenseCard key={expense.id} expense={expense} onDelete={onDelete} />
                     ))}
                   </>
