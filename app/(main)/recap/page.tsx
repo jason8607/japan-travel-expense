@@ -1,27 +1,48 @@
 "use client";
 
 import { PageHeader } from "@/components/layout/page-header";
-import { ShareableCard } from "@/components/recap/shareable-card";
-import { StatCard } from "@/components/recap/stat-card";
+import { WrappedCard } from "@/components/recap/wrapped-card";
 import { useCategories } from "@/hooks/use-categories";
 import { useCreditCards } from "@/hooks/use-credit-cards";
 import { useExpenses } from "@/hooks/use-expenses";
 import { useApp } from "@/lib/context";
-import { formatJPY } from "@/lib/exchange-rate";
-import { shareOrDownloadImage } from "@/lib/share-image";
-import { differenceInDays, format, parseISO } from "date-fns";
-import { Camera, Loader2 } from "lucide-react";
+import {
+  canShareImage,
+  downloadImage,
+  shareImageNative,
+} from "@/lib/share-image";
+import { format, parseISO } from "date-fns";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Download,
+  Loader2,
+  Share2,
+} from "lucide-react";
 import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+interface CardConfig {
+  key: string;
+  title: string;
+  big: string;
+  sub: string;
+  note?: string;
+}
+
 export default function RecapPage() {
-  const { currentTrip, tripMembers, loading: ctxLoading } = useApp();
+  const { currentTrip, loading: ctxLoading } = useApp();
   const { expenses, loading } = useExpenses();
   const { categories } = useCategories();
   const { cards } = useCreditCards();
-  const shareRef = useRef<HTMLDivElement>(null);
-  const [capturing, setCapturing] = useState(false);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const dragStartXRef = useRef<number | null>(null);
+  const [idx, setIdx] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const stats = useMemo(() => {
     if (!currentTrip || expenses.length === 0) return null;
@@ -29,56 +50,56 @@ export default function RecapPage() {
     const totalJpy = expenses.reduce((s, e) => s + e.amount_jpy, 0);
     const totalTwd = expenses.reduce((s, e) => s + e.amount_twd, 0);
 
-    const tripStart = parseISO(currentTrip.start_date);
-    const tripEnd = parseISO(currentTrip.end_date);
-    const totalDays = differenceInDays(tripEnd, tripStart) + 1;
-    const dailyAvgJpy = Math.round(totalJpy / totalDays);
-
     const dateSet = new Set(expenses.map((e) => e.expense_date));
     const activeDays = dateSet.size;
 
-    // Top expense
     const topExpense = expenses.reduce((max, e) =>
       e.amount_jpy > max.amount_jpy ? e : max
     );
 
-    // Category breakdown — top category
-    const catMap = new Map<string, number>();
+    const catAmount = new Map<string, number>();
+    const catCount = new Map<string, number>();
     for (const e of expenses) {
-      catMap.set(e.category, (catMap.get(e.category) || 0) + e.amount_jpy);
+      catAmount.set(e.category, (catAmount.get(e.category) || 0) + e.amount_jpy);
+      catCount.set(e.category, (catCount.get(e.category) || 0) + 1);
     }
-    const topCatEntry = [...catMap.entries()].sort((a, b) => b[1] - a[1])[0];
+    const topCatEntry = [...catAmount.entries()].sort((a, b) => b[1] - a[1])[0];
     const topCatInfo = categories.find((c) => c.value === topCatEntry?.[0]);
 
-    // Most visited store (by frequency)
     const storeFreq = new Map<string, number>();
     for (const e of expenses) {
       const name = e.store_name?.trim();
       if (name) storeFreq.set(name, (storeFreq.get(name) || 0) + 1);
     }
-    const topStoreEntry = [...storeFreq.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+    const topStoreEntry =
+      [...storeFreq.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
 
-    // Daily spending — max & min day
     const dailyMap = new Map<string, number>();
     for (const e of expenses) {
-      dailyMap.set(e.expense_date, (dailyMap.get(e.expense_date) || 0) + e.amount_jpy);
+      dailyMap.set(
+        e.expense_date,
+        (dailyMap.get(e.expense_date) || 0) + e.amount_jpy
+      );
     }
-    const dailyEntries = [...dailyMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-
+    const dailyEntries = [...dailyMap.entries()].sort((a, b) =>
+      a[0].localeCompare(b[0])
+    );
     const maxDay = dailyEntries.reduce(
-      (max, [date, amount]) => (amount > max.amount ? { date, amount } : max),
+      (max, [date, amount]) =>
+        amount > max.amount ? { date, amount } : max,
       { date: "", amount: 0 }
     );
-    const minDay = dailyEntries.reduce(
-      (min, [date, amount]) => (amount < min.amount ? { date, amount } : min),
-      { date: dailyEntries[0]?.[0] ?? "", amount: dailyEntries[0]?.[1] ?? 0 }
-    );
 
-    // Credit card cashback (capped at card limits)
-    const creditExpenses = expenses.filter((e) => e.payment_method === "信用卡");
+    const creditExpenses = expenses.filter(
+      (e) => e.payment_method === "信用卡"
+    );
     let cappedCashback = 0;
+    let topCashbackCardName: string | null = null;
+    let topCashbackAmount = 0;
     for (const card of cards) {
-      const cardExps = creditExpenses.filter((e) => e.credit_card_id === card.id);
+      const cardExps = creditExpenses.filter(
+        (e) => e.credit_card_id === card.id
+      );
       let cardCb = 0;
       if (card.plans && card.plans.length > 0) {
         for (const plan of card.plans) {
@@ -91,72 +112,164 @@ export default function RecapPage() {
         const twd = cardExps.reduce((s, e) => s + e.amount_twd, 0);
         cardCb = Math.round((twd * card.cashback_rate) / 100);
       }
-      cappedCashback += card.cashback_limit > 0 ? Math.min(cardCb, card.cashback_limit) : cardCb;
+      const capped =
+        card.cashback_limit > 0 ? Math.min(cardCb, card.cashback_limit) : cardCb;
+      cappedCashback += capped;
+      if (capped > topCashbackAmount) {
+        topCashbackAmount = capped;
+        topCashbackCardName = card.name;
+      }
     }
-
-    // Per-member stats (multi-member only)
-    const memberStats = tripMembers.length > 1
-      ? tripMembers.map((m) => {
-          const personalExps = expenses.filter(
-            (e) => e.split_type === "personal" && (e.owner_id || e.paid_by) === m.user_id
-          );
-          const biggestExp = personalExps.length > 0
-            ? personalExps.reduce((max, e) => (e.amount_jpy > max.amount_jpy ? e : max))
-            : null;
-          return {
-            userId: m.user_id,
-            name: m.profile?.display_name || "成員",
-            emoji: m.profile?.avatar_emoji || "🧑",
-            count: personalExps.length,
-            biggestExp,
-          };
-        })
-      : [];
 
     return {
       totalJpy,
       totalTwd,
       count: expenses.length,
       activeDays,
-      dailyAvgJpy,
       topExpense,
       topCategory: topCatInfo
-        ? { icon: topCatInfo.icon, label: topCatInfo.label, amount: topCatEntry[1] }
+        ? {
+            icon: topCatInfo.icon,
+            label: topCatInfo.label,
+            amount: topCatEntry[1],
+            count: catCount.get(topCatEntry[0]) ?? 0,
+          }
         : null,
-      topStore: topStoreEntry ? { name: topStoreEntry[0], count: topStoreEntry[1] } : null,
+      topStore: topStoreEntry
+        ? { name: topStoreEntry[0], count: topStoreEntry[1] }
+        : null,
       maxDay,
-      minDay,
       totalCashback: cappedCashback,
-      memberStats,
+      topCashbackCardName,
     };
-  }, [expenses, currentTrip, categories, cards, tripMembers]);
+  }, [expenses, currentTrip, categories, cards]);
 
-  async function handleCapture() {
-    const card = shareRef.current;
-    if (!card || !currentTrip) return;
-    setCapturing(true);
-    try {
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(card, {
-        pixelRatio: 2,
-        quality: 1,
-      });
+  const wrapped = useMemo(() => {
+    if (!stats || !currentTrip) return null;
+    const tripStart = parseISO(currentTrip.start_date);
+    const year = format(tripStart, "yyyy");
 
-      // Convert data URL to blob
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
+    const configs: CardConfig[] = [
+      {
+        key: "total",
+        title: "總花費",
+        big: `¥${stats.totalJpy.toLocaleString()}`,
+        sub: `≈ NT$${stats.totalTwd.toLocaleString()}`,
+        note: `共 ${stats.count} 筆消費 · ${stats.activeDays} 天`,
+      },
+    ];
 
-      const result = await shareOrDownloadImage(
-        blob,
-        `${currentTrip.name}-回顧.png`,
-        `${currentTrip.name} 旅後回顧`
+    if (stats.topCategory) {
+      const pct = Math.round(
+        (stats.topCategory.amount / stats.totalJpy) * 100
       );
-      if (result === "downloaded") toast.success("圖片已儲存");
+      configs.push({
+        key: "fav",
+        title: "最愛類別",
+        big: `${stats.topCategory.icon} ${stats.topCategory.label}`,
+        sub: `共 ${stats.topCategory.count} 筆 · 佔 ${pct}%`,
+        note: `花了 ¥${stats.topCategory.amount.toLocaleString()}`,
+      });
+    }
+
+    if (stats.topStore) {
+      configs.push({
+        key: "store",
+        title: "最常造訪",
+        big: stats.topStore.name,
+        sub: `去了 ${stats.topStore.count} 次`,
+        note: "旅途中的日常風景",
+      });
+    }
+
+    configs.push({
+      key: "big",
+      title: "最貴一筆",
+      big: `¥${stats.topExpense.amount_jpy.toLocaleString()}`,
+      sub: stats.topExpense.title,
+      note: [
+        stats.topExpense.store_name,
+        format(parseISO(stats.topExpense.expense_date), "yyyy/M/d"),
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    });
+
+    if (stats.totalCashback > 0) {
+      configs.push({
+        key: "card",
+        title: "信用卡回饋",
+        big: `NT$${stats.totalCashback.toLocaleString()}`,
+        sub: stats.topCashbackCardName
+          ? `主要來自 ${stats.topCashbackCardName}`
+          : "刷卡幫你省下的錢",
+        note: "省下一頓晚餐的錢",
+      });
+    }
+
+    if (stats.maxDay.date) {
+      configs.push({
+        key: "day",
+        title: "最豪氣一日",
+        big: `¥${stats.maxDay.amount.toLocaleString()}`,
+        sub: format(parseISO(stats.maxDay.date), "yyyy/M/d"),
+        note: "最揮霍的一天",
+      });
+    }
+
+    return { year, cards: configs };
+  }, [stats, currentTrip]);
+
+  async function captureBlob(): Promise<Blob | null> {
+    const node = cardRefs.current[idx];
+    if (!node) return null;
+    const { toPng } = await import("html-to-image");
+    const dataUrl = await toPng(node, { pixelRatio: 2, quality: 1 });
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  }
+
+  async function handleDownload() {
+    if (!wrapped || !currentTrip) return;
+    const current = wrapped.cards[idx];
+    setDownloading(true);
+    try {
+      const blob = await captureBlob();
+      if (!blob) return;
+      downloadImage(blob, `${currentTrip.name}-${current.title}.png`);
+      toast.success("圖片已儲存");
     } catch (err) {
-      console.error("Recap capture error:", err);
-      toast.error(`圖片產生失敗：${err instanceof Error ? err.message : "未知錯誤"}`);
+      console.error("Download error:", err);
+      toast.error(
+        `下載失敗：${err instanceof Error ? err.message : "未知錯誤"}`
+      );
     } finally {
-      setCapturing(false);
+      setDownloading(false);
+    }
+  }
+
+  async function handleShare() {
+    if (!wrapped || !currentTrip) return;
+    const current = wrapped.cards[idx];
+    setSharing(true);
+    try {
+      const blob = await captureBlob();
+      if (!blob) return;
+      const result = await shareImageNative(
+        blob,
+        `${currentTrip.name}-${current.title}.png`,
+        `${currentTrip.name} · ${current.title}`
+      );
+      if (result === "unsupported") {
+        toast.error("此裝置不支援原生分享，請改用下載");
+      }
+    } catch (err) {
+      console.error("Share error:", err);
+      toast.error(
+        `分享失敗：${err instanceof Error ? err.message : "未知錯誤"}`
+      );
+    } finally {
+      setSharing(false);
     }
   }
 
@@ -178,7 +291,7 @@ export default function RecapPage() {
     );
   }
 
-  if (!stats) {
+  if (!stats || !wrapped) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-2 text-muted-foreground">
         <span className="text-4xl">📝</span>
@@ -187,166 +300,148 @@ export default function RecapPage() {
     );
   }
 
+  const total = wrapped.cards.length;
+  const shareSupported = canShareImage();
+  const CARD_WIDTH = 340;
+
   return (
     <>
       <PageHeader title="旅後回顧" showBack />
-      <div className="space-y-4 px-4 pb-8">
-        {/* Trip overview — compact header */}
-        <StatCard
-          gradient="from-rose-500 to-primary"
-          emoji={
-            <Image
-              src="/icon-transparent.png"
-              alt=""
-              width={32}
-              height={32}
-              className="drop-shadow-sm"
-            />
-          }
-          title={currentTrip.name}
-        >
-          <div className="text-sm opacity-80">
-            {format(parseISO(currentTrip.start_date), "M/d")} ~ {format(parseISO(currentTrip.end_date), "M/d")}
-            {" · "}{stats.count} 筆消費 · {stats.activeDays} 天
+      <div className="px-4 pb-8">
+        <div className="text-center pt-2 pb-6">
+          <div className="text-[11px] tracking-[0.2em] text-muted-foreground">
+            WRAPPED · {wrapped.year}
           </div>
-          <div className="text-3xl font-bold mt-2">¥{stats.totalJpy.toLocaleString()}</div>
-          <div className="text-sm opacity-70">≈ NT${stats.totalTwd.toLocaleString()}</div>
-        </StatCard>
+          <div className="text-lg font-bold mt-1">{currentTrip.name}</div>
+        </div>
 
-        {/* Top category */}
-        {stats.topCategory && (
-          <StatCard gradient="from-amber-500 to-orange-500" emoji="🏆" title="最愛類別">
-            <div className="flex items-center gap-2">
-              <span className="text-3xl">{stats.topCategory.icon}</span>
-              <div>
-                <div className="text-xl font-bold">{stats.topCategory.label}</div>
-                <div className="text-sm opacity-80">
-                  花了 {formatJPY(stats.topCategory.amount)}
-                </div>
-              </div>
-            </div>
-          </StatCard>
-        )}
-
-        {/* Most visited store */}
-        {stats.topStore && (
-          <StatCard gradient="from-emerald-500 to-green-500" emoji="🏪" title="最常造訪">
-            <div className="text-xl font-bold">{stats.topStore.name}</div>
-            <div className="text-sm opacity-80">共去了 {stats.topStore.count} 次</div>
-          </StatCard>
-        )}
-
-        {/* Biggest single expense */}
-        <StatCard gradient="from-rose-500 to-pink-500" emoji="💸" title="最貴的一筆">
-          <div className="text-xl font-bold">{stats.topExpense.title}</div>
-          <div className="text-2xl font-bold mt-1">
-            {formatJPY(stats.topExpense.amount_jpy)}
-          </div>
-          <div className="text-xs opacity-70 mt-1">
-            {stats.topExpense.store_name && `${stats.topExpense.store_name} · `}
-            {format(parseISO(stats.topExpense.expense_date), "M/d")}
-          </div>
-        </StatCard>
-
-        {/* Max vs min day */}
-        {stats.maxDay.date && stats.minDay.date && stats.maxDay.date !== stats.minDay.date && (
-          <StatCard gradient="from-amber-500 to-primary/90" emoji="📅" title="最花 vs 最省的一天">
-            <div className="flex gap-4">
-              <div className="flex-1 rounded-xl bg-card/15 p-3">
-                <div className="text-xs opacity-80 mb-1">最花</div>
-                <div className="text-lg font-bold">
-                  {format(parseISO(stats.maxDay.date), "M/d")}
-                </div>
-                <div className="text-sm opacity-90">
-                  {formatJPY(stats.maxDay.amount)}
-                </div>
-              </div>
-              <div className="flex-1 rounded-xl bg-card/15 p-3">
-                <div className="text-xs opacity-80 mb-1">最省</div>
-                <div className="text-lg font-bold">
-                  {format(parseISO(stats.minDay.date), "M/d")}
-                </div>
-                <div className="text-sm opacity-90">
-                  {formatJPY(stats.minDay.amount)}
-                </div>
-              </div>
-            </div>
-          </StatCard>
-        )}
-
-        {/* Credit card cashback */}
-        {stats.totalCashback > 0 && (
-          <StatCard gradient="from-primary/90 to-rose-600" emoji="💳" title="信用卡回饋">
-            <div className="text-3xl font-bold">
-              NT${stats.totalCashback.toLocaleString()}
-            </div>
-            <div className="text-sm opacity-80">刷卡幫你省下的錢</div>
-          </StatCard>
-        )}
-
-        {/* Per-member fun stats */}
-        {stats.memberStats.length > 0 && (
-          <StatCard gradient="from-rose-500 to-red-500" emoji="👥" title="成員趣味統計">
-            <div className="space-y-3">
-              {stats.memberStats.map((m) => (
-                <div key={m.userId} className="rounded-xl bg-card/15 p-3">
-                  <div className="font-bold">
-                    {m.emoji} {m.name}
-                  </div>
-                  <div className="text-xs opacity-80 mt-1">
-                    個人消費 {m.count} 筆
-                    {m.biggestExp && (
-                      <>
-                        {" "}· 最大筆：{m.biggestExp.title}{" "}
-                        {formatJPY(m.biggestExp.amount_jpy)}
-                      </>
-                    )}
-                  </div>
+        <div className="flex flex-col items-center gap-5">
+          <div
+            className="relative overflow-hidden rounded-[28px]"
+            style={{ width: CARD_WIDTH }}
+          >
+            <div
+              className="flex"
+              onPointerDown={(e) => {
+                if (e.pointerType === "mouse" && e.button !== 0) return;
+                dragStartXRef.current = e.clientX;
+                setIsDragging(true);
+                e.currentTarget.setPointerCapture(e.pointerId);
+              }}
+              onPointerMove={(e) => {
+                if (dragStartXRef.current === null) return;
+                const dx = e.clientX - dragStartXRef.current;
+                let offset = dx;
+                if (idx === 0 && dx > 0) offset = dx * 0.3;
+                if (idx === total - 1 && dx < 0) offset = dx * 0.3;
+                setDragOffset(offset);
+              }}
+              onPointerUp={(e) => {
+                if (dragStartXRef.current === null) return;
+                const threshold = CARD_WIDTH * 0.2;
+                if (dragOffset < -threshold && idx < total - 1) {
+                  setIdx((i) => i + 1);
+                } else if (dragOffset > threshold && idx > 0) {
+                  setIdx((i) => i - 1);
+                }
+                setDragOffset(0);
+                setIsDragging(false);
+                dragStartXRef.current = null;
+                try {
+                  e.currentTarget.releasePointerCapture(e.pointerId);
+                } catch {}
+              }}
+              onPointerCancel={(e) => {
+                setDragOffset(0);
+                setIsDragging(false);
+                dragStartXRef.current = null;
+                try {
+                  e.currentTarget.releasePointerCapture(e.pointerId);
+                } catch {}
+              }}
+              style={{
+                touchAction: "pan-y",
+                userSelect: "none",
+                cursor: isDragging ? "grabbing" : "grab",
+                transform: `translateX(${-idx * CARD_WIDTH + dragOffset}px)`,
+                transition: isDragging
+                  ? "none"
+                  : "transform 400ms cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
+            >
+              {wrapped.cards.map((c, i) => (
+                <div
+                  key={c.key}
+                  style={{ width: CARD_WIDTH, flexShrink: 0 }}
+                >
+                  <WrappedCard
+                    ref={(el) => {
+                      cardRefs.current[i] = el;
+                    }}
+                    tripName={currentTrip.name}
+                    year={wrapped.year}
+                    title={c.title}
+                    big={c.big}
+                    sub={c.sub}
+                    note={c.note}
+                    index={i}
+                    total={total}
+                  />
                 </div>
               ))}
             </div>
-          </StatCard>
-        )}
+            {idx > 0 && (
+              <button
+                type="button"
+                onClick={() => setIdx((i) => Math.max(0, i - 1))}
+                aria-label="上一張"
+                className="absolute bottom-5 left-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-colors hover:bg-white/30 active:bg-white/40"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            )}
+            {idx < total - 1 && (
+              <button
+                type="button"
+                onClick={() => setIdx((i) => Math.min(total - 1, i + 1))}
+                aria-label="下一張"
+                className="absolute bottom-5 right-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-colors hover:bg-white/30 active:bg-white/40"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            )}
+          </div>
 
-        {/* Capture button */}
-        <button
-          onClick={handleCapture}
-          disabled={capturing}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/90 py-3 text-sm font-medium text-white shadow-sm transition-colors disabled:opacity-60"
-        >
-          {capturing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Camera className="h-4 w-4" />
-          )}
-          {capturing ? "產生中..." : "儲存旅行卡片"}
-        </button>
-
-        <p className="text-center text-[11px] text-muted-foreground">
-          {currentTrip.name} · 旅後回顧
-        </p>
-      </div>
-
-      {/* Off-screen shareable card for capture */}
-      <div className="fixed -left-[9999px] top-0" aria-hidden="true">
-        <ShareableCard
-          ref={shareRef}
-          tripName={currentTrip.name}
-          startDate={format(parseISO(currentTrip.start_date), "yyyy/M/d")}
-          endDate={format(parseISO(currentTrip.end_date), "yyyy/M/d")}
-          totalJpy={stats.totalJpy}
-          totalTwd={stats.totalTwd}
-          count={stats.count}
-          activeDays={stats.activeDays}
-          dailyAvgJpy={stats.dailyAvgJpy}
-          topCategoryIcon={stats.topCategory?.icon ?? "📦"}
-          topCategoryLabel={stats.topCategory?.label ?? "其他"}
-          topStoreName={stats.topStore?.name ?? null}
-          topStoreCount={stats.topStore?.count ?? 0}
-          topExpenseTitle={stats.topExpense.title}
-          topExpenseJpy={stats.topExpense.amount_jpy}
-          totalCashback={stats.totalCashback}
-        />
+          <div className="flex w-full max-w-[340px] gap-3">
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={downloading || sharing}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted disabled:opacity-60"
+            >
+              {downloading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              下載圖片
+            </button>
+            <button
+              type="button"
+              onClick={handleShare}
+              disabled={sharing || downloading || !shareSupported}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60"
+              title={shareSupported ? undefined : "此裝置不支援原生分享"}
+            >
+              {sharing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Share2 className="h-4 w-4" />
+              )}
+              分享
+            </button>
+          </div>
+        </div>
       </div>
     </>
   );

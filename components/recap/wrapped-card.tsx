@@ -149,7 +149,7 @@ export const WrappedCard = forwardRef<HTMLDivElement, WrappedCardProps>(
               letterSpacing: "0.1em",
             }}
           >
-            旅帳 · TABICHŌ
+            旅帳 · Travelio
           </div>
         </div>
 
