@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, Users, ArrowRight, Image as ImageIcon } from "lucide-react";
+import { Trash2, Users, ArrowRight, Image as ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
@@ -38,7 +38,14 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
     : null;
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow">
+    <div className="relative flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow">
+      {/* 整張卡點擊即為編輯 */}
+      <Link
+        href={`/records/new?edit=${expense.id}`}
+        aria-label={`編輯消費：${expense.title}`}
+        className="absolute inset-0 rounded-2xl z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      />
+
       {/* Avatar */}
       <UserAvatar
         avatarUrl={expense.profile?.avatar_url}
@@ -47,7 +54,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
       />
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 pointer-events-none">
         <p className="font-semibold text-sm text-foreground truncate">{expense.title}</p>
         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
           <Badge
@@ -76,8 +83,12 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
           )}
           {expense.receipt_image_url && (
             <button
-              onClick={() => setShowReceipt(true)}
-              className="inline-flex items-center gap-0.5 text-[10px] text-primary bg-primary/10 px-1.5 py-0 rounded-full font-medium hover:bg-primary/15 transition-colors"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowReceipt(true);
+              }}
+              className="pointer-events-auto relative z-10 inline-flex items-center gap-0.5 text-[10px] text-primary bg-primary/10 px-1.5 py-0 rounded-full font-medium hover:bg-primary/15 transition-colors"
             >
               <ImageIcon className="h-2.5 w-2.5" />收據
             </button>
@@ -102,7 +113,7 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
       </div>
 
       {/* Amount */}
-      <div className="shrink-0 text-right">
+      <div className="shrink-0 text-right pointer-events-none">
         <p className="font-bold text-sm text-foreground">{formatJPY(expense.amount_jpy)}</p>
         <p className="text-[10px] text-muted-foreground">
           {formatTWD(expense.amount_twd)}
@@ -110,25 +121,22 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
       </div>
 
       {/* Actions */}
-      <div className="shrink-0 flex items-center">
-        <Link
-          href={`/records/new?edit=${expense.id}`}
-          aria-label="編輯消費"
-          className="min-h-11 min-w-11 flex items-center justify-center text-muted-foreground/60 hover:text-primary transition-colors"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </Link>
-        {onDelete && (
+      {onDelete && (
+        <div className="shrink-0 flex items-center relative z-10">
           <button
+            type="button"
             aria-label="刪除消費"
-            onClick={() => setShowDeleteDialog(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteDialog(true);
+            }}
             disabled={deleting}
             className="min-h-11 min-w-11 flex items-center justify-center text-muted-foreground/60 hover:text-red-500 transition-colors disabled:opacity-50"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {expense.receipt_image_url && (
         <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
