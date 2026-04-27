@@ -93,6 +93,49 @@ export async function PUT(req: NextRequest) {
   }
 }
 
+export async function DELETE(req: NextRequest) {
+  try {
+    const user = await getRequestUser(req);
+    if (!user) {
+      return NextResponse.json({ error: "未登入" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "缺少旅程 ID" }, { status: 400 });
+    }
+
+    const admin = getAdminClient();
+
+    const { data: member } = await admin
+      .from("trip_members")
+      .select("role")
+      .eq("trip_id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!member || member.role !== "owner") {
+      return NextResponse.json({ error: "只有旅程建立者可以刪除" }, { status: 403 });
+    }
+
+    // Related rows (trip_members, expenses, expense_items, trip_schedule)
+    // are removed automatically via ON DELETE CASCADE.
+    const { error } = await admin.from("trips").delete().eq("id", id);
+
+    if (error) {
+      console.error("trips DELETE error:", error.message);
+      return NextResponse.json({ error: "刪除旅程失敗" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("trips DELETE error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req);

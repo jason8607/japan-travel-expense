@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export default function NewTripPage() {
-  const { user, setCurrentTrip } = useApp();
+  const { user, setCurrentTrip, refreshTrips } = useApp();
   const router = useRouter();
 
   const [name, setName] = useState("");
@@ -43,6 +43,7 @@ export default function NewTripPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "建立失敗");
 
+      await refreshTrips();
       setCurrentTrip(data.trip);
       toast.success("旅程已建立！");
       router.push("/");

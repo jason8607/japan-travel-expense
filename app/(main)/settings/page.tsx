@@ -27,6 +27,7 @@ import {
   Copy,
   Pencil,
   X,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarPicker } from "@/components/ui/avatar-picker";
@@ -75,6 +76,10 @@ export default function SettingsPage() {
 
   // Remove member dialog
   const [removeTarget, setRemoveTarget] = useState<{ userId: string; name: string } | null>(null);
+
+  // Delete trip dialog
+  const [deleteTripTarget, setDeleteTripTarget] = useState<Trip | null>(null);
+  const [deletingTrip, setDeletingTrip] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -181,6 +186,33 @@ export default function SettingsPage() {
       toast.error(message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteTrip = async () => {
+    if (!deleteTripTarget) return;
+    const target = deleteTripTarget;
+    setDeletingTrip(true);
+    try {
+      const res = await fetch(`/api/trips?id=${target.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "刪除失敗");
+
+      const remaining = await refreshTrips();
+      if (currentTrip?.id === target.id) {
+        const next = remaining.find((t: Trip) => t.id !== target.id) || null;
+        setCurrentTrip(next);
+      }
+      setEditingTrip(false);
+      setDeleteTripTarget(null);
+      toast.success(`已刪除「${target.name}」`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "刪除失敗";
+      toast.error(message);
+    } finally {
+      setDeletingTrip(false);
     }
   };
 
@@ -549,6 +581,18 @@ export default function SettingsPage() {
               >
                 {saving ? "儲存中..." : "儲存變更"}
               </Button>
+              {isOwner && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDeleteTripTarget(currentTrip)}
+                  className="w-full h-10 rounded-lg text-sm text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200"
+                  disabled={saving}
+                >
+                  <Trash2 className="h-4 w-4 mr-1.5" />
+                  刪除此旅程
+                </Button>
+              )}
             </div>
           ) : (
             <div className="px-4 py-3">
@@ -708,6 +752,38 @@ export default function SettingsPage() {
               onClick={handleRemoveMember}
             >
               確定移除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!deleteTripTarget}
+        onOpenChange={(open) => {
+          if (!open && !deletingTrip) setDeleteTripTarget(null);
+        }}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>確定要刪除此旅程？</DialogTitle>
+            <DialogDescription>
+              將永久刪除「{deleteTripTarget?.name}」以及其所有消費紀錄、行程安排與成員資料，此操作無法復原。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteTripTarget(null)}
+              disabled={deletingTrip}
+            >
+              取消
+            </Button>
+            <Button
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={handleDeleteTrip}
+              disabled={deletingTrip}
+            >
+              {deletingTrip ? "刪除中..." : "確定刪除"}
             </Button>
           </DialogFooter>
         </DialogContent>
