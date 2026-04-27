@@ -256,7 +256,7 @@ export function CreditCardManager() {
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="例：台新 Richart、玉山 UBear"
+              placeholder="例：台新 Richart、國泰 Cube"
               className="h-10 rounded-lg text-sm"
             />
           </div>
