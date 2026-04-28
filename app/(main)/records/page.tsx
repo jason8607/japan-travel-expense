@@ -814,7 +814,7 @@ export default function RecordsPage() {
 
   return (
     <div className="relative flex h-full flex-col">
-      <div className="flex-1 min-h-0 overflow-y-auto" style={{ paddingBottom: 32 }}>
+      <div className="flex-1 min-h-0 overflow-y-auto" style={{ paddingBottom: 96 }}>
         {/* Page head */}
         <div
           style={{
@@ -1080,16 +1080,13 @@ export default function RecordsPage() {
               categories={categories}
             />
           )}
-          <Link
-            href="/records/new"
-            aria-label="新增消費"
-            className="ed-fab"
-            style={{ position: "static", margin: "24px auto 0" }}
-          >
-            ＋
-          </Link>
         </div>
       </div>
+
+      {/* FAB */}
+      <Link href="/records/new" aria-label="新增消費" className="ed-fab">
+        ＋
+      </Link>
 
       {/* Detail bottom sheet */}
       <ExpenseDetailSheet

@@ -183,7 +183,7 @@ function NewExpenseInner() {
 
   return (
     <div className="relative flex h-full flex-col">
-      <div className="flex-1 min-h-0 overflow-y-auto" style={{ paddingBottom: 110 }}>
+      <div className="flex-1 min-h-0 overflow-y-auto" style={{ paddingBottom: 32 }}>
         {/* NavBack */}
         <div
           style={{
@@ -531,29 +531,21 @@ function NewExpenseInner() {
             }}
           />
         </div>
-      </div>
 
-      {/* Bottom submit button */}
-      <div
-        style={{
-          position: "absolute",
-          left: 24,
-          right: 24,
-          bottom: 28,
-          zIndex: 10,
-        }}
-      >
-        <button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="ed-btn-primary"
-          style={{
-            opacity: canSubmit ? 1 : 0.4,
-            cursor: canSubmit ? "pointer" : "default",
-          }}
-        >
-          {submitting ? "儲存中…" : editId ? "更　新　→" : "記　　錄　→"}
-        </button>
+        {/* Submit button */}
+        <div style={{ padding: "24px 24px 0" }}>
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="ed-btn-primary"
+            style={{
+              opacity: canSubmit ? 1 : 0.4,
+              cursor: canSubmit ? "pointer" : "default",
+            }}
+          >
+            {submitting ? "儲存中…" : editId ? "更　新　→" : "記　　錄　→"}
+          </button>
+        </div>
       </div>
     </div>
   );
