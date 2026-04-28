@@ -1,5 +1,6 @@
 "use client";
 
+import { ExpenseDetailSheet } from "@/components/expense/expense-detail-sheet";
 import { useCategories } from "@/hooks/use-categories";
 import { useExpenses } from "@/hooks/use-expenses";
 import { useApp } from "@/lib/context";
@@ -20,19 +21,24 @@ function EditorialRow({
   expense,
   index,
   categories,
-  onDelete,
+  onOpen,
 }: {
   expense: Expense;
   index: number;
   categories: CategoryItem[];
-  onDelete: (id: string) => void;
+  onOpen: (e: Expense) => void;
 }) {
   const sub = [categoryLabel(expense.category, categories), expense.store_name]
     .filter(Boolean)
     .join(" · ");
   const date = format(parseISO(expense.expense_date), "MM/dd");
   return (
-    <div className="ed-row group">
+    <button
+      onClick={() => onOpen(expense)}
+      className="ed-row"
+      style={{ width: "100%", textAlign: "left", background: "transparent", cursor: "pointer" }}
+      type="button"
+    >
       <div className="ed-row-num">{String(index + 1).padStart(2, "0")}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="ed-row-tt truncate">{expense.title}</div>
@@ -42,26 +48,7 @@ function EditorialRow({
         <div className="ed-row-amt">{formatJPY(expense.amount_jpy)}</div>
         <div className="ed-row-dt">{date}</div>
       </div>
-      <button
-        onClick={() => onDelete(expense.id)}
-        aria-label="刪除"
-        className="ed-mono"
-        style={{
-          marginLeft: 8,
-          background: "transparent",
-          border: 0,
-          color: "var(--ed-muted)",
-          fontSize: 11,
-          cursor: "pointer",
-          opacity: 0,
-          transition: "opacity 0.15s",
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
-      >
-        ×
-      </button>
-    </div>
+    </button>
   );
 }
 
@@ -70,6 +57,7 @@ export default function RecordsPage() {
   const { expenses, loading, error, refresh } = useExpenses();
   const { categories } = useCategories();
   const [activeDay, setActiveDay] = useState<number | "all">("all");
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
   const tripStart = currentTrip ? parseISO(currentTrip.start_date) : null;
   const tripEnd = currentTrip ? parseISO(currentTrip.end_date) : null;
@@ -249,7 +237,7 @@ export default function RecordsPage() {
                 expense={e}
                 index={i}
                 categories={categories}
-                onDelete={handleDelete}
+                onOpen={setSelectedExpense}
               />
             ))
           )}
@@ -260,6 +248,14 @@ export default function RecordsPage() {
       <Link href="/records/new" aria-label="新增消費" className="ed-fab">
         ＋
       </Link>
+
+      {/* Detail bottom sheet */}
+      <ExpenseDetailSheet
+        expense={selectedExpense}
+        categories={categories}
+        onClose={() => setSelectedExpense(null)}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

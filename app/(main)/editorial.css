@@ -1,7 +1,8 @@
-/* Editorial design tokens — scoped to .editorial-app so they don't override
-   the project's globals.css tokens (which other shadcn components rely on). */
+/* Editorial design tokens — defined on :root so portal-rendered components
+   (e.g. Sheet) can resolve the variables. Prefixed with --ed- so they don't
+   collide with the project's existing globals.css tokens. */
 
-.editorial-app {
+:root {
   --ed-paper: #FBF7EE;
   --ed-cream: #F4EFE6;
   --ed-ink: #1A1815;
@@ -13,7 +14,9 @@
   --ed-paper-deep: #EFE8D4;
   --ed-receipt: #F7F2E6;
   --ed-accent: #C8371D;
+}
 
+.editorial-app {
   background: var(--ed-paper);
   color: var(--ed-ink);
   font-family: var(--font-noto-serif-tc), 'Noto Serif TC', serif;
@@ -156,6 +159,12 @@
 .ed-cat-lb { font-size: 11px; margin-top: 2px; }
 
 /* Amount display for entry */
+/* Detail bottom sheet — constrained to app shell width on desktop. */
+[data-slot="sheet-content"][data-side="bottom"].ed-detail-sheet {
+  max-width: 32rem; /* matches the app's max-w-lg shell */
+  margin-inline: auto;
+}
+
 .ed-amount-display {
   padding: 18px 20px;
   background: var(--ed-ink);

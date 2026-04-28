@@ -1,15 +1,18 @@
 "use client";
 
+import { ExpenseDetailSheet } from "@/components/expense/expense-detail-sheet";
 import { useCategories } from "@/hooks/use-categories";
 import { useCreditCards } from "@/hooks/use-credit-cards";
 import { useExpenses } from "@/hooks/use-expenses";
 import { calculateTotalCashback } from "@/lib/cashback";
 import { useApp } from "@/lib/context";
 import { FALLBACK_RATE, formatJPY, formatTWD, getExchangeRate } from "@/lib/exchange-rate";
+import { deleteGuestExpense } from "@/lib/guest-storage";
 import { differenceInDays, format, parseISO } from "date-fns";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import type { CategoryItem, Expense } from "@/types";
 
 function categoryLabel(cat: string, categories: CategoryItem[]) {
@@ -20,17 +23,24 @@ function EditorialRow({
   expense,
   index,
   categories,
+  onOpen,
 }: {
   expense: Expense;
   index: number;
   categories: CategoryItem[];
+  onOpen: (e: Expense) => void;
 }) {
   const sub = [categoryLabel(expense.category, categories), expense.store_name]
     .filter(Boolean)
     .join(" · ");
   const date = format(parseISO(expense.expense_date), "MM/dd");
   return (
-    <Link href={`/records?expense=${expense.id}`} className="ed-row block">
+    <button
+      onClick={() => onOpen(expense)}
+      className="ed-row"
+      style={{ width: "100%", textAlign: "left", background: "transparent", cursor: "pointer" }}
+      type="button"
+    >
       <div className="ed-row-num">{String(index + 1).padStart(2, "0")}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="ed-row-tt truncate">{expense.title}</div>
@@ -40,16 +50,34 @@ function EditorialRow({
         <div className="ed-row-amt">{formatJPY(expense.amount_jpy)}</div>
         <div className="ed-row-dt">{date}</div>
       </div>
-    </Link>
+    </button>
   );
 }
 
 export default function HomePage() {
   const { user, profile, currentTrip, isGuest, enterGuestMode, loading: appLoading } = useApp();
-  const { expenses, loading, todayTotal, totalJpy, totalTwd } = useExpenses();
+  const { expenses, loading, todayTotal, totalJpy, totalTwd, refresh } = useExpenses();
   const { cards } = useCreditCards();
   const { categories } = useCategories();
   const [rate, setRate] = useState<number>(FALLBACK_RATE);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+
+  const handleDelete = async (id: string) => {
+    try {
+      if (isGuest) {
+        deleteGuestExpense(id);
+      } else {
+        const res = await fetch(`/api/expenses?id=${id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "刪除失敗");
+      }
+      toast.success("已刪除");
+      await refresh();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "刪除失敗";
+      toast.error(message);
+    }
+  };
 
   useEffect(() => {
     getExchangeRate().then(setRate).catch(() => {});
@@ -416,7 +444,13 @@ export default function HomePage() {
             </div>
           ) : (
             recent.map((e, i) => (
-              <EditorialRow key={e.id} expense={e} index={i} categories={categories} />
+              <EditorialRow
+                key={e.id}
+                expense={e}
+                index={i}
+                categories={categories}
+                onOpen={setSelectedExpense}
+              />
             ))
           )}
         </div>
@@ -426,6 +460,14 @@ export default function HomePage() {
       <Link href="/records/new" aria-label="新增消費" className="ed-fab">
         ＋
       </Link>
+
+      {/* Detail bottom sheet */}
+      <ExpenseDetailSheet
+        expense={selectedExpense}
+        categories={categories}
+        onClose={() => setSelectedExpense(null)}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }
