@@ -1,23 +1,35 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Camera, Sparkles, Upload } from "lucide-react";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface ReceiptUploadProps {
   onImageSelected: (base64: string, mimeType: string, file: File) => void;
   isProcessing: boolean;
+  error?: string | null;
+  onReset?: () => void;
+  resetSignal?: number;
 }
 
 export function ReceiptUpload({
   onImageSelected,
   isProcessing,
+  error,
+  onReset,
+  resetSignal,
 }: ReceiptUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+
+  // Allow parent to clear the preview (e.g. user pressed "移除").
+  useEffect(() => {
+    if (resetSignal === undefined) return;
+    setPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+  }, [resetSignal]);
 
   const handleFile = (file: File) => {
     const reader = new FileReader();
@@ -42,104 +54,176 @@ export function ReceiptUpload({
     if (file) handleFile(file);
   };
 
+  const handleRemove = () => {
+    setPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+    onReset?.();
+  };
+
+  const showErrorActions = !!error && !isProcessing && !!preview;
+
   return (
-    <div className="space-y-4">
-      {preview ? (
-        <div className="relative mx-4 rounded-2xl border bg-card p-4 shadow-sm">
-          <div className="relative w-full aspect-3/4 rounded-xl overflow-hidden bg-muted">
+    <div>
+      <div className="ed-scan-frame">
+        <span className="ed-scan-corner tl" />
+        <span className="ed-scan-corner tr" />
+        <span className="ed-scan-corner bl" />
+        <span className="ed-scan-corner br" />
+
+        {preview ? (
+          <div className="ed-scan-receipt">
             <Image
               src={preview}
               alt="收據"
               fill
-              className="object-contain"
+              sizes="(max-width: 512px) 80vw, 320px"
+              style={{ objectFit: "cover" }}
             />
-            {isProcessing && (
-              <>
-                <div
-                  className="pointer-events-none"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: "100%",
-                    background:
-                      "linear-gradient(180deg, transparent 0%, rgba(209,75,61,0.3) 48%, transparent 50%)",
-                    animation: "scanSweep 2.2s linear infinite",
-                  }}
-                />
-                <div
-                  className="pointer-events-none"
-                  style={{
-                    position: "absolute",
-                    bottom: 10,
-                    left: 10,
-                    right: 10,
-                    textAlign: "center",
-                    fontSize: 10,
-                    color: "#fff",
-                    fontWeight: 600,
-                    textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                      padding: "4px 10px",
-                      background: "rgba(209,75,61,0.9)",
-                      borderRadius: 999,
-                    }}
-                  >
-                    <Sparkles style={{ width: 10, height: 10 }} />
-                    辨識中…
-                  </span>
-                </div>
-              </>
-            )}
+            {isProcessing ? <div className="ed-scan-laser" /> : null}
           </div>
-          {isProcessing && (
-            <p className="text-xs text-muted-foreground text-center mt-3">
-              AI 正在辨識收據，請稍候幾秒
-            </p>
-          )}
+        ) : (
+          <div style={{ padding: "0 18px" }}>
+            <div className="ed-scan-empty-cap">N°01 · OCR INTAKE</div>
+            <div className="ed-scan-empty-h">
+              拍 一 張<br />
+              <span className="vermilion">收 據</span>
+            </div>
+            <div className="ed-scan-empty-sub">
+              交給 AI，剩下交給直覺
+            </div>
+          </div>
+        )}
+
+        {isProcessing ? (
+          <div className="ed-scan-status">
+            <span className="dot" />
+            辨識中
+          </div>
+        ) : null}
+      </div>
+
+      {/* Error banner */}
+      {showErrorActions ? (
+        <div
+          style={{
+            margin: "16px 24px 0",
+            padding: "12px 14px",
+            background: "var(--ed-cream)",
+            border: "1px solid var(--ed-vermillion)",
+          }}
+        >
+          <div
+            className="ed-mono"
+            style={{
+              fontSize: 10,
+              letterSpacing: 2,
+              color: "var(--ed-vermillion)",
+              marginBottom: 4,
+            }}
+          >
+            辨 識 失 敗
+          </div>
+          <div
+            className="ed-serif"
+            style={{
+              fontSize: 13,
+              color: "var(--ed-ink-soft)",
+              fontStyle: "italic",
+              lineHeight: 1.5,
+            }}
+          >
+            {error}
+          </div>
+        </div>
+      ) : null}
+
+      {isProcessing ? (
+        <p
+          className="ed-mono"
+          style={{
+            margin: "20px 24px 0",
+            fontSize: 10,
+            letterSpacing: 2,
+            color: "var(--ed-muted)",
+            textAlign: "center",
+          }}
+        >
+          AI 正在閱讀收據，約需數秒…
+        </p>
+      ) : showErrorActions ? (
+        <div
+          style={{
+            padding: "16px 24px 0",
+            display: "flex",
+            gap: 12,
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="ed-btn-ghost"
+            style={{
+              flex: 1,
+              padding: "14px 0",
+              fontSize: 13,
+              letterSpacing: 4,
+              fontWeight: 600,
+            }}
+          >
+            移 除 圖 片
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="ed-btn-primary"
+            style={{
+              flex: 1,
+              padding: "14px 0",
+              fontSize: 13,
+              letterSpacing: 4,
+            }}
+          >
+            重 新 上 傳
+          </button>
         </div>
       ) : (
-        <div className="mx-4 rounded-2xl border-2 border-dashed border-border bg-muted p-10">
-          <div className="flex flex-col items-center gap-4">
-            <div className="rounded-full bg-primary/10 p-4">
-              <Camera className="h-8 w-8 text-primary" />
-            </div>
-            <div className="text-center">
-              <p className="font-medium">拍照或上傳收據圖片</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                支援 JPG、PNG 格式
-              </p>
-            </div>
-          </div>
+        <div
+          style={{
+            padding: "20px 24px 0",
+            display: "flex",
+            gap: 12,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="ed-btn-ghost"
+            style={{
+              flex: 1,
+              padding: "14px 0",
+              fontSize: 13,
+              letterSpacing: 4,
+              fontWeight: 600,
+            }}
+          >
+            拍 　 照
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="ed-btn-primary"
+            style={{
+              flex: 1,
+              padding: "14px 0",
+              fontSize: 13,
+              letterSpacing: 4,
+            }}
+          >
+            上 傳 圖 片
+          </button>
         </div>
       )}
-
-      <div className="flex gap-3 px-4">
-        <Button
-          onClick={() => cameraInputRef.current?.click()}
-          variant="outline"
-          className="flex-1 h-11"
-          disabled={isProcessing}
-        >
-          <Camera className="h-4 w-4 mr-2" />
-          拍照
-        </Button>
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          className="flex-1 h-11 bg-primary hover:bg-primary/90"
-          disabled={isProcessing}
-        >
-          <Upload className="h-4 w-4 mr-2" />
-          上傳圖片
-        </Button>
-      </div>
 
       <input
         ref={cameraInputRef}

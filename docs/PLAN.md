@@ -14,10 +14,11 @@
 > 順序按使用頻率，OCR 掃描最高優先。
 > ⚠️ 結算入口已從 `/summary` 搬到 records 第 4 個 tab，`/summary` 之後可瘦身為純圖表 + CSV。
 
-- [ ] **`/scan` OCR 掃描頁**
-      參考設計稿 12（空狀態）/ 13（辨識中）/ 14（OCR 確認）。
-      重點：黑色背景 + 朱紅角框 + 雷射動畫 + 收據卡片旋轉 -1.2°。
-      OCR 完成後跳轉 `/records/new?fromScan=...` 預填表單
+- [x] **`/scan` OCR 掃描頁**
+      ✅ 黑底 + 朱紅角框 + 雷射 sweep + 收據卡片 rotate(-1.2deg)
+      ✅ Masthead（kicker + 大標 + 朱紅句點）三段狀態切換（intake / 辨識中 / 確認）
+      ✅ ReceiptConfirm 換成 ed-item / ed-chip / ed-chip-sm pattern
+      ⚠️ `?fromScan=` 預填 records/new 仍未做（屬決策事項 #2，待決定後再處理）
 - [ ] **`/stats` 統計頁**
       donut chart + week bars 已有編輯風範例（`lib/screens-stats.jsx`）
 - [ ] **`/settings` 設定頁**

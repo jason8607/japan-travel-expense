@@ -88,6 +88,9 @@ UI 文字使用繁體中文，CSS class 與變數使用 kebab-case 英文。
 | Bottom Nav | 全域底部導航 | `<BottomNav data-style="editorial">` |
 | Member Card | Records 按成員 view | `.ed-member-card` |
 | Settle View | Records 結算 view | 含總花費卡 / 最小轉帳 / 品項歸屬，資料來自 `lib/settlement.ts` |
+| Scan Frame | /scan 黑底相機框 | `.ed-scan-frame` `.ed-scan-corner` `.ed-scan-empty-h` |
+| Scan Receipt | 辨識中收據卡片 | `.ed-scan-receipt`（rotate -1.2°） `.ed-scan-laser` `.ed-scan-status` |
+| Scan Confirm Item | OCR 確認逐品項 | `.ed-item` `.ed-item-num` `.ed-item-name` `.ed-chip-sm` |
 
 按鈕：`.ed-btn-primary`（朱紅實心）、`.ed-btn-ghost`（透明黑邊）、`.ed-input-line`（單行 input 黑底線）
 
@@ -99,10 +102,10 @@ UI 文字使用繁體中文，CSS class 與變數使用 kebab-case 英文。
 - `app/(main)/page.tsx` — HomePage
 - `app/(main)/records/page.tsx` — 4 view tabs（按日期 / 按類別 / 按成員 / 結算）
 - `app/(main)/records/new/page.tsx` — 含信用卡、備註、日期
+- `app/(main)/scan/page.tsx` + `components/scan/*` — 黑底相機框 / 雷射 sweep / 收據旋轉 -1.2°
 - `components/expense/expense-detail-sheet.tsx`
 
 ❌ 尚未套用（仍是舊 shadcn 風格）：
-- `app/(main)/scan/`
 - `app/(main)/stats/`
 - `app/(main)/settings/`
 - `app/(main)/summary/`

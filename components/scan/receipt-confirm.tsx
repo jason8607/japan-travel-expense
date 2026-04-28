@@ -1,16 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import type { Category, OCRResult, PaymentMethod } from "@/types";
-import { ChevronDown, Plus, Trash2, Users } from "lucide-react";
-import { PaymentChips } from "@/components/expense/payment-chips";
-import { CreditCardPicker } from "@/components/expense/credit-card-picker";
 import { useCategories } from "@/hooks/use-categories";
-import { useState } from "react";
+import { useCreditCards } from "@/hooks/use-credit-cards";
 import { useApp } from "@/lib/context";
-import { cn } from "@/lib/utils";
-import { UserAvatar } from "@/components/ui/user-avatar";
+import type { Category, OCRResult, PaymentMethod } from "@/types";
+import Link from "next/link";
+import { useState } from "react";
+
+const PAYMENTS: PaymentMethod[] = ["現金", "信用卡", "PayPay", "Suica"];
 
 export interface ReceiptItemWithOwner {
   _id: string;
@@ -48,25 +45,32 @@ export function ReceiptConfirm({
 }: ReceiptConfirmProps) {
   const { user, profile: myProfile, tripMembers } = useApp();
   const { categories: CATEGORIES } = useCategories();
+  const { cards: creditCards } = useCreditCards();
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    initialResult.payment_method === "cash" ? "現金"
-    : initialResult.payment_method === "credit_card" ? "信用卡"
-    : initialResult.payment_method === "paypay" ? "PayPay"
-    : initialResult.payment_method === "suica" ? "Suica"
-    : "現金"
+    initialResult.payment_method === "cash"
+      ? "現金"
+      : initialResult.payment_method === "credit_card"
+        ? "信用卡"
+        : initialResult.payment_method === "paypay"
+          ? "PayPay"
+          : initialResult.payment_method === "suica"
+            ? "Suica"
+            : "現金",
   );
 
   const [creditCardId, setCreditCardId] = useState<string | null>(null);
   const [creditCardPlanId, setCreditCardPlanId] = useState<string | null>(null);
 
+  const defaultCategory = (CATEGORIES[0]?.value ?? "餐飲") as Category;
   const [items, setItems] = useState<ReceiptItemWithOwner[]>(
     initialResult.items.map((item) => ({
       ...item,
       _id: crypto.randomUUID(),
       owner_id: null,
       split_type: "personal" as const,
-      category: "餐飲" as Category,
-    }))
+      category: defaultCategory,
+    })),
   );
 
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
@@ -77,7 +81,7 @@ export function ReceiptConfirm({
 
   const updateItem = (index: number, field: string, value: string | number) => {
     setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     );
   };
 
@@ -98,28 +102,32 @@ export function ReceiptConfirm({
         tax_type: "reduced",
         owner_id: null,
         split_type: "personal" as const,
-        category: "餐飲" as Category,
+        category: defaultCategory,
       },
     ]);
   };
 
-  const setItemOwner = (index: number, ownerId: string | null, splitType: "personal" | "split") => {
+  const setItemOwner = (
+    index: number,
+    ownerId: string | null,
+    splitType: "personal" | "split",
+  ) => {
     setItems((prev) =>
       prev.map((item, i) =>
-        i === index ? { ...item, owner_id: ownerId, split_type: splitType } : item
-      )
+        i === index ? { ...item, owner_id: ownerId, split_type: splitType } : item,
+      ),
     );
   };
 
   const setAllOwner = (ownerId: string | null, splitType: "personal" | "split") => {
     setItems((prev) =>
-      prev.map((item) => ({ ...item, owner_id: ownerId, split_type: splitType }))
+      prev.map((item) => ({ ...item, owner_id: ownerId, split_type: splitType })),
     );
   };
 
   const setItemCategory = (index: number, cat: Category) => {
     setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, category: cat } : item))
+      prev.map((item, i) => (i === index ? { ...item, category: cat } : item)),
     );
     setExpandedCategoryId(null);
   };
@@ -129,181 +137,223 @@ export function ReceiptConfirm({
   };
 
   const hasMultipleMembers = tripMembers.length > 1;
+  const totalJpy = items.reduce(
+    (sum, it) => sum + it.quantity * it.unit_price,
+    0,
+  );
+
+  const allSameCat =
+    items.length > 0 &&
+    items.every((it) => it.category === items[0].category)
+      ? items[0].category
+      : null;
+  const allSameOwner =
+    items.length > 0 &&
+    items.every(
+      (it) =>
+        it.split_type === items[0].split_type && it.owner_id === items[0].owner_id,
+    )
+      ? items[0]
+      : null;
 
   return (
-    <div className="space-y-4 px-4">
-      {/* Store info */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="font-bold text-lg">{storeName}</h3>
-          <span className="text-sm text-muted-foreground">{date}</span>
+    <div>
+      {/* Store info — magazine masthead */}
+      <div style={{ padding: "0 24px" }}>
+        <div className="ed-kicker">N°02 · RECEIPT VERIFIED</div>
+        <div
+          className="ed-serif"
+          style={{
+            fontSize: 28,
+            fontWeight: 700,
+            lineHeight: 1.05,
+            letterSpacing: 1,
+            marginTop: 4,
+          }}
+        >
+          {storeName || "未指定店家"}
         </div>
-        <p className="text-xs text-muted-foreground">{storeNameJa}</p>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: 6,
+            paddingBottom: 10,
+            borderBottom: "1px solid var(--ed-ink)",
+          }}
+        >
+          <span
+            className="ed-serif"
+            style={{
+              fontSize: 12,
+              fontStyle: "italic",
+              color: "var(--ed-muted)",
+            }}
+          >
+            {storeNameJa || "—"}
+          </span>
+          <span
+            className="ed-mono"
+            style={{
+              fontSize: 10,
+              letterSpacing: 1.5,
+              color: "var(--ed-muted)",
+            }}
+          >
+            {date || "—"}
+          </span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            marginTop: 12,
+          }}
+        >
+          <span className="ed-kicker">合計</span>
+          <span
+            className="ed-serif"
+            style={{ fontSize: 24, fontWeight: 700, letterSpacing: -1 }}
+          >
+            ¥{totalJpy.toLocaleString()}
+          </span>
+        </div>
       </div>
 
-      {/* Quick assign buttons */}
-      <div className="rounded-2xl border bg-card p-3 shadow-sm space-y-2.5">
-        <p className="text-xs text-muted-foreground font-medium">快速指定全部品項</p>
-        {/* Quick assign category */}
-        <div>
-          <p className="text-[10px] text-muted-foreground mb-1.5">分類</p>
-          <div className="flex flex-wrap gap-1.5">
+      {/* Quick assign — only when there are members */}
+      {hasMultipleMembers ? (
+        <div className="ed-scan-section">
+          <div className="ed-scan-section-h">
+            一鍵指定 <span className="meta">適用全部品項</span>
+          </div>
+          <div className="ed-kicker" style={{ marginBottom: 6 }}>歸屬</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => setAllOwner(null, "personal")}
+              className={
+                "ed-chip" +
+                (allSameOwner?.split_type === "personal" &&
+                allSameOwner?.owner_id === null
+                  ? " on"
+                  : "")
+              }
+            >
+              全部我的
+            </button>
+            {tripMembers
+              .filter((m) => m.user_id !== user?.id)
+              .map((m) => (
+                <button
+                  key={m.user_id}
+                  type="button"
+                  onClick={() => setAllOwner(m.user_id, "personal")}
+                  className={
+                    "ed-chip" +
+                    (allSameOwner?.split_type === "personal" &&
+                    allSameOwner?.owner_id === m.user_id
+                      ? " on"
+                      : "")
+                  }
+                >
+                  全部 {m.profile?.display_name || "成員"} 的
+                </button>
+              ))}
+            <button
+              type="button"
+              onClick={() => setAllOwner(null, "split")}
+              className={
+                "ed-chip" +
+                (allSameOwner?.split_type === "split" ? " on" : "")
+              }
+            >
+              全部均分
+            </button>
+          </div>
+
+          <div className="ed-kicker" style={{ marginTop: 12, marginBottom: 6 }}>
+            分類
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.value}
                 type="button"
                 onClick={() => setAllCategory(cat.value)}
-                className={cn(
-                  "flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium transition-all",
-                  items.every((it) => it.category === cat.value)
-                    ? "border-primary/30 bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:bg-muted"
-                )}
+                className={"ed-chip" + (allSameCat === cat.value ? " on" : "")}
               >
-                <span className="text-sm">{cat.icon}</span>
-                {cat.label}
+                {cat.icon} {cat.label}
               </button>
             ))}
           </div>
         </div>
-        {/* Quick assign owner */}
-        {hasMultipleMembers && (
-          <div>
-            <p className="text-[10px] text-muted-foreground mb-1.5">歸屬</p>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => setAllOwner(null, "personal")}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium bg-primary/10 border-primary/25 text-primary"
-              >
-                <UserAvatar avatarUrl={myProfile?.avatar_url} avatarEmoji={myProfile?.avatar_emoji} size="xs" />
-                全部我的
-              </button>
-              {tripMembers
-                .filter((m) => m.user_id !== user?.id)
-                .map((m) => (
-                  <button
-                    key={m.user_id}
-                    type="button"
-                    onClick={() => setAllOwner(m.user_id, "personal")}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-border text-muted-foreground hover:bg-muted"
-                  >
-                    <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
-                    全部{m.profile?.display_name || "成員"}的
-                  </button>
-                ))}
-              <button
-                type="button"
-                onClick={() => setAllOwner(null, "split")}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-amber-300 text-amber-800 bg-amber-50"
-              >
-                <Users className="h-3 w-3" /> 全部均分
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      ) : null}
 
-      {/* Items with per-item owner */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="font-bold">購買明細</h4>
-          <button
-            onClick={addItem}
-            className="flex items-center gap-1 text-sm text-primary"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            新增品項
-          </button>
+      {/* Items */}
+      <div className="ed-scan-section">
+        <div className="ed-scan-section-h">
+          購買明細
+          <span className="meta">{items.length} 項</span>
         </div>
 
-        <div className="space-y-3">
-          {items.map((item, index) => {
-            const currentCat = CATEGORIES.find((c) => c.value === item.category) || CATEGORIES[0];
-            const isExpanded = expandedCategoryId === item._id;
+        {items.map((item, index) => {
+          const currentCat =
+            CATEGORIES.find((c) => c.value === item.category) ?? CATEGORIES[0];
+          const isExpanded = expandedCategoryId === item._id;
+          const lineTotal = item.quantity * item.unit_price;
 
-            return (
-              <div key={item._id} className="rounded-xl bg-muted overflow-hidden">
-                <div className="flex items-start gap-3 p-3">
-                  <div className="shrink-0 w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-bold">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <Input
-                      value={item.name}
-                      onChange={(e) => updateItem(index, "name", e.target.value)}
-                      className="h-7 text-sm font-medium border-0 bg-transparent p-0 focus-visible:ring-0"
-                    />
-                    <p className="text-[10px] text-muted-foreground">
-                      {item.name_ja} · {item.quantity} x ¥
-                      {item.unit_price.toLocaleString()} (
-                      {(item.tax_rate * 100).toFixed(0)}%)
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="font-bold text-sm">
-                      ¥{(item.quantity * item.unit_price).toLocaleString()}
-                    </span>
-                    <button
-                      onClick={() => removeItem(index)}
-                      className="p-1 text-muted-foreground hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+          return (
+            <div key={item._id} className="ed-item">
+              <div className="ed-item-head">
+                <div className="ed-item-num">
+                  {String(index + 1).padStart(2, "0")}
                 </div>
+                <input
+                  className="ed-item-name"
+                  value={item.name}
+                  onChange={(e) => updateItem(index, "name", e.target.value)}
+                />
+                <div className="ed-item-amt">
+                  ¥{lineTotal.toLocaleString()}
+                </div>
+              </div>
+              <div className="ed-item-meta">
+                {[
+                  item.name_ja || null,
+                  `${item.quantity} × ¥${item.unit_price.toLocaleString()}`,
+                  `稅 ${(item.tax_rate * 100).toFixed(0)}%`,
+                ]
+                  .filter(Boolean)
+                  .join("　·　")}
+              </div>
 
-                {/* Per-item category selector */}
-                <div className="px-3 pb-2">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedCategoryId(isExpanded ? null : item._id)}
-                    className={cn(
-                      "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
-                      "border border-border hover:border-border"
-                    )}
-                  >
-                    <span className="text-sm leading-none">{currentCat.icon}</span>
-                    {currentCat.label}
-                    <ChevronDown className={cn("h-3 w-3 text-muted-foreground transition-transform", isExpanded && "rotate-180")} />
-                  </button>
-                  {isExpanded && (
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      {CATEGORIES.map((cat) => (
-                        <button
-                          key={cat.value}
-                          type="button"
-                          onClick={() => setItemCategory(index, cat.value)}
-                          className={cn(
-                            "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
-                            item.category === cat.value
-                              ? "bg-primary/15 text-primary"
-                              : "bg-card text-muted-foreground hover:bg-muted"
-                          )}
-                        >
-                          <span className="text-sm leading-none">{cat.icon}</span>
-                          {cat.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              <div className="ed-item-actions">
+                {/* Category chip */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedCategoryId(isExpanded ? null : item._id)
+                  }
+                  className="ed-chip-sm"
+                >
+                  {currentCat?.icon} {currentCat?.label}
+                </button>
 
                 {/* Per-item owner chips */}
-                {hasMultipleMembers && (
-                  <div className="flex flex-wrap gap-1 px-3 pb-2.5">
+                {hasMultipleMembers ? (
+                  <>
                     <button
                       type="button"
                       onClick={() => setItemOwner(index, null, "personal")}
-                      className={cn(
-                        "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
-                        item.split_type === "personal" && item.owner_id === null
-                          ? "bg-primary/15 text-primary"
-                          : "bg-card text-muted-foreground hover:text-muted-foreground"
-                      )}
+                      className={
+                        "ed-chip-sm" +
+                        (item.split_type === "personal" && item.owner_id === null
+                          ? " on"
+                          : "")
+                      }
                     >
-                      <UserAvatar avatarUrl={myProfile?.avatar_url} avatarEmoji={myProfile?.avatar_emoji} size="xs" />
-                      我
+                      {myProfile?.avatar_emoji || "👤"} 我
                     </button>
                     {tripMembers
                       .filter((m) => m.user_id !== user?.id)
@@ -311,87 +361,265 @@ export function ReceiptConfirm({
                         <button
                           key={m.user_id}
                           type="button"
-                          onClick={() => setItemOwner(index, m.user_id, "personal")}
-                          className={cn(
-                            "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
-                            item.split_type === "personal" && item.owner_id === m.user_id
-                              ? "bg-primary/15 text-primary"
-                              : "bg-card text-muted-foreground hover:text-muted-foreground"
-                          )}
+                          onClick={() =>
+                            setItemOwner(index, m.user_id, "personal")
+                          }
+                          className={
+                            "ed-chip-sm" +
+                            (item.split_type === "personal" &&
+                            item.owner_id === m.user_id
+                              ? " on"
+                              : "")
+                          }
                         >
-                          <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
+                          {m.profile?.avatar_emoji || "👤"}{" "}
                           {m.profile?.display_name || "成員"}
                         </button>
                       ))}
                     <button
                       type="button"
                       onClick={() => setItemOwner(index, null, "split")}
-                      className={cn(
-                        "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
-                        item.split_type === "split"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-card text-muted-foreground hover:text-muted-foreground"
-                      )}
+                      className={
+                        "ed-chip-sm split" +
+                        (item.split_type === "split" ? " on" : "")
+                      }
                     >
-                      👥 均分
+                      均分
                     </button>
-                  </div>
-                )}
+                  </>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => removeItem(index)}
+                  className="ed-item-del"
+                  aria-label="刪除"
+                >
+                  ✕ 刪除
+                </button>
               </div>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Payment method picker */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm space-y-3">
-        <h4 className="font-bold text-sm">支付方式</h4>
-        <PaymentChips
-          value={paymentMethod}
-          onChange={(m) => {
-            setPaymentMethod(m);
-            if (m !== "信用卡") {
-              setCreditCardId(null);
-              setCreditCardPlanId(null);
-            }
+              {isExpanded ? (
+                <div
+                  style={{
+                    marginLeft: 36,
+                    marginTop: 8,
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 6,
+                  }}
+                >
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.value}
+                      type="button"
+                      onClick={() => setItemCategory(index, cat.value)}
+                      className={
+                        "ed-chip-sm" +
+                        (item.category === cat.value ? " on" : "")
+                      }
+                    >
+                      {cat.icon} {cat.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={addItem}
+          className="ed-mono"
+          style={{
+            marginTop: 12,
+            background: "transparent",
+            border: "1px dashed var(--ed-line)",
+            padding: "10px 0",
+            width: "100%",
+            color: "var(--ed-ink-soft)",
+            fontSize: 11,
+            letterSpacing: 3,
+            cursor: "pointer",
           }}
-        />
-        {paymentMethod === "信用卡" && (
-          <CreditCardPicker
-            value={creditCardId}
-            onChange={setCreditCardId}
-            planValue={creditCardPlanId}
-            onPlanChange={setCreditCardPlanId}
-          />
-        )}
+        >
+          + 新增品項
+        </button>
       </div>
 
-      <Button
-        onClick={() =>
-          onConfirm({
-            items,
-            paymentMethod,
-            creditCardId: paymentMethod === "信用卡" ? creditCardId : null,
-            creditCardPlanId: paymentMethod === "信用卡" ? creditCardPlanId : null,
-            storeName,
-            storeNameJa,
-            date,
-          })
-        }
-        className="w-full h-12 text-base bg-primary hover:bg-primary/90"
-        disabled={saving}
-      >
-        {saving ? "儲存中..." : `確認儲存 (${items.length} 筆)`}
-      </Button>
+      {/* Payment method */}
+      <div className="ed-scan-section">
+        <div className="ed-scan-section-h">付款方式</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {PAYMENTS.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => {
+                setPaymentMethod(p);
+                if (p !== "信用卡") {
+                  setCreditCardId(null);
+                  setCreditCardPlanId(null);
+                }
+              }}
+              className={"ed-chip" + (paymentMethod === p ? " on" : "")}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
 
-      <Button
-        variant="ghost"
-        onClick={onCancel}
-        className="w-full text-muted-foreground"
-        disabled={saving}
-      >
-        重新掃描
-      </Button>
+        {paymentMethod === "信用卡" ? (
+          <div style={{ marginTop: 14 }}>
+            <div className="ed-kicker" style={{ marginBottom: 8 }}>
+              信用卡 · 回饋
+            </div>
+            {creditCards.length === 0 ? (
+              <Link
+                href="/settings"
+                className="ed-serif"
+                style={{
+                  display: "inline-block",
+                  fontSize: 13,
+                  color: "var(--ed-vermillion)",
+                  borderBottom: "1px solid var(--ed-vermillion)",
+                  textDecoration: "none",
+                  paddingBottom: 1,
+                }}
+              >
+                尚未設定信用卡 → 前往設定
+              </Link>
+            ) : (
+              <>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {creditCards.map((card) => {
+                    const rates = card.plans?.map((p) => p.cashback_rate) ?? [];
+                    const rateLabel =
+                      rates.length === 0
+                        ? `${card.cashback_rate}%`
+                        : Math.min(...rates) === Math.max(...rates)
+                          ? `${rates[0]}%`
+                          : `${Math.min(...rates)}~${Math.max(...rates)}%`;
+                    const isOn = creditCardId === card.id;
+                    return (
+                      <button
+                        key={card.id}
+                        type="button"
+                        onClick={() => {
+                          if (isOn) {
+                            setCreditCardId(null);
+                            setCreditCardPlanId(null);
+                          } else {
+                            setCreditCardId(card.id);
+                            setCreditCardPlanId(card.plans?.[0]?.id ?? null);
+                          }
+                        }}
+                        className={"ed-chip" + (isOn ? " on" : "")}
+                      >
+                        {card.name}
+                        <span
+                          className="ed-mono"
+                          style={{
+                            marginLeft: 6,
+                            fontSize: 10,
+                            opacity: 0.7,
+                          }}
+                        >
+                          {rateLabel}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {(() => {
+                  const selectedCard = creditCards.find(
+                    (c) => c.id === creditCardId,
+                  );
+                  if (!selectedCard?.plans?.length) return null;
+                  return (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                        marginTop: 8,
+                      }}
+                    >
+                      {selectedCard.plans.map((plan) => (
+                        <button
+                          key={plan.id}
+                          type="button"
+                          onClick={() => setCreditCardPlanId(plan.id)}
+                          className={
+                            "ed-chip" +
+                            (creditCardPlanId === plan.id ? " on" : "")
+                          }
+                          style={{ fontSize: 11, padding: "4px 10px" }}
+                        >
+                          {plan.name}
+                          <span
+                            className="ed-mono"
+                            style={{ marginLeft: 4, opacity: 0.7 }}
+                          >
+                            {plan.cashback_rate}%
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </>
+            )}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Submit */}
+      <div style={{ padding: "26px 24px 16px" }}>
+        <button
+          type="button"
+          onClick={() =>
+            onConfirm({
+              items,
+              paymentMethod,
+              creditCardId: paymentMethod === "信用卡" ? creditCardId : null,
+              creditCardPlanId:
+                paymentMethod === "信用卡" ? creditCardPlanId : null,
+              storeName,
+              storeNameJa,
+              date,
+            })
+          }
+          className="ed-btn-primary"
+          disabled={saving || items.length === 0}
+          style={{
+            opacity: saving || items.length === 0 ? 0.4 : 1,
+            cursor: saving || items.length === 0 ? "default" : "pointer",
+          }}
+        >
+          {saving ? "儲 存 中…" : `確 認 儲 存 (${items.length})`}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="ed-mono"
+          style={{
+            marginTop: 12,
+            width: "100%",
+            background: "transparent",
+            border: 0,
+            padding: "10px 0",
+            color: "var(--ed-muted)",
+            fontSize: 10,
+            letterSpacing: 3,
+            cursor: saving ? "default" : "pointer",
+          }}
+        >
+          ← 重新掃描
+        </button>
+      </div>
     </div>
   );
 }
