@@ -58,19 +58,36 @@ export default function RecordsPage() {
   const { categories } = useCategories();
   const [activeDay, setActiveDay] = useState<number | "all">("all");
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [query, setQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
 
   const tripStart = currentTrip ? parseISO(currentTrip.start_date) : null;
   const tripEnd = currentTrip ? parseISO(currentTrip.end_date) : null;
   const totalDays = tripStart && tripEnd ? differenceInDays(tripEnd, tripStart) + 1 : 0;
 
   const filtered = useMemo(() => {
-    if (activeDay === "all" || !tripStart) return expenses;
-    const targetDate = format(
-      new Date(tripStart.getTime() + (activeDay - 1) * 24 * 60 * 60 * 1000),
-      "yyyy-MM-dd",
-    );
-    return expenses.filter((e) => e.expense_date === targetDate);
-  }, [expenses, activeDay, tripStart]);
+    let list = expenses;
+    if (activeDay !== "all" && tripStart) {
+      const targetDate = format(
+        new Date(tripStart.getTime() + (activeDay - 1) * 24 * 60 * 60 * 1000),
+        "yyyy-MM-dd",
+      );
+      list = list.filter((e) => e.expense_date === targetDate);
+    }
+    if (filterCategory) {
+      list = list.filter((e) => e.category === filterCategory);
+    }
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter(
+        (e) =>
+          e.title.toLowerCase().includes(q) ||
+          (e.store_name?.toLowerCase().includes(q) ?? false) ||
+          (e.note?.toLowerCase().includes(q) ?? false),
+      );
+    }
+    return list;
+  }, [expenses, activeDay, tripStart, filterCategory, query]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("確定要刪除這筆記錄？")) return;
@@ -178,6 +195,90 @@ export default function RecordsPage() {
           </div>
         </div>
 
+        {/* Search + category filter */}
+        {expenses.length > 0 ? (
+          <div style={{ padding: "20px 24px 0" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                borderBottom: "1px solid var(--ed-line)",
+                paddingBottom: 6,
+              }}
+            >
+              <span
+                className="ed-mono"
+                style={{ fontSize: 11, letterSpacing: 2, color: "var(--ed-muted)" }}
+              >
+                Q
+              </span>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="搜尋品項、店家、備註"
+                className="ed-serif"
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  background: "transparent",
+                  border: 0,
+                  outline: 0,
+                  color: "var(--ed-ink)",
+                  padding: "4px 0",
+                }}
+              />
+              {query ? (
+                <button
+                  onClick={() => setQuery("")}
+                  className="ed-mono"
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: 2,
+                    color: "var(--ed-muted)",
+                    background: "transparent",
+                    border: 0,
+                    cursor: "pointer",
+                  }}
+                  type="button"
+                >
+                  清除
+                </button>
+              ) : null}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 6,
+                flexWrap: "wrap",
+                marginTop: 10,
+              }}
+            >
+              <button
+                onClick={() => setFilterCategory(null)}
+                className={"ed-chip" + (filterCategory === null ? " on" : "")}
+                style={{ fontSize: 11, padding: "4px 10px" }}
+                type="button"
+              >
+                全部
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() =>
+                    setFilterCategory(filterCategory === c.value ? null : c.value)
+                  }
+                  className={"ed-chip" + (filterCategory === c.value ? " on" : "")}
+                  style={{ fontSize: 11, padding: "4px 10px" }}
+                  type="button"
+                >
+                  {c.icon} {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {/* Day tabs */}
         {totalDays > 0 ? (
           <div className="ed-day-tabs" style={{ marginTop: 20 }}>
@@ -202,34 +303,117 @@ export default function RecordsPage() {
         {/* Rows */}
         <div style={{ padding: "18px 24px 0" }}>
           {filtered.length === 0 ? (
-            <div style={{ padding: "60px 24px 0", textAlign: "center" }}>
-              <div
-                className="ed-serif"
-                style={{ fontSize: 80, opacity: 0.15, color: "var(--ed-ink)" }}
-              >
-                空
-              </div>
-              <div
-                className="ed-serif"
-                style={{ fontSize: 16, marginTop: 14, color: "var(--ed-ink)" }}
-              >
-                {activeDay === "all" ? "還沒有任何記錄" : "這天還沒有記錄"}
-              </div>
-              <div
-                className="ed-serif"
-                style={{
-                  fontSize: 12,
-                  color: "var(--ed-muted)",
-                  marginTop: 6,
-                  lineHeight: 1.6,
-                  fontStyle: "italic",
-                }}
-              >
-                點右下角 ＋ 新增一筆消費，
-                <br />
-                或掃描收據讓 AI 幫你填。
-              </div>
-            </div>
+            (() => {
+              const isFiltered =
+                expenses.length > 0 &&
+                (query.trim() !== "" || filterCategory !== null || activeDay !== "all");
+              return (
+                <div style={{ padding: "60px 24px 0", textAlign: "center" }}>
+                  <div
+                    className="ed-serif"
+                    style={{
+                      fontSize: 96,
+                      opacity: 0.18,
+                      color: "var(--ed-ink)",
+                      lineHeight: 1,
+                      fontWeight: 700,
+                    }}
+                  >
+                    空
+                  </div>
+                  <div
+                    className="ed-serif"
+                    style={{
+                      fontSize: 17,
+                      marginTop: 18,
+                      color: "var(--ed-ink)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {isFiltered ? "找不到符合的紀錄" : "還沒有任何記錄"}
+                  </div>
+                  <div
+                    className="ed-serif"
+                    style={{
+                      fontSize: 13,
+                      color: "var(--ed-muted)",
+                      marginTop: 8,
+                      lineHeight: 1.7,
+                      fontStyle: "italic",
+                    }}
+                  >
+                    {isFiltered ? (
+                      <>試著清除搜尋或切換到其他分類。</>
+                    ) : (
+                      <>
+                        記錄旅途裡每一筆花費，
+                        <br />
+                        旅程結束後就有完整的回顧。
+                      </>
+                    )}
+                  </div>
+                  {isFiltered ? (
+                    <button
+                      onClick={() => {
+                        setQuery("");
+                        setFilterCategory(null);
+                        setActiveDay("all");
+                      }}
+                      className="ed-btn-ghost"
+                      style={{
+                        marginTop: 22,
+                        padding: "10px 22px",
+                        fontSize: 13,
+                        letterSpacing: 4,
+                        cursor: "pointer",
+                      }}
+                      type="button"
+                    >
+                      清 除 篩 選
+                    </button>
+                  ) : (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        justifyContent: "center",
+                        marginTop: 26,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Link
+                        href="/records/new"
+                        className="ed-btn-primary"
+                        style={{
+                          width: "auto",
+                          padding: "12px 22px",
+                          fontSize: 13,
+                          letterSpacing: 5,
+                          textDecoration: "none",
+                          display: "inline-block",
+                        }}
+                      >
+                        新 增 一 筆
+                      </Link>
+                      <Link
+                        href="/scan"
+                        className="ed-btn-ghost"
+                        style={{
+                          padding: "12px 22px",
+                          fontSize: 13,
+                          letterSpacing: 5,
+                          textDecoration: "none",
+                          display: "inline-block",
+                          fontWeight: 600,
+                        }}
+                      >
+                        掃 描 收 據
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           ) : (
             filtered.map((e, i) => (
               <EditorialRow

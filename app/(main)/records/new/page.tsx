@@ -1,6 +1,7 @@
 "use client";
 
 import { useCategories } from "@/hooks/use-categories";
+import { useCreditCards } from "@/hooks/use-credit-cards";
 import { useApp } from "@/lib/context";
 import { FALLBACK_RATE, formatJPY, formatTWD, getExchangeRate } from "@/lib/exchange-rate";
 import { addGuestExpense, getGuestExpenses, updateGuestExpense } from "@/lib/guest-storage";
@@ -20,8 +21,8 @@ function NewExpenseInner() {
 
   const { isGuest, currentTrip, tripMembers } = useApp();
   const { categories } = useCategories();
+  const { cards: creditCards } = useCreditCards();
 
-  const [editExpense, setEditExpense] = useState<Expense | null>(null);
   const [loading, setLoading] = useState(!!editId);
 
   const [title, setTitle] = useState("");
@@ -31,6 +32,10 @@ function NewExpenseInner() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("現金");
   const [splitType, setSplitType] = useState<SplitType>("personal");
   const [storeName, setStoreName] = useState("");
+  const [note, setNote] = useState("");
+  const [expenseDate, setExpenseDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [creditCardId, setCreditCardId] = useState<string | null>(null);
+  const [creditCardPlanId, setCreditCardPlanId] = useState<string | null>(null);
   const [rate, setRate] = useState<number>(FALLBACK_RATE);
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,7 +58,6 @@ function NewExpenseInner() {
         if (cancelled) return;
         if (!found) toast.error("無法載入消費資料");
         else hydrate(found);
-        setEditExpense(found);
         setLoading(false);
         return;
       }
@@ -64,7 +68,6 @@ function NewExpenseInner() {
         const data = await res.json();
         if (!cancelled && data.expense) {
           hydrate(data.expense);
-          setEditExpense(data.expense);
         }
       } catch {
         if (!cancelled) toast.error("無法載入消費資料");
@@ -88,6 +91,10 @@ function NewExpenseInner() {
     setPaymentMethod(e.payment_method);
     setSplitType(e.split_type);
     setStoreName(e.store_name ?? "");
+    setNote(e.note ?? "");
+    setExpenseDate(e.expense_date);
+    setCreditCardId(e.credit_card_id);
+    setCreditCardPlanId(e.credit_card_plan_id);
   }
 
   // Default category once categories load
@@ -123,10 +130,12 @@ function NewExpenseInner() {
         payment_method: paymentMethod,
         store_name: storeName.trim() || null,
         location: null,
-        expense_date: editExpense?.expense_date ?? format(new Date(), "yyyy-MM-dd"),
+        expense_date: expenseDate,
         split_type: splitType,
         input_currency: currency,
-        note: editExpense?.note ?? null,
+        note: note.trim() || null,
+        credit_card_id: paymentMethod === "信用卡" ? creditCardId : null,
+        credit_card_plan_id: paymentMethod === "信用卡" ? creditCardPlanId : null,
       };
 
       if (isGuest) {
@@ -308,6 +317,18 @@ function NewExpenseInner() {
           />
         </div>
 
+        {/* Date */}
+        <div style={{ padding: "18px 24px 0" }}>
+          <div className="ed-kicker">日期</div>
+          <input
+            type="date"
+            value={expenseDate}
+            onChange={(e) => setExpenseDate(e.target.value)}
+            className="ed-input-line"
+            style={{ marginTop: 4, fontSize: 16 }}
+          />
+        </div>
+
         {/* Category grid */}
         <div style={{ padding: "22px 24px 0" }}>
           <div className="ed-kicker" style={{ marginBottom: 10 }}>
@@ -361,6 +382,105 @@ function NewExpenseInner() {
           </div>
         </div>
 
+        {/* Credit card picker (only when paymentMethod is 信用卡) */}
+        {paymentMethod === "信用卡" ? (
+          <div style={{ padding: "22px 24px 0" }}>
+            <div className="ed-kicker" style={{ marginBottom: 10 }}>
+              信用卡 · 回饋
+            </div>
+            {creditCards.length === 0 ? (
+              <Link
+                href="/settings"
+                className="ed-serif"
+                style={{
+                  display: "inline-block",
+                  fontSize: 13,
+                  color: "var(--ed-vermillion)",
+                  borderBottom: "1px solid var(--ed-vermillion)",
+                  textDecoration: "none",
+                  paddingBottom: 1,
+                }}
+              >
+                尚未設定信用卡 → 前往設定
+              </Link>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {creditCards.map((card) => {
+                    const rates = card.plans?.map((p) => p.cashback_rate) ?? [];
+                    const rateLabel =
+                      rates.length === 0
+                        ? `${card.cashback_rate}%`
+                        : Math.min(...rates) === Math.max(...rates)
+                          ? `${rates[0]}%`
+                          : `${Math.min(...rates)}~${Math.max(...rates)}%`;
+                    const isOn = creditCardId === card.id;
+                    return (
+                      <button
+                        key={card.id}
+                        onClick={() => {
+                          if (isOn) {
+                            setCreditCardId(null);
+                            setCreditCardPlanId(null);
+                          } else {
+                            setCreditCardId(card.id);
+                            setCreditCardPlanId(card.plans?.[0]?.id ?? null);
+                          }
+                        }}
+                        className={"ed-chip" + (isOn ? " on" : "")}
+                        type="button"
+                      >
+                        {card.name}
+                        <span
+                          className="ed-mono"
+                          style={{ marginLeft: 6, fontSize: 10, opacity: 0.7 }}
+                        >
+                          {rateLabel}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {(() => {
+                  const selectedCard = creditCards.find((c) => c.id === creditCardId);
+                  if (!selectedCard?.plans?.length) return null;
+                  return (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 6,
+                        flexWrap: "wrap",
+                        marginTop: 8,
+                        paddingLeft: 2,
+                      }}
+                    >
+                      {selectedCard.plans.map((plan) => (
+                        <button
+                          key={plan.id}
+                          onClick={() => setCreditCardPlanId(plan.id)}
+                          className={
+                            "ed-chip" + (creditCardPlanId === plan.id ? " on" : "")
+                          }
+                          style={{ fontSize: 11, padding: "4px 10px" }}
+                          type="button"
+                        >
+                          {plan.name}
+                          <span
+                            className="ed-mono"
+                            style={{ marginLeft: 4, opacity: 0.7 }}
+                          >
+                            {plan.cashback_rate}%
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </>
+            )}
+          </div>
+        ) : null}
+
         {/* Split */}
         <div style={{ padding: "22px 24px 0" }}>
           <div className="ed-kicker" style={{ marginBottom: 10 }}>
@@ -384,6 +504,32 @@ function NewExpenseInner() {
               </button>
             ) : null}
           </div>
+        </div>
+
+        {/* Note */}
+        <div style={{ padding: "22px 24px 0" }}>
+          <div className="ed-kicker">備註（選填）</div>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="可寫一句感想或細節"
+            rows={3}
+            style={{
+              width: "100%",
+              marginTop: 6,
+              padding: "8px 0",
+              background: "transparent",
+              border: 0,
+              borderBottom: "1px dashed var(--ed-line)",
+              outline: 0,
+              fontFamily: "var(--font-noto-serif-tc), serif",
+              fontSize: 13,
+              lineHeight: 1.7,
+              color: "var(--ed-ink)",
+              resize: "vertical",
+              fontStyle: "italic",
+            }}
+          />
         </div>
       </div>
 
