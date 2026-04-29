@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-29T08:26:00Z",
+  "title": "Design System: 旅帳",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "oklch(54% 0.21 261)",
+        "tonalRamp": [
+          "oklch(15% 0.05 261)",
+          "oklch(27% 0.12 261)",
+          "oklch(39% 0.17 261)",
+          "oklch(54% 0.21 261)",
+          "oklch(65% 0.19 261)",
+          "oklch(76% 0.13 261)",
+          "oklch(87% 0.07 261)",
+          "oklch(96% 0.03 261)"
+        ]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Ink Slate",
+        "canonical": "oklch(20% 0.04 250)",
+        "tonalRamp": [
+          "oklch(15% 0.04 250)",
+          "oklch(25% 0.04 250)",
+          "oklch(36% 0.035 250)",
+          "oklch(50% 0.03 250)",
+          "oklch(64% 0.022 250)",
+          "oklch(78% 0.014 250)",
+          "oklch(88% 0.008 250)",
+          "oklch(96% 0.004 250)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Mist",
+        "canonical": "oklch(96% 0.012 250)",
+        "tonalRamp": [
+          "oklch(20% 0.012 250)",
+          "oklch(35% 0.012 250)",
+          "oklch(50% 0.012 250)",
+          "oklch(64% 0.012 250)",
+          "oklch(76% 0.012 250)",
+          "oklch(86% 0.012 250)",
+          "oklch(92% 0.012 250)",
+          "oklch(96% 0.012 250)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Smoke",
+        "canonical": "oklch(54% 0.03 250)",
+        "tonalRamp": [
+          "oklch(20% 0.03 250)",
+          "oklch(32% 0.03 250)",
+          "oklch(44% 0.03 250)",
+          "oklch(54% 0.03 250)",
+          "oklch(66% 0.025 250)",
+          "oklch(78% 0.02 250)",
+          "oklch(88% 0.014 250)",
+          "oklch(96% 0.008 250)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(91% 0.014 250)",
+        "tonalRamp": [
+          "oklch(20% 0.014 250)",
+          "oklch(35% 0.014 250)",
+          "oklch(50% 0.014 250)",
+          "oklch(64% 0.014 250)",
+          "oklch(76% 0.014 250)",
+          "oklch(86% 0.014 250)",
+          "oklch(91% 0.014 250)",
+          "oklch(96% 0.014 250)"
+        ]
+      },
+      "accent": {
+        "role": "accent",
+        "displayName": "Soft Sky",
+        "canonical": "oklch(91% 0.05 261)",
+        "tonalRamp": [
+          "oklch(20% 0.08 261)",
+          "oklch(34% 0.10 261)",
+          "oklch(48% 0.10 261)",
+          "oklch(62% 0.09 261)",
+          "oklch(74% 0.08 261)",
+          "oklch(83% 0.07 261)",
+          "oklch(91% 0.05 261)",
+          "oklch(97% 0.02 261)"
+        ]
+      },
+      "accent-foreground": {
+        "role": "accent",
+        "displayName": "Deep Indigo",
+        "canonical": "oklch(38% 0.18 264)",
+        "tonalRamp": [
+          "oklch(15% 0.10 264)",
+          "oklch(26% 0.15 264)",
+          "oklch(38% 0.18 264)",
+          "oklch(50% 0.18 264)",
+          "oklch(62% 0.16 264)",
+          "oklch(74% 0.12 264)",
+          "oklch(85% 0.07 264)",
+          "oklch(95% 0.03 264)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Total amounts, settlement totals, day-header dates that must be readable at a glance." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles (Records, Stats, Settings) and card titles." },
+      "title": { "displayName": "Title", "purpose": "List item primary text, form field labels, button copy." },
+      "body": { "displayName": "Body", "purpose": "Inline copy, descriptions, secondary text. Cap at 65–75ch." },
+      "label": { "displayName": "Label", "purpose": "Metadata, timestamps, tag captions, icon-adjacent text." }
+    },
+    "shadows": [
+      { "name": "app-shell", "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)", "purpose": "The single allowed elevation. Applies only to the central <main> container that frames the phone-shaped viewport." },
+      { "name": "focus-ring", "value": "0 0 0 3px oklch(54% 0.21 261 / 0.5)", "purpose": "Keyboard focus indicator on every interactive control. Reproduced by Tailwind's ring-3 ring-ring/50." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Default ease-out-quint for all state transitions. Confident exit, no bounce." },
+      { "name": "duration-short", "value": "150ms", "purpose": "Hover, focus, color transitions." },
+      { "name": "duration-medium", "value": "240ms", "purpose": "Sheet / dialog entrance, dropdown reveal." },
+      { "name": "active-press", "value": "translateY(1px)", "purpose": "Tactile feedback on button press. No scale, no shadow." },
+      { "name": "scan-sweep", "value": "scanSweep 2.4s linear infinite", "purpose": "OCR scanner laser line on the scan page. The single signature animation in the system." }
+    ],
+    "breakpoints": [
+      { "name": "phone-shell", "value": "32rem", "purpose": "max-w-lg of <main>. The phone-form container that everything lives inside." },
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single highest-attention action on a screen. Use sparingly per the One Action Color Rule.",
+      "html": "<button class=\"ds-btn-primary\">儲存</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 10px; background: var(--color-primary, #2563EB); color: var(--color-primary-foreground, #FFFFFF); font-family: Geist, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; line-height: 1; letter-spacing: normal; cursor: pointer; transition: background 150ms cubic-bezier(0.16, 1, 0.3, 1), transform 150ms cubic-bezier(0.16, 1, 0.3, 1); outline: none; } .ds-btn-primary:hover { background: oklch(54% 0.21 261 / 0.9); } .ds-btn-primary:focus-visible { box-shadow: 0 0 0 3px oklch(54% 0.21 261 / 0.5); border-color: var(--color-primary, #2563EB); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:disabled { pointer-events: none; opacity: 0.5; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Neutral action paired with a Primary on the same screen. Transparent over the page surface.",
+      "html": "<button class=\"ds-btn-outline\">取消</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 10px; border: 1px solid var(--color-border, #E2E8F0); border-radius: 10px; background: transparent; color: var(--color-foreground, #0F172A); font-family: Geist, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; line-height: 1; cursor: pointer; transition: background 150ms cubic-bezier(0.16, 1, 0.3, 1); outline: none; } .ds-btn-outline:hover { background: var(--color-muted, #F1F5F9); } .ds-btn-outline:focus-visible { box-shadow: 0 0 0 3px oklch(54% 0.21 261 / 0.5); border-color: var(--color-primary, #2563EB); } .ds-btn-outline:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Mist-tinted action for the second-tier action when you don't want a transparent outline.",
+      "html": "<button class=\"ds-btn-secondary\">查看明細</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 10px; background: var(--color-secondary, #F1F5F9); color: var(--color-secondary-foreground, #0F172A); font-family: Geist, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; line-height: 1; cursor: pointer; transition: background 150ms cubic-bezier(0.16, 1, 0.3, 1); outline: none; } .ds-btn-secondary:hover { background: oklch(96% 0.012 250 / 0.7); } .ds-btn-secondary:focus-visible { box-shadow: 0 0 0 3px oklch(54% 0.21 261 / 0.5); border-color: var(--color-primary, #2563EB); } .ds-btn-secondary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Ghost Icon Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "No-chrome trigger for icon-only actions in toolbars and list rows.",
+      "html": "<button class=\"ds-btn-ghost\" aria-label=\"刪除\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"/><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/><path d=\"M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6\"/></svg></button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--color-foreground, #0F172A); cursor: pointer; transition: background 150ms cubic-bezier(0.16, 1, 0.3, 1); outline: none; } .ds-btn-ghost:hover { background: var(--color-muted, #F1F5F9); } .ds-btn-ghost:focus-visible { box-shadow: 0 0 0 3px oklch(54% 0.21 261 / 0.5); border-color: var(--color-primary, #2563EB); } .ds-btn-ghost:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Default container. Flat, ring-bordered, no shadow. Used for stats blocks, expense rows, member cards.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\"><div class=\"ds-card-title\">今日花費</div><div class=\"ds-card-description\">2026 年 4 月 29 日</div></div><div class=\"ds-card-content\"><div class=\"ds-card-amount\">¥12,480</div></div></div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 16px; padding: 16px 0; border-radius: 14px; background: var(--color-card, #FFFFFF); color: var(--color-card-foreground, #0F172A); box-shadow: inset 0 0 0 1px oklch(20% 0.04 250 / 0.1); overflow: hidden; font-family: Geist, ui-sans-serif, system-ui, sans-serif; } .ds-card-header { display: grid; gap: 4px; padding: 0 16px; } .ds-card-title { font-size: 16px; font-weight: 500; line-height: 1.4; } .ds-card-description { font-size: 14px; color: var(--color-muted-foreground, #64748B); } .ds-card-content { padding: 0 16px; } .ds-card-amount { font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text field with transparent background and a thin Hairline border. Focus brings up the Signal Blue ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"店家名稱\" />",
+      "css": ".ds-input { display: block; width: 100%; height: 32px; padding: 4px 10px; border: 1px solid var(--color-input, #E2E8F0); border-radius: 10px; background: transparent; color: var(--color-foreground, #0F172A); font-family: Geist, ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.4; outline: none; transition: border-color 150ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-input::placeholder { color: var(--color-muted-foreground, #64748B); } .ds-input:focus-visible { border-color: var(--color-primary, #2563EB); box-shadow: 0 0 0 3px oklch(54% 0.21 261 / 0.5); } .ds-input:disabled { opacity: 0.5; cursor: not-allowed; background: oklch(96% 0.012 250 / 0.5); } .ds-input[aria-invalid=\"true\"] { border-color: oklch(0.577 0.245 27.325); box-shadow: 0 0 0 3px oklch(0.577 0.245 27.325 / 0.2); }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge-primary",
+      "description": "Small classifier label for category tags, payment methods, credit-card brand chips.",
+      "html": "<span class=\"ds-badge\">餐飲</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 8px; background: var(--color-accent, #DBEAFE); color: var(--color-accent-foreground, #1E40AF); font-family: Geist, ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1.3; letter-spacing: 0.01em; }"
+    },
+    {
+      "name": "Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "nav",
+      "description": "Fixed-bottom tab bar with safe-area inset. Selected tab uses Signal Blue text only — no underline, no pill.",
+      "html": "<nav class=\"ds-bottom-nav\"><a class=\"ds-bottom-nav-item ds-bottom-nav-item--active\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12l9-9 9 9\"/><path d=\"M5 10v10h14V10\"/></svg><span>首頁</span></a><a class=\"ds-bottom-nav-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"/></svg><span>記錄</span></a><a class=\"ds-bottom-nav-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"3.5\"/></svg><span>掃描</span></a><a class=\"ds-bottom-nav-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 20V10M10 20V4M16 20v-7M22 20H2\"/></svg><span>統計</span></a></nav>",
+      "css": ".ds-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; max-width: 32rem; margin: 0 auto; padding: 8px 0; padding-bottom: env(safe-area-inset-bottom, 8px); background: var(--color-background, #FFFFFF); box-shadow: inset 0 1px 0 0 var(--color-border, #E2E8F0); font-family: Geist, ui-sans-serif, system-ui, sans-serif; } .ds-bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 0; color: var(--color-muted-foreground, #64748B); font-size: 11px; font-weight: 500; line-height: 1.2; text-decoration: none; transition: color 150ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-bottom-nav-item:hover { color: var(--color-foreground, #0F172A); } .ds-bottom-nav-item--active { color: var(--color-primary, #2563EB); }"
+    },
+    {
+      "name": "Scan Sweep (signature)",
+      "kind": "custom",
+      "refersTo": "scan-sweep",
+      "description": "OCR scanner laser line. The only signature animation in the system. Disabled under prefers-reduced-motion.",
+      "html": "<div class=\"ds-scan-frame\"><div class=\"ds-scan-line\"></div></div>",
+      "css": ".ds-scan-frame { position: relative; width: 100%; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden; background: oklch(20% 0.04 250 / 0.04); box-shadow: inset 0 0 0 1px oklch(20% 0.04 250 / 0.1); } .ds-scan-line { position: absolute; inset: 0 0 auto 0; height: 1px; background: var(--color-primary, #2563EB); box-shadow: 0 0 12px 0 oklch(54% 0.21 261 / 0.6); animation: ds-scan-sweep 2.4s linear infinite; } @keyframes ds-scan-sweep { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } } @media (prefers-reduced-motion: reduce) { .ds-scan-line { animation-duration: 0.01ms; animation-iteration-count: 1; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Pocket Ledger",
+    "overview": "旅帳 是一個 PWA 口袋帳本,給作者本人和少數熟人在日本旅行時用。它不是社交產品、不是觀光紀念,也不是給陌生人看的儀表板。視覺系統圍繞「精準的私人工具」這個核心:單手可操作的窄欄手機畫面、白底襯穩重的板岩字、唯一一個訊號藍主色用來標示動作,其餘一律灰階。\n\n界面的密度由功能驅動 — Records 頁是緊湊的列表、Stats 頁是清晰可掃讀的圖表、Scan 頁是無干擾的拍照流程。每一個元件都有它存在的功能理由,沒有純裝飾的元素。系統明確拒絕花俏記帳 App 的彩色 emoji、典型 SaaS dashboard 的大數字漸層 hero、過度設計的旅遊 App 風景照背景,以及任何 glassmorphism、gradient text、bounce 動畫。",
+    "keyCharacteristics": [
+      "手機優先的 max-w-lg (32rem) 中央欄位,單手可達的底部固定導覽",
+      "白 + 板岩字 + 訊號藍主色,藍色僅出現在主要動作與焦點環",
+      "全平面元件 — 用 ring-1 細描邊取代 box-shadow,depth 由顏色深淺與分隔線傳達",
+      "Geist 單一無襯線字體系統,無 mono 對比,無 display serif 對比",
+      "圓角適中(10–14px),不極端 0,也不極端 999"
+    ],
+    "rules": [
+      { "name": "The One Action Color Rule", "body": "整個 App 在任何畫面上,Signal Blue 的覆蓋面積不得超過 10%。它的稀有性就是它的意義。", "section": "colors" },
+      { "name": "The No-True-Black Rule", "body": "永遠不用 #000 或 #FFF。Ink Slate (#0F172A) 帶 220 hue,跟 Signal Blue 同色族。", "section": "colors" },
+      { "name": "Themes Are Optional", "body": "系統內建 light(canonical)/ dark / japanese 三主題,但 PRODUCT.md 的視覺基準是 light。", "section": "colors" },
+      { "name": "The Single Family Rule", "body": "全站只用 Geist。對比靠 weight 與 size,不靠 family。禁止為了「設計感」引入 serif display 或 monospace。", "section": "typography" },
+      { "name": "The Tabular Numbers Rule", "body": "所有金額顯示必須開啟 font-variant-numeric: tabular-nums,小數點對齊。", "section": "typography" },
+      { "name": "The Ring-Not-Shadow Rule", "body": "Card / Dialog / Popover 的「邊」必須是 ring-1 ring-foreground/10,不准用 shadow-md / lg / xl。陰影只屬於 App Shell 與 focus ring。", "section": "elevation" },
+      { "name": "The Active Press Rule", "body": "可點元件按下時用 active:translate-y-px(向下移 1px),不用 scale、不用 shadow。", "section": "elevation" }
+    ],
+    "dos": [
+      "Do 把 Signal Blue (#2563EB) 當作貴重資源 — 一個畫面只用一處。",
+      "Do 用 ring-1 ring-foreground/10 作為 card 邊界,不用 shadow-md。",
+      "Do 用 font-variant-numeric: tabular-nums 顯示所有金額。",
+      "Do 把主要動作放在拇指可達的下半區(底部 nav、sheet 內底部 CTA)。",
+      "Do 用 weight (400/500/600) 與 size (12/14/16/18/24) 拉開字級層次,單一 Geist 字族走到底。",
+      "Do 在所有 transition / animation 外層尊重 prefers-reduced-motion: reduce。",
+      "Do focus-visible 一律 ring-3 ring-ring/50,不論元件類型。"
+    ],
+    "donts": [
+      "Don't 像花俏記帳 App — 禁止滿版彩色 emoji、紅綠強對比、農民曆配色、卡通插畫。",
+      "Don't 像典型 SaaS dashboard — 禁止大數字 + 漸層底 + 點綴小圖示的 hero metric 模板。",
+      "Don't 像過度設計的旅遊 App — 禁止大張風景照填底、漸層 hero、強迫情緒共鳴的標語。",
+      "Don't 加 glassmorphism — 禁止 backdrop-blur 作為裝飾性效果。",
+      "Don't 用 gradient text(background-clip: text + 漸層底)。emphasis 一律靠 weight 或 size。",
+      "Don't 用 bounce / elastic 動畫。easing 用 ease-out exponential。",
+      "Don't 用 box-shadow 來「讓 card 浮起」。Flat 是預設。",
+      "Don't 用 side-stripe border-left >1px 作為彩色 accent。",
+      "Don't 寫 onboarding tutorial 與行銷文案 — 使用者就是熟人。",
+      "Don't 用 #000 或 #FFF。",
+      "Don't 用 em dash 在 UI 文案。",
+      "Don't 為陌生使用者設計 — 沒有公開註冊轉換漏斗、沒有 referral。"
+    ]
+  }
+}
