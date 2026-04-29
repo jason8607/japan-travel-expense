@@ -2,6 +2,8 @@ export type Category = string;
 
 export type PaymentMethod = "現金" | "信用卡" | "PayPay" | "Suica" | "其他";
 
+export type OCRPaymentCode = "cash" | "credit_card" | "paypay" | "suica" | "other";
+
 export type SplitType = "personal" | "split";
 
 export type MemberRole = "owner" | "member";
@@ -118,7 +120,7 @@ export interface OCRResult {
     tax_type: TaxType;
   }[];
   total: number;
-  payment_method: string;
+  payment_method: OCRPaymentCode;
 }
 
 export const DEFAULT_CATEGORIES: CategoryItem[] = [

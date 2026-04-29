@@ -1,7 +1,73 @@
 import type { OCRResult } from "@/types";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { isOCRPaymentCode } from "@/lib/payment-methods";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || "");
+
+function normalizeFullWidthDigits(value: string): string {
+  return value.replace(/[０-９]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0xfee0));
+}
+
+function normalizeYenAmount(value: unknown): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.round(value) : 0;
+  }
+
+  if (typeof value !== "string") {
+    return 0;
+  }
+
+  let normalized = value
+    .replace(/[０-９]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0xfee0))
+    .replace(/[¥￥円,\s]/g, "")
+    .trim();
+
+  // OCR/AI sometimes turns a thousands separator into a decimal point for yen.
+  if (/^\d+\.\d{3}$/.test(normalized)) {
+    normalized = normalized.replace(".", "");
+  }
+
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? Math.round(parsed) : 0;
+}
+
+function normalizeQuantity(value: unknown): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value > 0 ? value : 1;
+  }
+
+  if (typeof value !== "string") {
+    return 1;
+  }
+
+  const parsed = Number.parseFloat(normalizeFullWidthDigits(value).trim());
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function normalizeTaxRate(value: unknown, taxType: unknown): 0.08 | 0.1 {
+  const isCloseTo = (actual: number, expected: number) => Math.abs(actual - expected) < 1e-6;
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    if (isCloseTo(value, 8) || isCloseTo(value, 0.08)) return 0.08;
+    if (isCloseTo(value, 10) || isCloseTo(value, 0.1)) return 0.1;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(normalizeFullWidthDigits(value).replace("%", "").trim());
+    if (isCloseTo(parsed, 8) || isCloseTo(parsed, 0.08)) return 0.08;
+    if (isCloseTo(parsed, 10) || isCloseTo(parsed, 0.1)) return 0.1;
+  }
+
+  return taxType === "reduced" ? 0.08 : 0.1;
+}
+
+function normalizePaymentMethod(value: unknown): OCRResult["payment_method"] {
+  return isOCRPaymentCode(value) ? value : "cash";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 const RECEIPT_PROMPT = `你是一個日本收據辨識專家，目標讀者是台灣旅客。請分析這張圖片，擷取資訊並翻譯成自然的繁體中文。
 
@@ -59,7 +125,12 @@ export async function recognizeReceipt(
   imageBase64: string,
   mimeType: string
 ): Promise<OCRResult> {
-  const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-3-flash-preview",
+    generationConfig: {
+      responseMimeType: "application/json",
+    },
+  });
 
   const result = await model.generateContent([
     RECEIPT_PROMPT,
@@ -129,8 +200,12 @@ export async function recognizeReceipt(
     };
   }
 
+  if (parsed.is_receipt !== true) {
+    console.error("Gemini: missing is_receipt flag, keys:", Object.keys(parsed));
+    throw new Error("AI 回應格式不符");
+  }
+
   if (
-    typeof parsed.total !== "number" ||
     !Array.isArray(parsed.items) ||
     typeof parsed.store_name !== "string"
   ) {
@@ -138,15 +213,21 @@ export async function recognizeReceipt(
     throw new Error("AI 回應格式不符");
   }
 
-  const items = parsed.items as Record<string, unknown>[];
-  const validatedItems = items.map((item, i) => ({
-    name: typeof item.name === "string" ? item.name : `品項 ${i + 1}`,
-    name_ja: typeof item.name_ja === "string" ? item.name_ja : "",
-    quantity: typeof item.quantity === "number" && item.quantity > 0 ? item.quantity : 1,
-    unit_price: typeof item.unit_price === "number" ? item.unit_price : 0,
-    tax_rate: typeof item.tax_rate === "number" ? item.tax_rate : 0.1,
-    tax_type: item.tax_type === "reduced" ? "reduced" as const : "standard" as const,
-  }));
+  const validatedItems = parsed.items.map((item, i) => {
+    const itemRecord = isRecord(item) ? item : {};
+    const rawTaxType = itemRecord.tax_type === "reduced" ? "reduced" : itemRecord.tax_type;
+    const taxRate = normalizeTaxRate(itemRecord.tax_rate, rawTaxType);
+    const taxType = rawTaxType === "reduced" || taxRate === 0.08 ? "reduced" as const : "standard" as const;
+
+    return {
+      name: typeof itemRecord.name === "string" ? itemRecord.name : `品項 ${i + 1}`,
+      name_ja: typeof itemRecord.name_ja === "string" ? itemRecord.name_ja : "",
+      quantity: normalizeQuantity(itemRecord.quantity),
+      unit_price: normalizeYenAmount(itemRecord.unit_price),
+      tax_rate: taxRate,
+      tax_type: taxType,
+    };
+  });
 
   return {
     is_receipt: true,
@@ -154,7 +235,7 @@ export async function recognizeReceipt(
     store_name_ja: typeof parsed.store_name_ja === "string" ? parsed.store_name_ja : "",
     date: typeof parsed.date === "string" ? parsed.date : "",
     items: validatedItems,
-    total: parsed.total as number,
-    payment_method: typeof parsed.payment_method === "string" ? parsed.payment_method : "cash",
+    total: normalizeYenAmount(parsed.total),
+    payment_method: normalizePaymentMethod(parsed.payment_method),
   };
 }

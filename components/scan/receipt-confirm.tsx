@@ -1,16 +1,17 @@
 "use client";
 
+import { CreditCardPicker } from "@/components/expense/credit-card-picker";
+import { PaymentChips } from "@/components/expense/payment-chips";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { useCategories } from "@/hooks/use-categories";
+import { useApp } from "@/lib/context";
+import { OCR_TO_PAYMENT_METHOD } from "@/lib/payment-methods";
+import { cn } from "@/lib/utils";
 import type { Category, OCRResult, PaymentMethod } from "@/types";
 import { ChevronDown, Plus, Trash2, Users } from "lucide-react";
-import { PaymentChips } from "@/components/expense/payment-chips";
-import { CreditCardPicker } from "@/components/expense/credit-card-picker";
-import { useCategories } from "@/hooks/use-categories";
 import { useState } from "react";
-import { useApp } from "@/lib/context";
-import { cn } from "@/lib/utils";
-import { UserAvatar } from "@/components/ui/user-avatar";
 
 export interface ReceiptItemWithOwner {
   _id: string;
@@ -49,11 +50,7 @@ export function ReceiptConfirm({
   const { user, profile: myProfile, tripMembers } = useApp();
   const { categories: CATEGORIES } = useCategories();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    initialResult.payment_method === "cash" ? "現金"
-    : initialResult.payment_method === "credit_card" ? "信用卡"
-    : initialResult.payment_method === "paypay" ? "PayPay"
-    : initialResult.payment_method === "suica" ? "Suica"
-    : "現金"
+    OCR_TO_PAYMENT_METHOD[initialResult.payment_method],
   );
 
   const [creditCardId, setCreditCardId] = useState<string | null>(null);
