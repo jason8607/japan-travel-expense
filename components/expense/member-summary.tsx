@@ -116,17 +116,17 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-foreground">{m.name}</p>
                 {m.items.length > 0 && (
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     花費項目 {m.items.length} 筆
                     {m.hasSplitShare && " · 含均分分攤"}
                   </p>
                 )}
               </div>
               <div className="text-right shrink-0">
-                <p className="font-bold text-sm text-foreground">
+                <p className="font-bold text-sm text-foreground tabular-nums">
                   {formatJPY(m.totalJpy)}
                 </p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground tabular-nums">
                   ≈ {formatTWD(m.totalTwd)}
                 </p>
               </div>

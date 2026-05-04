@@ -2,7 +2,7 @@
 
 import { useCreditCards } from "@/hooks/use-credit-cards";
 import { cn } from "@/lib/utils";
-import { Settings } from "lucide-react";
+import { CreditCard, Settings } from "lucide-react";
 import Link from "next/link";
 
 interface CreditCardPickerProps {
@@ -71,13 +71,18 @@ export function CreditCardPicker({ value, onChange, planValue, onPlanChange }: C
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-xl ring-1 transition-colors text-sm",
                 isSelected
-                  ? "bg-accent ring-primary text-primary font-medium"
+                  ? "bg-accent ring-primary text-accent-foreground font-medium"
                   : "bg-card ring-border text-muted-foreground hover:bg-muted"
               )}
             >
-              <span className="text-base leading-none">💳</span>
+              <CreditCard className="h-4 w-4" />
               <span className="leading-none">{card.name}</span>
-              <span className="text-[10px] text-muted-foreground leading-none self-center">
+              <span
+                className={cn(
+                  "text-xs leading-none self-center",
+                  isSelected ? "text-accent-foreground/80" : "text-muted-foreground"
+                )}
+              >
                 {displayRate}
               </span>
             </button>
@@ -96,12 +101,12 @@ export function CreditCardPicker({ value, onChange, planValue, onPlanChange }: C
               className={cn(
                 "px-2.5 py-1.5 rounded-lg ring-1 transition-colors text-xs",
                 planValue === plan.id
-                  ? "bg-accent ring-primary text-primary font-medium"
+                  ? "bg-accent ring-primary text-accent-foreground font-medium"
                   : "bg-card ring-border text-muted-foreground hover:bg-muted"
               )}
             >
               {plan.name}
-              <span className="ml-1 text-[10px] opacity-70">{plan.cashback_rate}%</span>
+              <span className="ml-1 text-xs opacity-70">{plan.cashback_rate}%</span>
             </button>
           ))}
         </div>

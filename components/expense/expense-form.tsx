@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import type { Category, Expense, PaymentMethod, SplitType } from "@/types";
 import { Image as ImageIcon, MapPin, Store, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Textarea } from "../ui/textarea";
 import { CategoryGrid } from "./category-grid";
@@ -27,6 +27,70 @@ import { CreditCardPicker } from "./credit-card-picker";
 import { PaymentChips } from "./payment-chips";
 
 const AMOUNT_MAX = 9_999_999;
+const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
+const DRAFT_DEBOUNCE_MS = 1000;
+
+interface ExpenseDraft {
+  savedAt: number;
+  title: string;
+  currency: "JPY" | "TWD";
+  amount: string;
+  category: Category;
+  paymentMethod: PaymentMethod;
+  storeName: string;
+  location: string;
+  expenseDate: string;
+  paidBy: string;
+  splitType: SplitType;
+  ownerId: string | null;
+  creditCardId: string | null;
+  creditCardPlanId: string | null;
+  note: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isExpenseDraft(value: unknown): value is ExpenseDraft {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.savedAt === "number" &&
+    typeof value.title === "string" &&
+    (value.currency === "JPY" || value.currency === "TWD") &&
+    typeof value.amount === "string" &&
+    typeof value.category === "string" &&
+    typeof value.paymentMethod === "string" &&
+    typeof value.storeName === "string" &&
+    typeof value.location === "string" &&
+    typeof value.expenseDate === "string" &&
+    typeof value.paidBy === "string" &&
+    (value.splitType === "personal" || value.splitType === "split") &&
+    (typeof value.ownerId === "string" || value.ownerId === null) &&
+    (typeof value.creditCardId === "string" || value.creditCardId === null) &&
+    (typeof value.creditCardPlanId === "string" || value.creditCardPlanId === null) &&
+    typeof value.note === "string"
+  );
+}
+
+function isSameDraft(a: ExpenseDraft, b: ExpenseDraft) {
+  return (
+    a.title === b.title &&
+    a.currency === b.currency &&
+    a.amount === b.amount &&
+    a.category === b.category &&
+    a.paymentMethod === b.paymentMethod &&
+    a.storeName === b.storeName &&
+    a.location === b.location &&
+    a.expenseDate === b.expenseDate &&
+    a.paidBy === b.paidBy &&
+    a.splitType === b.splitType &&
+    a.ownerId === b.ownerId &&
+    a.creditCardId === b.creditCardId &&
+    a.creditCardPlanId === b.creditCardPlanId &&
+    a.note === b.note
+  );
+}
 
 interface ExpenseFormProps {
   editExpense?: Expense | null;
@@ -35,7 +99,10 @@ interface ExpenseFormProps {
 export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   const { user, currentTrip, tripMembers, isGuest } = useApp();
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const draftTimerRef = useRef<number | null>(null);
   const isEditing = !!editExpense;
+  const draftKey = `expense-form-draft:${editExpense?.id ?? "new"}`;
 
   const [title, setTitle] = useState(editExpense?.title || "");
   const [currency, setCurrency] = useState<"JPY" | "TWD">(
@@ -77,9 +144,31 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
   const [previewRate, setPreviewRate] = useState<number>(
     editExpense?.exchange_rate ?? FALLBACK_RATE
   );
+  const initialDraftRef = useRef<ExpenseDraft | null>(null);
+
+  if (initialDraftRef.current === null) {
+    initialDraftRef.current = {
+      savedAt: 0,
+      title,
+      currency,
+      amount,
+      category,
+      paymentMethod,
+      storeName,
+      location,
+      expenseDate,
+      paidBy,
+      splitType,
+      ownerId,
+      creditCardId,
+      creditCardPlanId,
+      note,
+    };
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +177,106 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
     });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    try {
+      const rawDraft = sessionStorage.getItem(draftKey);
+      if (!rawDraft) {
+        setDraftReady(true);
+        return;
+      }
+
+      const parsed = JSON.parse(rawDraft) as unknown;
+      if (!isExpenseDraft(parsed)) {
+        sessionStorage.removeItem(draftKey);
+        setDraftReady(true);
+        return;
+      }
+
+      if (Date.now() - parsed.savedAt > DRAFT_TTL_MS) {
+        sessionStorage.removeItem(draftKey);
+        setDraftReady(true);
+        return;
+      }
+
+      setTitle(parsed.title);
+      setCurrency(parsed.currency);
+      setAmount(parsed.amount);
+      setCategory(parsed.category);
+      setPaymentMethod(parsed.paymentMethod);
+      setStoreName(parsed.storeName);
+      setLocation(parsed.location);
+      setExpenseDate(parsed.expenseDate);
+      setPaidBy(parsed.paidBy);
+      setSplitType(parsed.splitType);
+      setOwnerId(parsed.ownerId);
+      setCreditCardId(parsed.creditCardId);
+      setCreditCardPlanId(parsed.creditCardPlanId);
+      setNote(parsed.note);
+      toast.success("已恢復未送出的草稿");
+    } catch {
+      sessionStorage.removeItem(draftKey);
+    } finally {
+      setDraftReady(true);
+    }
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+
+    const draft: ExpenseDraft = {
+      savedAt: Date.now(),
+      title,
+      currency,
+      amount,
+      category,
+      paymentMethod,
+      storeName,
+      location,
+      expenseDate,
+      paidBy,
+      splitType,
+      ownerId,
+      creditCardId,
+      creditCardPlanId,
+      note,
+    };
+
+    if (initialDraftRef.current && isSameDraft(draft, initialDraftRef.current)) {
+      sessionStorage.removeItem(draftKey);
+      return;
+    }
+
+    if (draftTimerRef.current) window.clearTimeout(draftTimerRef.current);
+    draftTimerRef.current = window.setTimeout(() => {
+      sessionStorage.setItem(draftKey, JSON.stringify(draft));
+      draftTimerRef.current = null;
+    }, DRAFT_DEBOUNCE_MS);
+
+    return () => {
+      if (draftTimerRef.current) {
+        window.clearTimeout(draftTimerRef.current);
+        draftTimerRef.current = null;
+      }
+    };
+  }, [
+    amount,
+    category,
+    creditCardId,
+    creditCardPlanId,
+    currency,
+    draftKey,
+    draftReady,
+    expenseDate,
+    location,
+    note,
+    ownerId,
+    paidBy,
+    paymentMethod,
+    splitType,
+    storeName,
+    title,
+  ]);
 
   const numericAmount = Number(amount);
   const hasValidAmount = amount !== "" && Number.isFinite(numericAmount) && numericAmount > 0;
@@ -98,8 +287,21 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       : `≈ ¥ ${twdToJpy(numericAmount, previewRate).toLocaleString()}`
     : null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const removeDraft = () => {
+    if (draftTimerRef.current) {
+      window.clearTimeout(draftTimerRef.current);
+      draftTimerRef.current = null;
+    }
+    sessionStorage.removeItem(draftKey);
+  };
+
+  const discardAndReturn = () => {
+    removeDraft();
+    router.push("/records");
+  };
+
+  const submitExpense = async () => {
+    if (saving) return;
     if (!currentTrip) {
       toast.error("請先建立或選擇一個旅程");
       return;
@@ -169,6 +371,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
           toast.success("已新增消費紀錄");
         }
+        removeDraft();
         router.push("/records");
         return;
       }
@@ -231,14 +434,25 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         toast.success("已新增消費紀錄");
       }
 
+      removeDraft();
       router.push("/records");
       router.refresh();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "儲存失敗";
-      toast.error(message);
+      toast.error(message, {
+        action: {
+          label: "重試",
+          onClick: () => formRef.current?.requestSubmit(),
+        },
+      });
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void submitExpense();
   };
 
   const handleDelete = async () => {
@@ -257,6 +471,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       }
 
       toast.success("已刪除消費紀錄");
+      removeDraft();
       router.push("/records");
       if (!isGuest) router.refresh();
     } catch (err: unknown) {
@@ -268,7 +483,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 p-4">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-5 p-4">
       {/* 收據照片預覽 (編輯時) */}
       {isEditing && editExpense?.receipt_image_url && (
         <div className="space-y-1.5">
@@ -318,7 +533,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               className={cn(
                 "flex-1 py-2.5 rounded-xl ring-1 text-sm font-medium transition-colors",
                 currency === val
-                  ? "bg-accent ring-primary text-primary"
+                  ? "bg-accent ring-primary text-accent-foreground"
                   : "bg-card ring-border text-muted-foreground hover:bg-muted"
               )}
             >
@@ -333,30 +548,33 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         <Label htmlFor="amount" className="text-sm font-medium text-muted-foreground">
           金額 ({currency === "JPY" ? "¥" : "NT$"})
         </Label>
-        <Input
-          id="amount"
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0"
-          required
-          min={1}
-          max={AMOUNT_MAX}
-          step={currency === "JPY" ? 1 : 0.01}
-          inputMode={currency === "JPY" ? "numeric" : "decimal"}
-          enterKeyHint="next"
-          aria-invalid={isOverLimit || undefined}
-          className="h-12 rounded-xl border-border text-2xl font-semibold tabular-nums focus-visible:ring-primary"
-        />
-        <div className="flex min-h-5 items-center justify-between text-xs tabular-nums">
-          {isOverLimit ? (
-            <span className="text-destructive">金額不可超過 {AMOUNT_MAX.toLocaleString()}</span>
-          ) : previewConversion ? (
-            <span className="text-muted-foreground">{previewConversion}</span>
-          ) : (
-            <span aria-hidden />
+        <div className="relative">
+          <Input
+            id="amount"
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0"
+            required
+            min={1}
+            max={AMOUNT_MAX}
+            step={currency === "JPY" ? 1 : 0.01}
+            inputMode={currency === "JPY" ? "numeric" : "decimal"}
+            enterKeyHint="go"
+            aria-invalid={isOverLimit || undefined}
+            className="h-16 rounded-xl border-border pr-28 text-3xl font-semibold tabular-nums focus-visible:ring-primary"
+          />
+          {previewConversion && !isOverLimit && (
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-right text-xs font-medium text-muted-foreground tabular-nums">
+              {previewConversion}
+            </span>
           )}
         </div>
+        {isOverLimit && (
+          <div className="flex min-h-5 items-center text-xs tabular-nums">
+            <span className="text-destructive">金額不可超過 {AMOUNT_MAX.toLocaleString()}</span>
+          </div>
+        )}
       </div>
 
       {/* 日期 */}
@@ -412,6 +630,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             value={storeName}
             onChange={(e) => setStoreName(e.target.value)}
             placeholder="選填"
+            enterKeyHint="next"
             className="h-11 rounded-xl border-border focus-visible:ring-primary"
           />
         </div>
@@ -425,6 +644,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="選填"
+            enterKeyHint="next"
             className="h-11 rounded-xl border-border focus-visible:ring-primary"
           />
         </div>
@@ -438,6 +658,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="選填"
+          enterKeyHint="done"
           className="h-24 rounded-xl border-border focus-visible:ring-primary"
         />
       </div>
@@ -465,7 +686,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2.5 rounded-xl ring-1 transition-colors text-sm font-medium",
                     isSelected
-                      ? "bg-accent ring-primary text-primary"
+                      ? "bg-accent ring-primary text-accent-foreground"
                       : "bg-card ring-border text-muted-foreground hover:bg-muted"
                   )}
                 >
@@ -483,7 +704,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2.5 rounded-xl ring-1 transition-colors text-sm font-medium",
                 splitType === "split"
-                  ? "bg-accent ring-primary text-primary"
+                  ? "bg-accent ring-primary text-accent-foreground"
                   : "bg-card ring-border text-muted-foreground hover:bg-muted"
               )}
             >
@@ -492,7 +713,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             </button>
           </div>
           {splitType === "split" && amount && (
-            <p className="rounded-lg bg-warning-subtle px-3 py-2 text-xs text-warning-foreground">
+            <p className="rounded-lg bg-warning-subtle px-3 py-2 text-xs text-warning-foreground tabular-nums">
               每人 {currency === "JPY" ? "¥" : "NT$"}{Math.round(Number(amount) / tripMembers.length).toLocaleString()}
             </p>
           )}
@@ -514,7 +735,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2.5 rounded-xl ring-1 transition-colors text-sm font-medium",
                     isSelected
-                      ? "bg-accent ring-primary text-primary"
+                      ? "bg-accent ring-primary text-accent-foreground"
                       : "bg-card ring-border text-muted-foreground hover:bg-muted"
                   )}
                 >
@@ -528,10 +749,10 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       )}
 
       {/* 送出按鈕 */}
-      <div className="pt-2 space-y-3">
+      <div className="pt-2 space-y-2">
         <Button
           type="submit"
-          className="w-full bg-primary hover:bg-primary/90 h-13 text-base font-semibold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+          className="h-12 w-full rounded-xl bg-primary text-base font-semibold ring-1 ring-primary/30 hover:bg-primary/90"
           disabled={saving || deleting}
         >
           {saving
@@ -539,6 +760,16 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             : isEditing
               ? "更新消費"
               : "新增消費"}
+        </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-12 w-full rounded-xl text-base"
+          onClick={discardAndReturn}
+          disabled={saving || deleting}
+        >
+          取消
         </Button>
 
         {isEditing && (

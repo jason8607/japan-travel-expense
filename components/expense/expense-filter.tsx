@@ -85,15 +85,15 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            "relative shrink-0 h-10 w-10 rounded-xl border flex items-center justify-center transition-all",
+            "relative shrink-0 h-10 w-10 rounded-xl ring-1 flex items-center justify-center transition-colors",
             showFilters || chipCount > 0
-              ? "bg-primary/10 border-primary/25 text-primary"
-              : "bg-card border-border text-muted-foreground hover:bg-muted"
+              ? "bg-accent ring-primary text-accent-foreground"
+              : "bg-card ring-border text-muted-foreground hover:bg-muted"
           )}
         >
           <SlidersHorizontal className="h-4 w-4" />
           {chipCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 rounded-full bg-primary text-[10px] text-white font-bold flex items-center justify-center px-1">
+            <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-xl bg-accent px-1 text-xs font-semibold text-accent-foreground ring-1 ring-primary">
               {chipCount}
             </span>
           )}
@@ -116,7 +116,7 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
           <button
             type="button"
             onClick={clearAll}
-            className="rounded-md px-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
+            className="rounded-lg px-1 text-xs font-medium text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
           >
             清除篩選
           </button>
@@ -127,7 +127,7 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
       {showFilters && (
         <div className="rounded-xl border border-border/60 bg-muted/60 p-3 space-y-3">
           <div>
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               分類
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -138,12 +138,11 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
                     key={cat.id}
                     onClick={() => toggleCat(cat.value)}
                     className={cn(
-                      "px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
+                      "rounded-xl px-2.5 py-1 text-xs font-medium ring-1 transition-colors",
                       active
-                        ? "text-white shadow-sm"
-                        : "bg-card text-muted-foreground hover:bg-muted border border-border/60"
+                        ? "bg-accent text-accent-foreground ring-primary"
+                        : "bg-card text-muted-foreground ring-border hover:bg-muted"
                     )}
-                    style={active ? { backgroundColor: cat.color } : undefined}
                   >
                     {cat.icon} {cat.label}
                   </button>
@@ -153,7 +152,7 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
           </div>
 
           <div className="border-t border-border/60 pt-3">
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               支付方式
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -164,12 +163,11 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
                     key={pm.value}
                     onClick={() => togglePay(pm.value)}
                     className={cn(
-                      "px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
+                      "rounded-xl px-2.5 py-1 text-xs font-medium ring-1 transition-colors",
                       active
-                        ? "text-white shadow-sm"
-                        : "bg-card text-muted-foreground hover:bg-muted border border-border/60"
+                        ? "bg-accent text-accent-foreground ring-primary"
+                        : "bg-card text-muted-foreground ring-border hover:bg-muted"
                     )}
-                    style={active ? { backgroundColor: pm.color } : undefined}
                   >
                     <span className="inline-flex items-center gap-1 align-middle">
                       <PaymentIcon method={pm.value} size={14} />

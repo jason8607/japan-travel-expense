@@ -28,8 +28,8 @@ export function CategoryGrid({ value, onChange }: CategoryGridProps) {
           <span className="text-2xl leading-none">{cat.icon}</span>
           <span
             className={cn(
-              "text-[11px] font-medium",
-              value === cat.value ? "text-primary" : "text-muted-foreground"
+              "text-xs font-medium",
+              value === cat.value ? "text-accent-foreground" : "text-muted-foreground"
             )}
           >
             {cat.label}

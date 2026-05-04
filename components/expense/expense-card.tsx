@@ -67,7 +67,7 @@ export function ExpenseCard({
         <div className="flex items-center gap-1.5 mt-1">
           <Badge
             variant="secondary"
-            className="text-[10px] px-1.5 py-0 h-[18px] gap-0.5 font-medium"
+            className="h-[18px] gap-0.5 px-1.5 py-0 text-xs font-medium"
             style={{
               backgroundColor: `${categoryColor}18`,
               color: categoryColor,
@@ -85,11 +85,11 @@ export function ExpenseCard({
         <p className="font-bold text-sm text-foreground tabular-nums">
           {formatJPY(amountJpy)}
         </p>
-        <p className="text-[10px] text-muted-foreground tabular-nums">
+        <p className="text-xs text-muted-foreground tabular-nums">
           {formatTWD(amountTwd)}
         </p>
         {amountNote && (
-          <p className="text-[10px] text-muted-foreground/70 tabular-nums">
+          <p className="text-xs text-muted-foreground/70 tabular-nums">
             {amountNote}
           </p>
         )}
