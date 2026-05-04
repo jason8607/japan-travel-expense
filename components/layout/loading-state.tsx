@@ -25,7 +25,7 @@ export function LoadingState({
       role="status"
       aria-busy="true"
     >
-      <div className="w-full max-w-sm rounded-3xl border bg-card p-6 text-center shadow-sm">
+      <div className="w-full max-w-sm rounded-3xl bg-card p-6 text-center ring-1 ring-foreground/10">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
           <Image
             src="/icon-transparent.png"

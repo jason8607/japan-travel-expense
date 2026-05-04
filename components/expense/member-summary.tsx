@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { EmptyState } from "@/components/layout/empty-state";
-import { ExpenseCard } from "./expense-card";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { formatJPY, formatTWD } from "@/lib/exchange-rate";
-import { ChevronDown, ChevronUp, ReceiptText, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useCategories } from "@/hooks/use-categories";
+import { formatJPY, formatTWD } from "@/lib/exchange-rate";
+import { cn } from "@/lib/utils";
 import type { Expense, TripMember } from "@/types";
+import { ChevronDown, ChevronUp, ReceiptText } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ExpenseCard } from "./expense-card";
 
 interface MemberSummaryProps {
   expenses: Expense[];
@@ -23,7 +23,15 @@ interface MemberBreakdown {
   avatarUrl: string | null;
   totalJpy: number;
   totalTwd: number;
-  items: Expense[];
+  items: MemberExpenseItem[];
+  hasSplitShare: boolean;
+}
+
+interface MemberExpenseItem {
+  expense: Expense;
+  amountJpy: number;
+  amountTwd: number;
+  amountNote?: string;
 }
 
 function getExpenseOwner(expense: Expense): string | "split" {
@@ -35,38 +43,45 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
   const [expandedMember, setExpandedMember] = useState<string | null>(null);
   const { categories } = useCategories();
 
-  const { breakdowns, totalSplitJpy, perPersonSplitJpy, perPersonSplitTwd } = useMemo(() => {
+  const { breakdowns } = useMemo(() => {
     const memberCount = tripMembers.length || 1;
     const splitExps = expenses.filter((e) => e.split_type === "split");
-    const splitJpy = splitExps.reduce((s, e) => s + e.amount_jpy, 0);
-    const splitTwd = splitExps.reduce((s, e) => s + e.amount_twd, 0);
-    const perJpy = Math.round(splitJpy / memberCount);
-    const perTwd = Math.round(splitTwd / memberCount);
 
     const result: MemberBreakdown[] = tripMembers.map((member) => {
       const ownedExpenses = expenses.filter(
         (e) => getExpenseOwner(e) === member.user_id
       );
-      const personalJpy = ownedExpenses.reduce((s, e) => s + e.amount_jpy, 0);
-      const personalTwd = ownedExpenses.reduce((s, e) => s + e.amount_twd, 0);
-
-      const items = [...ownedExpenses, ...splitExps].sort((a, b) =>
-        b.expense_date.localeCompare(a.expense_date)
+      const ownedItems: MemberExpenseItem[] = ownedExpenses.map((expense) => ({
+        expense,
+        amountJpy: expense.amount_jpy,
+        amountTwd: expense.amount_twd,
+      }));
+      const splitItems: MemberExpenseItem[] = splitExps.map((expense) => ({
+        expense,
+        amountJpy: Math.round(expense.amount_jpy / memberCount),
+        amountTwd: Math.round(expense.amount_twd / memberCount),
+        amountNote: `均分 · 原 ${formatJPY(expense.amount_jpy)}`,
+      }));
+      const items = [...ownedItems, ...splitItems].sort((a, b) =>
+        b.expense.expense_date.localeCompare(a.expense.expense_date)
       );
+      const totalJpy = items.reduce((s, item) => s + item.amountJpy, 0);
+      const totalTwd = items.reduce((s, item) => s + item.amountTwd, 0);
 
       return {
         userId: member.user_id,
         name: member.profile?.display_name || "成員",
         avatar: member.profile?.avatar_emoji || "🧑",
         avatarUrl: member.profile?.avatar_url || null,
-        totalJpy: personalJpy + perJpy,
-        totalTwd: personalTwd + perTwd,
+        totalJpy,
+        totalTwd,
         items,
+        hasSplitShare: splitItems.length > 0,
       };
     });
 
     result.sort((a, b) => b.totalJpy - a.totalJpy);
-    return { breakdowns: result, totalSplitJpy: splitJpy, perPersonSplitJpy: perJpy, perPersonSplitTwd: perTwd };
+    return { breakdowns: result };
   }, [expenses, tripMembers]);
 
   if (expenses.length === 0) {
@@ -82,37 +97,28 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
 
   return (
     <div className="space-y-3 px-4">
-      {/* Split info banner */}
-      {totalSplitJpy > 0 && (
-        <div className="rounded-xl bg-accent border border-accent-foreground/10 p-3">
-          <div className="flex items-center gap-2 text-accent-foreground text-sm font-medium mb-1">
-            <Users className="h-4 w-4" />
-            均分費用總計
-          </div>
-          <p className="text-lg font-bold text-accent-foreground">{formatJPY(totalSplitJpy)}</p>
-          <p className="text-xs text-accent-foreground/75">
-            每人 {formatJPY(perPersonSplitJpy)} ≈ {formatTWD(perPersonSplitTwd)}
-          </p>
-        </div>
-      )}
+      <p className="text-xs text-muted-foreground">
+        看每個人實際負擔，不是付款人統計；均分已拆到每位成員。
+      </p>
 
       {/* Member cards */}
       {breakdowns.map((m) => {
         const isExpanded = expandedMember === m.userId;
 
         return (
-          <div key={m.userId} className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+          <div key={m.userId} className="overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10">
             <button
               onClick={() => setExpandedMember(isExpanded ? null : m.userId)}
               aria-expanded={isExpanded}
-              className="w-full flex items-center gap-3 p-4 text-left"
+              className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
             >
               <UserAvatar avatarUrl={m.avatarUrl} avatarEmoji={m.avatar} size="md" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-foreground">{m.name}</p>
                 {m.items.length > 0 && (
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    個人消費 {m.items.length} 筆
+                    花費項目 {m.items.length} 筆
+                    {m.hasSplitShare && " · 含均分分攤"}
                   </p>
                 )}
               </div>
@@ -141,20 +147,23 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
                 {m.items.length > 0 ? (
                   <>
                     <p className="text-xs text-muted-foreground font-medium mb-2">
-                      個人消費（{m.items.length} 筆）
+                      花費項目（{m.items.length} 筆）
                     </p>
-                    {m.items.map((expense) => (
+                    {m.items.map(({ expense, amountJpy, amountTwd, amountNote }) => (
                       <ExpenseCard
                         key={expense.id}
                         expense={expense}
                         onDelete={onDelete}
                         categories={categories}
+                        displayAmountJpy={amountJpy}
+                        displayAmountTwd={amountTwd}
+                        amountNote={amountNote}
                       />
                     ))}
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    尚無個人消費
+                    尚無花費項目
                   </p>
                 )}
               </div>

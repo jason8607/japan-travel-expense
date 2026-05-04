@@ -17,7 +17,7 @@ export function AuthRequiredState({
 }: AuthRequiredStateProps) {
   return (
     <div className="flex min-h-[calc(100dvh-5rem)] items-center justify-center px-4 py-4">
-      <div className="w-full max-w-sm rounded-3xl border bg-card p-6 text-center shadow-sm">
+      <div className="w-full max-w-sm rounded-3xl bg-card p-6 text-center ring-1 ring-foreground/10">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Icon className="h-8 w-8" />
         </div>
@@ -28,13 +28,13 @@ export function AuthRequiredState({
         <div className="mt-5 grid gap-2">
           <Link
             href="/auth/login"
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
           >
             登入 / 註冊
           </Link>
           <Link
             href="/"
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-card px-4 text-sm font-medium text-muted-foreground ring-1 ring-foreground/10 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
           >
             <Plane className="h-4 w-4" />
             回首頁使用訪客模式

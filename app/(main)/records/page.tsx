@@ -4,7 +4,6 @@ import type { ExpenseFilterState } from "@/components/expense/expense-filter";
 import { EMPTY_FILTER, ExpenseFilter } from "@/components/expense/expense-filter";
 import { ExpenseList } from "@/components/expense/expense-list";
 import { MemberSummary } from "@/components/expense/member-summary";
-import { SettlementView } from "@/components/expense/settlement-view";
 import { AuthRequiredState } from "@/components/layout/auth-required-state";
 import { EmptyState } from "@/components/layout/empty-state";
 import { LoadingState } from "@/components/layout/loading-state";
@@ -20,12 +19,12 @@ import { toast } from "sonner";
 export default function RecordsPage() {
   const { user, currentTrip, tripMembers, isGuest, loading: ctxLoading } = useApp();
   const { expenses, loading, error, refresh } = useExpenses();
-  const [groupBy, setGroupBy] = useState<"date" | "category" | "member" | "settlement">("date");
+  const [groupBy, setGroupBy] = useState<"date" | "category" | "member">("date");
   const [filter, setFilter] = useState<ExpenseFilterState>(EMPTY_FILTER);
 
   useEffect(() => {
-    if (isGuest && (groupBy === "member" || groupBy === "settlement")) setGroupBy("date");
-  }, [isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (isGuest && groupBy === "member") setGroupBy("date");
+  }, [groupBy, isGuest]);
 
   const filtered = useMemo(() => {
     let result = expenses;
@@ -104,19 +103,38 @@ export default function RecordsPage() {
 
   return (
     <div className="relative flex h-full flex-col">
-      <div className="flex-1 min-h-0 overflow-y-auto pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto pb-24">
+        <div className="px-4 pb-3">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
+                {currentTrip.name}
+              </h1>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-sm font-semibold tabular-nums text-foreground">
+                {filtered.length} 筆
+              </p>
+              {filtered.length !== expenses.length && (
+                <p className="text-[11px] text-muted-foreground tabular-nums">
+                  共 {expenses.length} 筆
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="px-4 mb-3">
           <ExpenseFilter
             onChange={setFilter}
-            total={expenses.length}
-            filtered={filtered.length}
           />
         </div>
 
-        <div className="px-4 mb-4">
+        <div className="px-4 mb-5 space-y-2">
           <Tabs
             value={groupBy}
-            onValueChange={(v) => setGroupBy(v as "date" | "category" | "member" | "settlement")}
+            onValueChange={(v) => setGroupBy(v as "date" | "category" | "member")}
+            className="min-w-0"
           >
             <TabsList className="w-full">
               <TabsTrigger value="date" className="flex-1">
@@ -127,21 +145,14 @@ export default function RecordsPage() {
               </TabsTrigger>
               {!isGuest && (
                 <TabsTrigger value="member" className="flex-1">
-                  按成員
-                </TabsTrigger>
-              )}
-              {!isGuest && (
-                <TabsTrigger value="settlement" className="flex-1">
-                  結算
+                  成員花費
                 </TabsTrigger>
               )}
             </TabsList>
           </Tabs>
         </div>
 
-        {groupBy === "settlement" ? (
-          <SettlementView expenses={filtered} tripMembers={tripMembers} />
-        ) : groupBy === "member" ? (
+        {groupBy === "member" ? (
           <MemberSummary expenses={filtered} tripMembers={tripMembers} onDelete={handleDelete} />
         ) : (
           <ExpenseList
@@ -158,11 +169,11 @@ export default function RecordsPage() {
         )}
       </div>
 
-      {/* FAB — 固定在中間滑動區塊的右下 */}
+      {/* FAB stays in the thumb zone without adding decorative elevation. */}
       <Link
         href="/records/new"
         aria-label="新增消費"
-        className="absolute right-4 bottom-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all active:scale-95"
+        className="absolute right-4 bottom-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground ring-1 ring-primary/20 transition-colors hover:bg-primary/90 active:translate-y-px"
       >
         <Plus className="h-6 w-6" />
       </Link>

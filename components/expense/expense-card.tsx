@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Users, Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
 import { DEFAULT_CATEGORIES } from "@/types";
 import type { Expense, CategoryItem } from "@/types";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -17,38 +17,52 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ExpenseCardProps {
   expense: Expense;
   onDelete?: (id: string) => Promise<void>;
   categories?: CategoryItem[];
+  displayAmountJpy?: number;
+  displayAmountTwd?: number;
+  amountNote?: string;
 }
 
 const FALLBACK_CATEGORY = DEFAULT_CATEGORIES.find((c) => c.value === "其他") ?? DEFAULT_CATEGORIES[0];
 
-export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES }: ExpenseCardProps) {
+export function ExpenseCard({
+  expense,
+  onDelete,
+  categories = DEFAULT_CATEGORIES,
+  displayAmountJpy,
+  displayAmountTwd,
+  amountNote,
+}: ExpenseCardProps) {
+  const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const categoryInfo = categories.find((c) => c.value === expense.category);
   const categoryColor = categoryInfo?.color ?? FALLBACK_CATEGORY.color;
   const categoryIcon = categoryInfo?.icon ?? FALLBACK_CATEGORY.icon;
+  const amountJpy = displayAmountJpy ?? expense.amount_jpy;
+  const amountTwd = displayAmountTwd ?? expense.amount_twd;
 
   return (
-    <div className="relative flex items-center gap-3 px-4 py-3.5 bg-card rounded-xl ring-1 ring-foreground/10 transition-colors">
-      <Link
-        href={`/records/new?edit=${expense.id}`}
-        aria-label={`編輯消費：${expense.title}`}
-        className="absolute inset-0 rounded-xl z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-      />
-
+    <div className="relative flex items-center gap-3 rounded-xl bg-card px-4 py-3.5 ring-1 ring-foreground/10 transition-colors hover:bg-muted/30">
       <UserAvatar
         avatarUrl={expense.profile?.avatar_url}
         avatarEmoji={expense.profile?.avatar_emoji}
         size="md"
       />
 
-      <div className="flex-1 min-w-0 pointer-events-none">
+      <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm text-foreground truncate">{expense.title}</p>
         <div className="flex items-center gap-1.5 mt-1">
           <Badge
@@ -67,44 +81,53 @@ export function ExpenseCard({ expense, onDelete, categories = DEFAULT_CATEGORIES
         </div>
       </div>
 
-      <div className="shrink-0 text-right pointer-events-none">
+      <div className="shrink-0 text-right">
         <p className="font-bold text-sm text-foreground tabular-nums">
-          {formatJPY(expense.amount_jpy)}
+          {formatJPY(amountJpy)}
         </p>
         <p className="text-[10px] text-muted-foreground tabular-nums">
-          {formatTWD(expense.amount_twd)}
+          {formatTWD(amountTwd)}
         </p>
+        {amountNote && (
+          <p className="text-[10px] text-muted-foreground/70 tabular-nums">
+            {amountNote}
+          </p>
+        )}
       </div>
 
-      <div className="shrink-0 flex items-center gap-0.5 relative z-10">
-        {expense.receipt_image_url && (
-          <button
-            type="button"
-            aria-label="檢視收據"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowReceipt(true);
-            }}
-            className="min-h-11 min-w-11 flex items-center justify-center text-muted-foreground/60 hover:text-foreground transition-colors"
-          >
-            <ImageIcon className="h-3.5 w-3.5" />
-          </button>
-        )}
-        {onDelete && (
-          <button
-            type="button"
-            aria-label="刪除消費"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowDeleteDialog(true);
-            }}
-            disabled={deleting}
-            className="min-h-11 min-w-11 flex items-center justify-center text-muted-foreground/60 hover:text-destructive transition-colors disabled:opacity-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={`更多操作：${expense.title}`}
+          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-36">
+          <DropdownMenuItem onClick={() => router.push(`/records/new?edit=${expense.id}`)}>
+            <Pencil className="h-4 w-4" />
+            編輯
+          </DropdownMenuItem>
+          {expense.receipt_image_url && (
+            <DropdownMenuItem onClick={() => setShowReceipt(true)}>
+              <ImageIcon className="h-4 w-4" />
+              檢視收據
+            </DropdownMenuItem>
+          )}
+          {onDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={deleting}
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                刪除
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {expense.receipt_image_url && (
         <Dialog open={showReceipt} onOpenChange={setShowReceipt}>

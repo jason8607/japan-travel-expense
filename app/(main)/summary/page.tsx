@@ -2,6 +2,7 @@
 
 import { EmptyState } from "@/components/layout/empty-state";
 import { LoadingState } from "@/components/layout/loading-state";
+import { SettlementView } from "@/components/expense/settlement-view";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useCategories } from "@/hooks/use-categories";
 import { useCreditCards } from "@/hooks/use-credit-cards";
@@ -9,11 +10,9 @@ import { useExpenses } from "@/hooks/use-expenses";
 import { useApp } from "@/lib/context";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
 import { buildExpensesCsv } from "@/lib/export";
-import { calculateSettlements } from "@/lib/settlement";
 import { shareOrDownloadFile } from "@/lib/share-image";
 import { differenceInDays, format, parseISO } from "date-fns";
 import {
-  ArrowRight,
   CalendarDays,
   Camera,
   CreditCard as CreditCardIcon,
@@ -118,9 +117,6 @@ export default function SummaryPage() {
       };
     }).sort((a, b) => b.amount - a.amount);
 
-    // Settlement
-    const { settlements } = calculateSettlements(expenses, tripMembers);
-
     // Credit card cashback
     const creditExpenses = expenses.filter((e) => e.payment_method === "信用卡");
     const cardStats = cards
@@ -171,7 +167,6 @@ export default function SummaryPage() {
       maxDaySpend,
       dailyEntries,
       memberSpend,
-      settlements,
       budgetUsed,
       budgetJpy: currentTrip.budget_jpy,
       cardStats,
@@ -492,24 +487,9 @@ export default function SummaryPage() {
         </div>
       )}
 
-      {/* Settlement summary */}
-      {!isGuest && tripMembers.length > 1 && stats.settlements.length > 0 && (
-        <div className="rounded-2xl border bg-warning-subtle border-warning/30 p-4 shadow-sm">
-          <h3 className="font-bold text-sm mb-3 text-warning-foreground">結算摘要</h3>
-          <div className="space-y-2">
-            {stats.settlements.map((s, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm">
-                <UserAvatar avatarUrl={s.fromAvatarUrl} avatarEmoji={s.fromEmoji} size="xs" />
-                <span className="text-warning-foreground/85">{s.fromName}</span>
-                <ArrowRight className="h-3 w-3 text-warning" />
-                <span className="font-bold text-warning-foreground">{formatJPY(s.amount)}</span>
-                <ArrowRight className="h-3 w-3 text-warning" />
-                <span className="text-warning-foreground/85">{s.toName}</span>
-                <UserAvatar avatarUrl={s.toAvatarUrl} avatarEmoji={s.toEmoji} size="xs" />
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Settlement */}
+      {!isGuest && tripMembers.length > 1 && (
+        <SettlementView expenses={expenses} tripMembers={tripMembers} />
       )}
 
       {/* Credit card cashback */}

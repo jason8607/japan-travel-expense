@@ -41,7 +41,7 @@ export function EmptyState({
     >
       <div
         className={cn(
-          "w-full max-w-sm rounded-3xl border bg-card text-center shadow-sm",
+          "w-full max-w-sm rounded-3xl bg-card text-center ring-1 ring-foreground/10",
           isPage ? "p-6" : "p-5"
         )}
       >
@@ -71,7 +71,7 @@ export function EmptyState({
             {action && (
               <Link
                 href={action.href}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
               >
                 {action.label}
               </Link>
@@ -79,7 +79,7 @@ export function EmptyState({
             {secondaryAction && (
               <Link
                 href={secondaryAction.href}
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="inline-flex h-10 items-center justify-center rounded-xl bg-card px-4 text-sm font-medium text-muted-foreground ring-1 ring-foreground/10 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
               >
                 {secondaryAction.label}
               </Link>

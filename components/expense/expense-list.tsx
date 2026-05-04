@@ -45,12 +45,16 @@ export function ExpenseList({
       {grouped.map((group) => {
         const total = group.expenses.reduce((s, e) => s + e.amount_jpy, 0);
         const totalTwd = group.expenses.reduce((s, e) => s + e.amount_twd, 0);
+        const category = groupBy === "category"
+          ? categories.find((c) => c.value === group.key)
+          : null;
+        const groupLabel = category ? `${category.icon} ${category.label}` : group.label;
 
         return (
           <div key={group.key}>
             <div className="flex items-center justify-between px-4 mb-2">
               <span className="text-sm font-medium text-foreground">
-                {group.label}
+                {groupLabel}
               </span>
               <span className="text-xs text-muted-foreground">
                 總計 {formatJPY(total)} ≈ {formatTWD(totalTwd)}

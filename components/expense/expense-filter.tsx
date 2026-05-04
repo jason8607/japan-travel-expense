@@ -101,15 +101,22 @@ export function ExpenseFilter({ onChange, total, filtered }: ExpenseFilterProps)
       </div>
 
       {/* Active filter summary */}
-      {hasFilter && total !== undefined && filtered !== undefined && (
+      {hasFilter && (
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            找到 {filtered} 筆
-            {total !== filtered && <span className="text-muted-foreground/60"> / {total}</span>}
+            {total !== undefined && filtered !== undefined ? (
+              <>
+                找到 {filtered} 筆
+                {total !== filtered && <span className="text-muted-foreground/60"> / {total}</span>}
+              </>
+            ) : (
+              <>已套用篩選</>
+            )}
           </p>
           <button
+            type="button"
             onClick={clearAll}
-            className="text-xs text-primary hover:text-primary font-medium"
+            className="rounded-md px-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
           >
             清除篩選
           </button>
