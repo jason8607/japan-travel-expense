@@ -19,7 +19,7 @@ export function CategoryGrid({ value, onChange }: CategoryGridProps) {
           type="button"
           onClick={() => onChange(cat.value)}
           className={cn(
-            "flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl ring-1 transition-colors",
+            "flex flex-col items-center justify-center gap-1 p-2.5 rounded-lg ring-1 transition-colors",
             value === cat.value
               ? "bg-accent ring-primary"
               : "bg-card ring-border hover:bg-muted"

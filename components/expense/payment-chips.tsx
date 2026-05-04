@@ -19,7 +19,7 @@ export function PaymentChips({ value, onChange }: PaymentChipsProps) {
           type="button"
           onClick={() => onChange(pm.value)}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-2 rounded-xl ring-1 transition-colors text-sm",
+            "flex items-center gap-1.5 px-3 py-2 rounded-lg ring-1 transition-colors text-sm",
             value === pm.value
               ? "bg-accent ring-primary text-accent-foreground font-medium"
               : "bg-card ring-border text-muted-foreground hover:bg-muted"

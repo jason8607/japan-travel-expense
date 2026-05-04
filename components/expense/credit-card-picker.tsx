@@ -2,7 +2,7 @@
 
 import { useCreditCards } from "@/hooks/use-credit-cards";
 import { cn } from "@/lib/utils";
-import { CreditCard, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import Link from "next/link";
 
 interface CreditCardPickerProps {
@@ -19,11 +19,11 @@ export function CreditCardPicker({ value, onChange, planValue, onPlanChange }: C
 
   if (cards.length === 0) {
     return (
-      <div className="rounded-xl bg-muted ring-1 ring-border p-3 flex items-center justify-between">
+      <div className="flex items-center justify-between rounded-xl bg-muted p-3 ring-1 ring-border">
         <p className="text-xs text-muted-foreground">尚未設定信用卡</p>
         <Link
           href="/settings"
-          className="text-xs text-primary font-medium flex items-center gap-1 hover:underline"
+          className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
         >
           <Settings className="h-3 w-3" />
           前往設定
@@ -33,22 +33,27 @@ export function CreditCardPicker({ value, onChange, planValue, onPlanChange }: C
   }
 
   const selectedCard = cards.find((c) => c.id === value);
-  const hasPlans = selectedCard?.plans && selectedCard.plans.length > 0;
+  const hasPlans = !!selectedCard?.plans && selectedCard.plans.length > 0;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         {cards.map((card) => {
           const isSelected = value === card.id;
-          const displayRate =
-            card.plans && card.plans.length > 0
-              ? (() => {
-                  const rates = card.plans.map((p) => p.cashback_rate);
-                  const min = Math.min(...rates);
-                  const max = Math.max(...rates);
-                  return min === max ? `${min}%` : `${min}~${max}%`;
-                })()
-              : `${card.cashback_rate}%`;
+          const cardHasPlans = !!card.plans && card.plans.length > 0;
+          const displayRate = cardHasPlans
+            ? (() => {
+                const rates = card.plans!.map((p) => p.cashback_rate);
+                const min = Math.min(...rates);
+                const max = Math.max(...rates);
+                return min === max ? `${min}%` : `${min}~${max}%`;
+              })()
+            : `${card.cashback_rate}%`;
+
+          // When this card is selected and has plans, hide the rate range on the
+          // chip — the plan chip below shows the actual active rate, repeating
+          // a "2~3.8%" range alongside a concrete "3.3%" plan reads as conflict.
+          const showRate = !(isSelected && cardHasPlans);
 
           return (
             <button
@@ -60,7 +65,6 @@ export function CreditCardPicker({ value, onChange, planValue, onPlanChange }: C
                   onPlanChange?.(null);
                 } else {
                   onChange(card.id);
-                  // Auto-select first plan if card has plans
                   if (card.plans && card.plans.length > 0) {
                     onPlanChange?.(card.plans[0].id);
                   } else {
@@ -69,46 +73,59 @@ export function CreditCardPicker({ value, onChange, planValue, onPlanChange }: C
                 }
               }}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-xl ring-1 transition-colors text-sm",
+                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm ring-1 transition-colors",
                 isSelected
                   ? "bg-accent ring-primary text-accent-foreground font-medium"
                   : "bg-card ring-border text-muted-foreground hover:bg-muted"
               )}
             >
-              <CreditCard className="h-4 w-4" />
               <span className="leading-none">{card.name}</span>
-              <span
-                className={cn(
-                  "text-xs leading-none self-center",
-                  isSelected ? "text-accent-foreground/80" : "text-muted-foreground"
-                )}
-              >
-                {displayRate}
-              </span>
+              {showRate && (
+                <span
+                  className={cn(
+                    "text-xs leading-none tabular-nums",
+                    isSelected ? "text-accent-foreground/70" : "text-muted-foreground/70"
+                  )}
+                >
+                  {displayRate}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* Plan selection */}
+      {/* Plan selection — visually subordinate to the selected card.
+          Plans drop ring-1 and bg-card so the row reads as "tags inside the
+          selected card" rather than another row of peer buttons. */}
       {hasPlans && (
-        <div className="flex flex-wrap gap-1.5 pl-1">
-          {selectedCard!.plans!.map((plan) => (
-            <button
-              key={plan.id}
-              type="button"
-              onClick={() => onPlanChange?.(plan.id)}
-              className={cn(
-                "px-2.5 py-1.5 rounded-lg ring-1 transition-colors text-xs",
-                planValue === plan.id
-                  ? "bg-accent ring-primary text-accent-foreground font-medium"
-                  : "bg-card ring-border text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {plan.name}
-              <span className="ml-1 text-xs opacity-70">{plan.cashback_rate}%</span>
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-1.5">
+          {selectedCard!.plans!.map((plan) => {
+            const isPlanSelected = planValue === plan.id;
+            return (
+              <button
+                key={plan.id}
+                type="button"
+                onClick={() => onPlanChange?.(plan.id)}
+                className={cn(
+                  "rounded-lg px-2.5 py-1.5 text-xs transition-colors",
+                  isPlanSelected
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                {plan.name}
+                <span
+                  className={cn(
+                    "ml-1 tabular-nums",
+                    isPlanSelected ? "opacity-80" : "opacity-60"
+                  )}
+                >
+                  {plan.cashback_rate}%
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

@@ -17,9 +17,9 @@ import { FALLBACK_RATE, getExchangeRate, jpyToTwd, twdToJpy } from "@/lib/exchan
 import { addGuestExpense, deleteGuestExpense, updateGuestExpense } from "@/lib/guest-storage";
 import { cn } from "@/lib/utils";
 import type { Category, Expense, PaymentMethod, SplitType } from "@/types";
-import { Image as ImageIcon, MapPin, Store, Trash2, Users } from "lucide-react";
+import { Image as ImageIcon, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Textarea } from "../ui/textarea";
 import { CategoryGrid } from "./category-grid";
@@ -170,12 +170,53 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
     };
   }
 
+  const removeDraft = useCallback(() => {
+    if (draftTimerRef.current) {
+      window.clearTimeout(draftTimerRef.current);
+      draftTimerRef.current = null;
+    }
+    sessionStorage.removeItem(draftKey);
+  }, [draftKey]);
+
+  const resetForm = useCallback(() => {
+    const init = initialDraftRef.current;
+    if (!init) return;
+    setTitle(init.title);
+    setCurrency(init.currency);
+    setAmount(init.amount);
+    setCategory(init.category);
+    setPaymentMethod(init.paymentMethod);
+    setStoreName(init.storeName);
+    setLocation(init.location);
+    setExpenseDate(init.expenseDate);
+    setPaidBy(init.paidBy);
+    setSplitType(init.splitType);
+    setOwnerId(init.ownerId);
+    setCreditCardId(init.creditCardId);
+    setCreditCardPlanId(init.creditCardPlanId);
+    setNote(init.note);
+    removeDraft();
+  }, [removeDraft]);
+
   useEffect(() => {
     let cancelled = false;
     getExchangeRate().then((rate) => {
       if (!cancelled) setPreviewRate(rate);
     });
     return () => { cancelled = true; };
+  }, []);
+
+  // Power-user shortcut: Cmd/Ctrl+Enter submits from anywhere in the form,
+  // including inside <textarea> where Enter inserts a newline.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        formRef.current?.requestSubmit();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, []);
 
   useEffect(() => {
@@ -213,13 +254,19 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       setCreditCardId(parsed.creditCardId);
       setCreditCardPlanId(parsed.creditCardPlanId);
       setNote(parsed.note);
-      toast.success("已恢復未送出的草稿");
+      toast.success("已恢復未送出的草稿", {
+        action: {
+          label: "重新開始",
+          onClick: () => resetForm(),
+        },
+  
+      });
     } catch {
       sessionStorage.removeItem(draftKey);
     } finally {
       setDraftReady(true);
     }
-  }, [draftKey]);
+  }, [draftKey, resetForm]);
 
   useEffect(() => {
     if (!draftReady) return;
@@ -287,16 +334,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       : `≈ ¥ ${twdToJpy(numericAmount, previewRate).toLocaleString()}`
     : null;
 
-  const removeDraft = () => {
-    if (draftTimerRef.current) {
-      window.clearTimeout(draftTimerRef.current);
-      draftTimerRef.current = null;
-    }
-    sessionStorage.removeItem(draftKey);
-  };
-
   const discardAndReturn = () => {
-    removeDraft();
+    // Preserve draft in sessionStorage so an accidental cancel can be recovered
+    // within DRAFT_TTL_MS (24h). Use the draft toast's "重新開始" action to truly wipe.
     router.push("/records");
   };
 
@@ -316,6 +356,15 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
     }
     if (isOverLimit) {
       toast.error(`金額不可超過 ${AMOUNT_MAX.toLocaleString()}`);
+      return;
+    }
+    if (!isGuest && typeof navigator !== "undefined" && !navigator.onLine) {
+      toast.error("目前離線，連線後再試一次", {
+        action: {
+          label: "重試",
+          onClick: () => formRef.current?.requestSubmit(),
+        },
+      });
       return;
     }
     setSaving(true);
@@ -483,47 +532,61 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-5 p-4">
-      {/* 收據照片預覽 (編輯時) */}
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      aria-busy={saving || deleting}
+    >
+      {/* fieldset disabled cascades to every form control inside, so saving/deleting
+          locks the entire surface (inputs, chips, toggles) without per-control props.
+          The reset classes neutralise fieldset's default border/padding/min-width. */}
+      <fieldset
+        disabled={saving || deleting}
+        className="m-0 min-w-0 border-0 p-4 disabled:opacity-90"
+      >
+      {/* Receipt strip (editing only) — sits above input group as visual context, no group treatment */}
       {isEditing && editExpense?.receipt_image_url && (
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 pb-6">
           <button
             type="button"
             onClick={() => setShowReceiptImage(!showReceiptImage)}
-            className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary transition-colors"
+            className="-mx-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-foreground outline-none transition-colors hover:bg-muted active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <ImageIcon className="h-4 w-4" />
             {showReceiptImage ? "收起收據照片" : "查看收據照片"}
           </button>
           {showReceiptImage && (
-            <div className="relative w-full aspect-3/4 max-h-80 rounded-xl overflow-hidden bg-muted border border-border">
+            <div className="relative aspect-3/4 max-h-80 w-full overflow-hidden rounded-xl bg-muted ring-1 ring-foreground/10">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={editExpense.receipt_image_url}
                 alt="收據照片"
-                className="w-full h-full object-contain"
+                className="h-full w-full object-contain"
               />
             </div>
           )}
         </div>
       )}
 
+      {/* === Group 1 — 輸入 (品名 / 幣別 / 金額 / 日期) === */}
+      <div className="space-y-4">
       {/* 品名 */}
       <div className="space-y-1.5">
-        <Label htmlFor="title" className="text-sm font-medium text-muted-foreground">品名</Label>
+        <Label htmlFor="title" className="text-sm font-medium text-foreground">品名</Label>
         <Input
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="例：拉麵、新幹線車票"
           required
-          className="h-12 rounded-xl border-border text-base focus-visible:ring-primary"
+          maxLength={100}
+          className="h-12 rounded-lg border-border text-base focus-visible:ring-primary"
         />
       </div>
 
       {/* 幣別 */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-muted-foreground">幣別</Label>
+        <Label className="text-sm font-medium text-foreground">幣別</Label>
         <div className="flex gap-2">
           {([["JPY", "🇯🇵 ¥ 日幣"], ["TWD", "🇹🇼 NT$ 台幣"]] as const).map(([val, label]) => (
             <button
@@ -531,7 +594,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               type="button"
               onClick={() => setCurrency(val)}
               className={cn(
-                "flex-1 py-2.5 rounded-xl ring-1 text-sm font-medium transition-colors",
+                "flex-1 rounded-lg py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
                 currency === val
                   ? "bg-accent ring-primary text-accent-foreground"
                   : "bg-card ring-border text-muted-foreground hover:bg-muted"
@@ -545,7 +608,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
 
       {/* 金額 (hero) */}
       <div className="space-y-1.5">
-        <Label htmlFor="amount" className="text-sm font-medium text-muted-foreground">
+        <Label htmlFor="amount" className="text-sm font-medium text-foreground">
           金額 ({currency === "JPY" ? "¥" : "NT$"})
         </Label>
         <div className="relative">
@@ -562,10 +625,10 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             inputMode={currency === "JPY" ? "numeric" : "decimal"}
             enterKeyHint="go"
             aria-invalid={isOverLimit || undefined}
-            className="h-16 rounded-xl border-border pr-28 text-3xl font-semibold tabular-nums focus-visible:ring-primary"
+            className="h-16 rounded-lg border-border pr-28 text-2xl font-semibold tabular-nums"
           />
           {previewConversion && !isOverLimit && (
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-right text-xs font-medium text-muted-foreground tabular-nums">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-right text-xs font-normal text-muted-foreground tabular-nums">
               {previewConversion}
             </span>
           )}
@@ -579,25 +642,28 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
 
       {/* 日期 */}
       <div className="space-y-1.5">
-        <Label htmlFor="date" className="text-sm font-medium text-muted-foreground">日期</Label>
+        <Label htmlFor="date" className="text-sm font-medium text-foreground">日期</Label>
         <Input
           id="date"
           type="date"
           value={expenseDate}
           onChange={(e) => setExpenseDate(e.target.value)}
-          className="h-12 rounded-xl border-border focus-visible:ring-primary"
+          className="h-12 rounded-lg border-border"
         />
       </div>
+      </div>
 
+      {/* === Group 2 — 分類 (類別 / 支付方式) === */}
+      <div className="mt-6 space-y-4 border-t border-border/60 pt-6">
       {/* 類別選擇 - 圖示網格 */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-muted-foreground">類別</Label>
+        <Label className="text-sm font-medium text-foreground">類別</Label>
         <CategoryGrid value={category} onChange={setCategory} />
       </div>
 
       {/* 支付方式 - 橫排 chips */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-muted-foreground">支付方式</Label>
+        <Label className="text-sm font-medium text-foreground">支付方式</Label>
         <PaymentChips
           value={paymentMethod}
           onChange={(m) => {
@@ -608,65 +674,28 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             }
           }}
         />
-        {paymentMethod === "信用卡" && (
+      </div>
+
+      {/* Credit card picker — sibling of the payment-method block (not nested
+          inside its tight space-y-2), so it inherits the section-level gap and
+          reads as a sub-zone that expanded out of the selected payment chip. */}
+      {paymentMethod === "信用卡" && (
+        <div className="pt-1">
           <CreditCardPicker
             value={creditCardId}
             onChange={setCreditCardId}
             planValue={creditCardPlanId}
             onPlanChange={setCreditCardPlanId}
           />
-        )}
-      </div>
-
-      {/* 店家 + 地點 */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="store" className="text-sm font-medium text-muted-foreground">
-            <Store className="inline h-3.5 w-3.5 mr-1 text-muted-foreground" />
-            店家名稱
-          </Label>
-          <Input
-            id="store"
-            value={storeName}
-            onChange={(e) => setStoreName(e.target.value)}
-            placeholder="選填"
-            enterKeyHint="next"
-            className="h-11 rounded-xl border-border focus-visible:ring-primary"
-          />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="location" className="text-sm font-medium text-muted-foreground">
-            <MapPin className="inline h-3.5 w-3.5 mr-1 text-muted-foreground" />
-            地點
-          </Label>
-          <Input
-            id="location"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="選填"
-            enterKeyHint="next"
-            className="h-11 rounded-xl border-border focus-visible:ring-primary"
-          />
-        </div>
+      )}
       </div>
 
-      {/* 備註 */}
-      <div className="space-y-1.5">
-        <Label htmlFor="note" className="text-sm font-medium text-muted-foreground">備註</Label>
-        <Textarea
-          id="note"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="選填"
-          enterKeyHint="done"
-          className="h-24 rounded-xl border-border focus-visible:ring-primary"
-        />
-      </div>
-
-      {/* 這筆是誰的 */}
+      {/* === Group 3 — 分帳 (這筆是誰的 / 誰付的) — only when authenticated multi-member trip === */}
       {!isGuest && tripMembers.length > 1 && (
+        <div className="mt-6 space-y-4 border-t border-border/60 pt-6">
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">這筆是誰的</Label>
+          <Label className="text-sm font-medium text-foreground">這筆是誰的</Label>
           <div className="flex flex-wrap gap-2">
             {tripMembers.map((m) => {
               const isMe = m.user_id === user?.id;
@@ -684,7 +713,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                     setOwnerId(isMe ? null : m.user_id);
                   }}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2.5 rounded-xl ring-1 transition-colors text-sm font-medium",
+                    "flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
                     isSelected
                       ? "bg-accent ring-primary text-accent-foreground"
                       : "bg-card ring-border text-muted-foreground hover:bg-muted"
@@ -702,7 +731,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                 setOwnerId(null);
               }}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2.5 rounded-xl ring-1 transition-colors text-sm font-medium",
+                "flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
                 splitType === "split"
                   ? "bg-accent ring-primary text-accent-foreground"
                   : "bg-card ring-border text-muted-foreground hover:bg-muted"
@@ -718,12 +747,10 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             </p>
           )}
         </div>
-      )}
 
-      {/* 誰付的 */}
-      {!isGuest && tripMembers.length > 1 && (
+        {/* 誰付的 */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">誰付的</Label>
+          <Label className="text-sm font-medium text-foreground">誰付的</Label>
           <div className="flex flex-wrap gap-2">
             {tripMembers.map((m) => {
               const isSelected = paidBy === m.user_id;
@@ -733,7 +760,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                   type="button"
                   onClick={() => setPaidBy(m.user_id)}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2.5 rounded-xl ring-1 transition-colors text-sm font-medium",
+                    "flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
                     isSelected
                       ? "bg-accent ring-primary text-accent-foreground"
                       : "bg-card ring-border text-muted-foreground hover:bg-muted"
@@ -746,17 +773,66 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             })}
           </div>
         </div>
+        </div>
       )}
 
-      {/* 送出按鈕 */}
-      <div className="pt-2 space-y-2">
+      {/* === Group 4 — 補充 (店家 + 地點 / 備註) === */}
+      <div className="mt-6 space-y-4 border-t border-border/60 pt-6">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="store" className="text-sm font-medium text-muted-foreground">
+              店家名稱 <span className="font-normal text-muted-foreground/60">（選填）</span>
+            </Label>
+            <Input
+              id="store"
+              value={storeName}
+              onChange={(e) => setStoreName(e.target.value)}
+              placeholder="例：一蘭拉麵"
+              enterKeyHint="next"
+              maxLength={100}
+              className="h-12 rounded-lg border-border"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="location" className="text-sm font-medium text-muted-foreground">
+              地點 <span className="font-normal text-muted-foreground/60">（選填）</span>
+            </Label>
+            <Input
+              id="location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="例：澀谷"
+              enterKeyHint="next"
+              maxLength={100}
+              className="h-12 rounded-lg border-border"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="note" className="text-sm font-medium text-muted-foreground">
+            備註 <span className="font-normal text-muted-foreground/60">（選填）</span>
+          </Label>
+          <Textarea
+            id="note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            enterKeyHint="done"
+            maxLength={500}
+            className="h-24 rounded-lg border-border"
+          />
+        </div>
+      </div>
+
+      {/* === Group 5 — 行動 (送出 / 取消 / 刪除) === */}
+      <div className="mt-6 space-y-2 border-t border-border/60 pt-6">
         <Button
           type="submit"
-          className="h-12 w-full rounded-xl bg-primary text-base font-semibold ring-1 ring-primary/30 hover:bg-primary/90"
+          className="h-12 w-full rounded-lg text-base font-semibold hover:bg-primary/90"
           disabled={saving || deleting}
         >
           {saving
-            ? "儲存中..."
+            ? "儲存中…"
             : isEditing
               ? "更新消費"
               : "新增消費"}
@@ -765,7 +841,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         <Button
           type="button"
           variant="ghost"
-          className="h-12 w-full rounded-xl text-base"
+          className="h-12 w-full rounded-lg text-base"
           onClick={discardAndReturn}
           disabled={saving || deleting}
         >
@@ -775,16 +851,18 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         {isEditing && (
           <Button
             type="button"
-            variant="outline"
-            className="w-full h-12 text-base text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30 rounded-xl"
+            variant="destructive"
+            className="h-12 w-full rounded-lg text-base"
             onClick={() => setShowDeleteDialog(true)}
             disabled={saving || deleting}
           >
-            <Trash2 className="h-4 w-4 mr-2" />
-            {deleting ? "刪除中..." : "刪除此筆消費"}
+            <Trash2 className="mr-2 h-4 w-4" />
+            {deleting ? "刪除中…" : "刪除此筆消費"}
           </Button>
         )}
       </div>
+
+      </fieldset>
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent showCloseButton={false}>
