@@ -23,3 +23,5 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **DESIGN.json** — 機器可讀的元件 HTML/CSS sidecar,8 個 canonical 元件 + tonal ramps + motion tokens
 
 `$impeccable` 系列指令(craft / shape / critique / polish ...)會自動讀取這三份檔案。手寫新介面也應比對這三份的 anti-references 與 Named Rules。
+
+回覆一率繁體中文

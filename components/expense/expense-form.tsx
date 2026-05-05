@@ -1,25 +1,17 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useHeaderAction } from "@/components/layout/header-action-context";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useApp } from "@/lib/context";
 import { FALLBACK_RATE, getExchangeRate, jpyToTwd, twdToJpy } from "@/lib/exchange-rate";
-import { addGuestExpense, deleteGuestExpense, updateGuestExpense } from "@/lib/guest-storage";
+import { addGuestExpense, updateGuestExpense } from "@/lib/guest-storage";
 import { cn } from "@/lib/utils";
 import type { Category, Expense, PaymentMethod, SplitType } from "@/types";
-import { Image as ImageIcon, Trash2, Users } from "lucide-react";
+import { Check, Image as ImageIcon, Loader2, Plus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Textarea } from "../ui/textarea";
 import { CategoryGrid } from "./category-grid";
@@ -141,9 +133,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   );
   const [note, setNote] = useState(editExpense?.note || "");
   const [showReceiptImage, setShowReceiptImage] = useState(false);
+  const hasOptionalFields = !!(editExpense?.store_name || editExpense?.location || editExpense?.note);
+  const [detailsExpanded, setDetailsExpanded] = useState(hasOptionalFields);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [draftReady, setDraftReady] = useState(false);
   const [previewRate, setPreviewRate] = useState<number>(
     editExpense?.exchange_rate ?? FALLBACK_RATE
@@ -195,8 +187,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
     setCreditCardId(init.creditCardId);
     setCreditCardPlanId(init.creditCardPlanId);
     setNote(init.note);
+    setDetailsExpanded(hasOptionalFields);
     removeDraft();
-  }, [removeDraft]);
+  }, [hasOptionalFields, removeDraft]);
 
   useEffect(() => {
     let cancelled = false;
@@ -247,6 +240,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       setPaymentMethod(parsed.paymentMethod);
       setStoreName(parsed.storeName);
       setLocation(parsed.location);
+      if (parsed.storeName || parsed.location || parsed.note) {
+        setDetailsExpanded(true);
+      }
       setExpenseDate(parsed.expenseDate);
       setPaidBy(parsed.paidBy);
       setSplitType(parsed.splitType);
@@ -333,12 +329,6 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       ? `≈ NT$ ${jpyToTwd(numericAmount, previewRate).toLocaleString()}`
       : `≈ ¥ ${twdToJpy(numericAmount, previewRate).toLocaleString()}`
     : null;
-
-  const discardAndReturn = () => {
-    // Preserve draft in sessionStorage so an accidental cancel can be recovered
-    // within DRAFT_TTL_MS (24h). Use the draft toast's "重新開始" action to truly wipe.
-    router.push("/records");
-  };
 
   const submitExpense = async () => {
     if (saving) return;
@@ -504,44 +494,38 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
     void submitExpense();
   };
 
-  const handleDelete = async () => {
-    if (!editExpense) return;
-    setShowDeleteDialog(false);
-    setDeleting(true);
-    try {
-      if (isGuest) {
-        deleteGuestExpense(editExpense.id);
-      } else {
-        const res = await fetch(`/api/expenses?id=${editExpense.id}`, {
-          method: "DELETE",
-        });
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || "刪除失敗");
-      }
-
-      toast.success("已刪除消費紀錄");
-      removeDraft();
-      router.push("/records");
-      if (!isGuest) router.refresh();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "刪除失敗";
-      toast.error(message);
-    } finally {
-      setDeleting(false);
-    }
-  };
+  const headerSubmitButton = useMemo(
+    () => (
+      <button
+        type="submit"
+        form="expense-form"
+        disabled={saving}
+        aria-label={isEditing ? "更新消費" : "新增消費"}
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-primary outline-none transition-colors hover:bg-muted active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+      >
+        {saving ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          <Check className="h-5 w-5" />
+        )}
+      </button>
+    ),
+    [saving, isEditing]
+  );
+  useHeaderAction(headerSubmitButton);
 
   return (
     <form
+      id="expense-form"
       ref={formRef}
       onSubmit={handleSubmit}
-      aria-busy={saving || deleting}
+      aria-busy={saving}
     >
-      {/* fieldset disabled cascades to every form control inside, so saving/deleting
+      {/* fieldset disabled cascades to every form control inside, so saving
           locks the entire surface (inputs, chips, toggles) without per-control props.
           The reset classes neutralise fieldset's default border/padding/min-width. */}
       <fieldset
-        disabled={saving || deleting}
+        disabled={saving}
         className="m-0 min-w-0 border-0 p-4 disabled:opacity-90"
       >
       {/* Receipt strip (editing only) — sits above input group as visual context, no group treatment */}
@@ -584,20 +568,20 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         />
       </div>
 
-      {/* 幣別 */}
+      {/* 幣別 — segmented control */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-foreground">幣別</Label>
-        <div className="flex gap-2">
-          {([["JPY", "🇯🇵 ¥ 日幣"], ["TWD", "🇹🇼 NT$ 台幣"]] as const).map(([val, label]) => (
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          {([["JPY", "¥ 日幣"], ["TWD", "NT$ 台幣"]] as const).map(([val, label]) => (
             <button
               key={val}
               type="button"
               onClick={() => setCurrency(val)}
               className={cn(
-                "flex-1 rounded-lg py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
+                "rounded-md px-3 py-2 text-sm font-medium outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
                 currency === val
-                  ? "bg-accent ring-primary text-accent-foreground"
-                  : "bg-card ring-border text-muted-foreground hover:bg-muted"
+                  ? "bg-card text-foreground ring-1 ring-foreground/10"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               {label}
@@ -676,11 +660,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         />
       </div>
 
-      {/* Credit card picker — sibling of the payment-method block (not nested
-          inside its tight space-y-2), so it inherits the section-level gap and
-          reads as a sub-zone that expanded out of the selected payment chip. */}
+      {/* Credit card picker — appears with a soft slide-in when 信用卡 is picked. */}
       {paymentMethod === "信用卡" && (
-        <div className="pt-1">
+        <div className="animate-in fade-in slide-in-from-top-2 pt-1 duration-200">
           <CreditCardPicker
             value={creditCardId}
             onChange={setCreditCardId}
@@ -776,114 +758,68 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         </div>
       )}
 
-      {/* === Group 4 — 補充 (店家 + 地點 / 備註) === */}
+      {/* === Group 4 — 補充 (店家 + 地點 / 備註) — collapsed by default === */}
       <div className="mt-6 space-y-4 border-t border-border/60 pt-6">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="store" className="text-sm font-medium text-muted-foreground">
-              店家名稱 <span className="font-normal text-muted-foreground/60">（選填）</span>
-            </Label>
-            <Input
-              id="store"
-              value={storeName}
-              onChange={(e) => setStoreName(e.target.value)}
-              placeholder="例：一蘭拉麵"
-              enterKeyHint="next"
-              maxLength={100}
-              className="h-12 rounded-lg border-border"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="location" className="text-sm font-medium text-muted-foreground">
-              地點 <span className="font-normal text-muted-foreground/60">（選填）</span>
-            </Label>
-            <Input
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="例：澀谷"
-              enterKeyHint="next"
-              maxLength={100}
-              className="h-12 rounded-lg border-border"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="note" className="text-sm font-medium text-muted-foreground">
-            備註 <span className="font-normal text-muted-foreground/60">（選填）</span>
-          </Label>
-          <Textarea
-            id="note"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            enterKeyHint="done"
-            maxLength={500}
-            className="h-24 rounded-lg border-border"
-          />
-        </div>
-      </div>
-
-      {/* === Group 5 — 行動 (送出 / 取消 / 刪除) === */}
-      <div className="mt-6 space-y-2 border-t border-border/60 pt-6">
-        <Button
-          type="submit"
-          className="h-12 w-full rounded-lg text-base font-semibold hover:bg-primary/90"
-          disabled={saving || deleting}
-        >
-          {saving
-            ? "儲存中…"
-            : isEditing
-              ? "更新消費"
-              : "新增消費"}
-        </Button>
-
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-12 w-full rounded-lg text-base"
-          onClick={discardAndReturn}
-          disabled={saving || deleting}
-        >
-          取消
-        </Button>
-
-        {isEditing && (
-          <Button
+        {!detailsExpanded ? (
+          <button
             type="button"
-            variant="destructive"
-            className="h-12 w-full rounded-lg text-base"
-            onClick={() => setShowDeleteDialog(true)}
-            disabled={saving || deleting}
+            onClick={() => setDetailsExpanded(true)}
+            className="inline-flex items-center gap-1 self-start rounded-md text-xs text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {deleting ? "刪除中…" : "刪除此筆消費"}
-          </Button>
+            <Plus className="h-3 w-3" />
+            更多細節（店家、地點、備註）
+          </button>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-top-2 space-y-4 duration-200">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="store" className="text-sm font-medium text-muted-foreground">
+                  店家名稱 <span className="font-normal text-muted-foreground/60">（選填）</span>
+                </Label>
+                <Input
+                  id="store"
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
+                  placeholder="例：一蘭拉麵"
+                  enterKeyHint="next"
+                  maxLength={100}
+                  className="h-12 rounded-lg border-border"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="location" className="text-sm font-medium text-muted-foreground">
+                  地點 <span className="font-normal text-muted-foreground/60">（選填）</span>
+                </Label>
+                <Input
+                  id="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="例：澀谷"
+                  enterKeyHint="next"
+                  maxLength={100}
+                  className="h-12 rounded-lg border-border"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="note" className="text-sm font-medium text-muted-foreground">
+                備註 <span className="font-normal text-muted-foreground/60">（選填）</span>
+              </Label>
+              <Textarea
+                id="note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                enterKeyHint="done"
+                maxLength={500}
+                className="h-24 rounded-lg border-border"
+              />
+            </div>
+          </div>
         )}
       </div>
 
       </fieldset>
-
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>確定要刪除？</DialogTitle>
-            <DialogDescription>刪除後無法復原</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              取消
-            </Button>
-            <Button
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
-              確定刪除
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </form>
   );
 }

@@ -19,13 +19,13 @@ export function PaymentChips({ value, onChange }: PaymentChipsProps) {
           type="button"
           onClick={() => onChange(pm.value)}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-2 rounded-lg ring-1 transition-colors text-sm",
+            "flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
             value === pm.value
               ? "bg-accent ring-primary text-accent-foreground font-medium"
               : "bg-card ring-border text-muted-foreground hover:bg-muted"
           )}
         >
-          <PaymentIcon method={pm.value} size={16} />
+          <PaymentIcon method={pm.value} size={14} />
           <span>{pm.label}</span>
         </button>
       ))}

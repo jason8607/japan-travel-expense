@@ -4,6 +4,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { HeaderActionProvider, useHeaderActionSlot } from "@/components/layout/header-action-context";
 import { PageHeader } from "@/components/layout/page-header";
 import { cn } from "@/lib/utils";
 
@@ -14,13 +15,18 @@ interface MainShellProps {
 interface HeaderConfig {
   title: string;
   showBack?: boolean;
+  backVariant?: "arrow" | "close";
 }
 
 function getHeaderConfig(pathname: string, isEditingExpense: boolean): HeaderConfig | null {
   if (pathname === "/") return null;
   if (pathname === "/records") return { title: "記帳" };
   if (pathname === "/records/new") {
-    return { title: isEditingExpense ? "編輯消費" : "新增消費", showBack: true };
+    return {
+      title: isEditingExpense ? "編輯消費" : "新增消費",
+      showBack: true,
+      backVariant: "close",
+    };
   }
   if (pathname === "/scan") return { title: "掃描收據" };
   if (pathname === "/stats") return { title: "統計" };
@@ -38,14 +44,22 @@ function getHeaderConfig(pathname: string, isEditingExpense: boolean): HeaderCon
   return null;
 }
 
-export function MainShell({ children }: MainShellProps) {
+function MainShellInner({ children }: MainShellProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const header = getHeaderConfig(pathname, searchParams.has("edit"));
+  const headerAction = useHeaderActionSlot();
 
   return (
     <div className="flex h-dvh flex-col">
-      {header && <PageHeader title={header.title} showBack={header.showBack} />}
+      {header && (
+        <PageHeader
+          title={header.title}
+          showBack={header.showBack}
+          backVariant={header.backVariant}
+          right={headerAction}
+        />
+      )}
       <main
         className={cn(
           "flex-1 min-h-0 overflow-y-auto",
@@ -56,5 +70,13 @@ export function MainShell({ children }: MainShellProps) {
       </main>
       <BottomNav />
     </div>
+  );
+}
+
+export function MainShell({ children }: MainShellProps) {
+  return (
+    <HeaderActionProvider>
+      <MainShellInner>{children}</MainShellInner>
+    </HeaderActionProvider>
   );
 }
