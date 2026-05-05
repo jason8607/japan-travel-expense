@@ -12,6 +12,21 @@ async function verifyTripAccess(admin: ReturnType<typeof getAdminClient>, tripId
   return !!data;
 }
 
+// Flatten the nested expense_participants relation into a string[] of user_ids.
+// Supabase returns related rows as an array of objects; we collapse them so the
+// frontend can treat `expense.participants` as a plain id list.
+type ExpenseRow = Record<string, unknown> & {
+  expense_participants?: { user_id: string }[];
+};
+
+function flattenParticipants<T extends ExpenseRow>(row: T): T & { participants: string[] } {
+  const { expense_participants, ...rest } = row;
+  return {
+    ...(rest as T),
+    participants: (expense_participants ?? []).map((p) => p.user_id),
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getRequestUser(req);
@@ -25,7 +40,7 @@ export async function GET(req: NextRequest) {
     if (expenseId) {
       const { data: expense, error } = await admin
         .from("expenses")
-        .select("*")
+        .select("*, expense_participants(user_id)")
         .eq("id", expenseId)
         .single();
 
@@ -38,7 +53,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "無權限" }, { status: 403 });
       }
 
-      return NextResponse.json({ expense });
+      return NextResponse.json({ expense: flattenParticipants(expense) });
     }
 
     const tripId = req.nextUrl.searchParams.get("trip_id");
@@ -56,7 +71,7 @@ export async function GET(req: NextRequest) {
 
     const { data: expenses, error } = await admin
       .from("expenses")
-      .select("*, profile:profiles!paid_by(*)")
+      .select("*, profile:profiles!paid_by(*), expense_participants(user_id)")
       .eq("trip_id", tripId)
       .order("expense_date", { ascending: false })
       .order("created_at", { ascending: false })
@@ -67,11 +82,48 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "載入消費紀錄失敗" }, { status: 500 });
     }
 
-    return NextResponse.json({ expenses: expenses || [] });
+    return NextResponse.json({
+      expenses: (expenses || []).map(flattenParticipants),
+    });
   } catch (err) {
     console.error("expenses GET error:", err);
     return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
+}
+
+// Validate participants array: must be string[] of trip member user_ids.
+// Returns the deduped, validated array, or an error message.
+async function validateParticipants(
+  admin: ReturnType<typeof getAdminClient>,
+  tripId: string,
+  participants: unknown
+): Promise<{ ok: true; ids: string[] } | { ok: false; error: string }> {
+  if (participants === undefined || participants === null) {
+    return { ok: true, ids: [] };
+  }
+  if (!Array.isArray(participants)) {
+    return { ok: false, error: "participants 必須為陣列" };
+  }
+  const unique = Array.from(
+    new Set(
+      participants.filter((id): id is string => typeof id === "string" && id.length > 0)
+    )
+  );
+  if (unique.length === 0) {
+    return { ok: true, ids: [] };
+  }
+  const { data: members, error } = await admin
+    .from("trip_members")
+    .select("user_id")
+    .eq("trip_id", tripId)
+    .in("user_id", unique);
+  if (error) {
+    return { ok: false, error: "驗證 participants 失敗" };
+  }
+  if (!members || members.length !== unique.length) {
+    return { ok: false, error: "participants 必須全部是旅程成員" };
+  }
+  return { ok: true, ids: unique };
 }
 
 export async function POST(req: NextRequest) {
@@ -103,6 +155,7 @@ export async function POST(req: NextRequest) {
       credit_card_plan_id,
       input_currency,
       note,
+      participants,
     } = body;
 
     if (!trip_id) {
@@ -179,6 +232,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Only validate/store participants for split expenses; ignored otherwise.
+    let participantIds: string[] = [];
+    if (split_type === "split") {
+      const result = await validateParticipants(admin, trip_id, participants);
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      participantIds = result.ids;
+    }
+
     const { data: expense, error } = await admin
       .from("expenses")
       .insert({
@@ -206,12 +269,25 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
-    if (error) {
-      console.error("expenses POST error:", error.message);
+    if (error || !expense) {
+      console.error("expenses POST error:", error?.message);
       return NextResponse.json({ error: "新增消費失敗" }, { status: 500 });
     }
 
-    return NextResponse.json({ expense });
+    // Insert participant rows in a separate statement. If this fails we roll
+    // back the parent expense to keep the two stores consistent.
+    if (participantIds.length > 0) {
+      const { error: participantErr } = await admin
+        .from("expense_participants")
+        .insert(participantIds.map((user_id) => ({ expense_id: expense.id, user_id })));
+      if (participantErr) {
+        console.error("expense_participants insert error:", participantErr.message);
+        await admin.from("expenses").delete().eq("id", expense.id);
+        return NextResponse.json({ error: "新增分帳人選失敗" }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({ expense: { ...expense, participants: participantIds } });
   } catch (err) {
     console.error("expenses POST error:", err);
     return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
@@ -304,6 +380,36 @@ export async function PUT(req: NextRequest) {
       }
     }
 
+    // Resolve the effective split_type for participant handling (use the new
+    // value if updating, otherwise the existing one).
+    const effectiveSplitType =
+      "split_type" in safeUpdates
+        ? (safeUpdates.split_type as string)
+        : undefined;
+
+    let participantIds: string[] | null = null;
+    if ("participants" in updates) {
+      // Caller is explicitly setting participants. If we're switching away from
+      // 'split' (or already not split and not switching to it), force empty.
+      const finalSplitType =
+        effectiveSplitType ??
+        (await admin.from("expenses").select("split_type").eq("id", id).single())
+          .data?.split_type;
+      if (finalSplitType === "split") {
+        const result = await validateParticipants(admin, existing.trip_id, updates.participants);
+        if (!result.ok) {
+          return NextResponse.json({ error: result.error }, { status: 400 });
+        }
+        participantIds = result.ids;
+      } else {
+        participantIds = [];
+      }
+    } else if (effectiveSplitType && effectiveSplitType !== "split") {
+      // split_type changed away from 'split' without explicit participants:
+      // clear participant rows so stale data doesn't leak into settlement.
+      participantIds = [];
+    }
+
     const { data: expense, error } = await admin
       .from("expenses")
       .update(safeUpdates)
@@ -311,12 +417,44 @@ export async function PUT(req: NextRequest) {
       .select()
       .single();
 
-    if (error) {
-      console.error("expenses PUT error:", error.message);
+    if (error || !expense) {
+      console.error("expenses PUT error:", error?.message);
       return NextResponse.json({ error: "更新消費失敗" }, { status: 500 });
     }
 
-    return NextResponse.json({ expense });
+    // Upsert participants by delete-then-insert (small row count, safe).
+    if (participantIds !== null) {
+      const { error: deleteErr } = await admin
+        .from("expense_participants")
+        .delete()
+        .eq("expense_id", id);
+      if (deleteErr) {
+        console.error("expense_participants delete error:", deleteErr.message);
+        return NextResponse.json({ error: "更新分帳人選失敗" }, { status: 500 });
+      }
+      if (participantIds.length > 0) {
+        const { error: insertErr } = await admin
+          .from("expense_participants")
+          .insert(participantIds.map((user_id) => ({ expense_id: id, user_id })));
+        if (insertErr) {
+          console.error("expense_participants insert error:", insertErr.message);
+          return NextResponse.json({ error: "更新分帳人選失敗" }, { status: 500 });
+        }
+      }
+    }
+
+    // Re-fetch the participant ids so the response always reflects current state.
+    const { data: participantRows } = await admin
+      .from("expense_participants")
+      .select("user_id")
+      .eq("expense_id", id);
+
+    return NextResponse.json({
+      expense: {
+        ...expense,
+        participants: (participantRows ?? []).map((r) => r.user_id),
+      },
+    });
   } catch (err) {
     console.error("expenses PUT error:", err);
     return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });

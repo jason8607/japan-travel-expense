@@ -9,13 +9,14 @@ import { FALLBACK_RATE, getExchangeRate, jpyToTwd, twdToJpy } from "@/lib/exchan
 import { addGuestExpense, updateGuestExpense } from "@/lib/guest-storage";
 import { cn } from "@/lib/utils";
 import type { Category, Expense, PaymentMethod, SplitType } from "@/types";
-import { Check, Image as ImageIcon, Loader2, Plus, Users } from "lucide-react";
+import { Check, Image as ImageIcon, Loader2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Textarea } from "../ui/textarea";
 import { CategoryGrid } from "./category-grid";
 import { CreditCardPicker } from "./credit-card-picker";
+import { ParticipantPicker, type ParticipantValue } from "./participant-picker";
 import { PaymentChips } from "./payment-chips";
 
 const AMOUNT_MAX = 9_999_999;
@@ -35,6 +36,7 @@ interface ExpenseDraft {
   paidBy: string;
   splitType: SplitType;
   ownerId: string | null;
+  participants: string[];
   creditCardId: string | null;
   creditCardPlanId: string | null;
   note: string;
@@ -59,10 +61,19 @@ function isExpenseDraft(value: unknown): value is ExpenseDraft {
     typeof value.paidBy === "string" &&
     (value.splitType === "personal" || value.splitType === "split") &&
     (typeof value.ownerId === "string" || value.ownerId === null) &&
+    Array.isArray(value.participants) &&
+    value.participants.every((p) => typeof p === "string") &&
     (typeof value.creditCardId === "string" || value.creditCardId === null) &&
     (typeof value.creditCardPlanId === "string" || value.creditCardPlanId === null) &&
     typeof value.note === "string"
   );
+}
+
+function arraysEqual(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const sortedA = [...a].sort();
+  const sortedB = [...b].sort();
+  return sortedA.every((x, i) => x === sortedB[i]);
 }
 
 function isSameDraft(a: ExpenseDraft, b: ExpenseDraft) {
@@ -78,6 +89,7 @@ function isSameDraft(a: ExpenseDraft, b: ExpenseDraft) {
     a.paidBy === b.paidBy &&
     a.splitType === b.splitType &&
     a.ownerId === b.ownerId &&
+    arraysEqual(a.participants, b.participants) &&
     a.creditCardId === b.creditCardId &&
     a.creditCardPlanId === b.creditCardPlanId &&
     a.note === b.note
@@ -125,6 +137,11 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
   const [ownerId, setOwnerId] = useState<string | null>(
     editExpense?.owner_id || null
   );
+  // Subset participants for split expenses. Empty = "all members" (legacy
+  // fallback in settlement). Only meaningful when splitType === 'split'.
+  const [participants, setParticipants] = useState<string[]>(
+    editExpense?.participants ?? []
+  );
   const [creditCardId, setCreditCardId] = useState<string | null>(
     editExpense?.credit_card_id || null
   );
@@ -156,6 +173,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       paidBy,
       splitType,
       ownerId,
+      participants,
       creditCardId,
       creditCardPlanId,
       note,
@@ -184,6 +202,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
     setPaidBy(init.paidBy);
     setSplitType(init.splitType);
     setOwnerId(init.ownerId);
+    setParticipants(init.participants);
     setCreditCardId(init.creditCardId);
     setCreditCardPlanId(init.creditCardPlanId);
     setNote(init.note);
@@ -247,6 +266,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       setPaidBy(parsed.paidBy);
       setSplitType(parsed.splitType);
       setOwnerId(parsed.ownerId);
+      setParticipants(parsed.participants);
       setCreditCardId(parsed.creditCardId);
       setCreditCardPlanId(parsed.creditCardPlanId);
       setNote(parsed.note);
@@ -280,6 +300,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       paidBy,
       splitType,
       ownerId,
+      participants,
       creditCardId,
       creditCardPlanId,
       note,
@@ -314,6 +335,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
     location,
     note,
     ownerId,
+    participants,
     paidBy,
     paymentMethod,
     splitType,
@@ -415,6 +437,10 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         return;
       }
 
+      // Only attach participants for split expenses; the API ignores it for
+      // 'personal' but we keep the payload tight.
+      const submitParticipants = splitType === "split" ? participants : undefined;
+
       if (isEditing) {
         const res = await fetch("/api/expenses", {
           method: "PUT",
@@ -437,6 +463,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             credit_card_plan_id: planId,
             input_currency: currency,
             note: note || null,
+            participants: submitParticipants,
           }),
         });
 
@@ -465,6 +492,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             credit_card_plan_id: planId,
             input_currency: currency,
             note: note || null,
+            participants: submitParticipants,
           }),
         });
 
@@ -674,89 +702,77 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       </div>
 
       {/* === Group 3 — 分帳 (這筆是誰的 / 誰付的) — only when authenticated multi-member trip === */}
-      {!isGuest && tripMembers.length > 1 && (
-        <div className="mt-6 space-y-4 border-t border-border/60 pt-6">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-foreground">這筆是誰的</Label>
-          <div className="flex flex-wrap gap-2">
-            {tripMembers.map((m) => {
-              const isMe = m.user_id === user?.id;
-              const isSelected =
-                splitType === "personal" &&
-                (isMe
-                  ? ownerId === null || ownerId === user?.id
-                  : ownerId === m.user_id);
-              return (
-                <button
-                  key={m.user_id}
-                  type="button"
-                  onClick={() => {
-                    setSplitType("personal");
-                    setOwnerId(isMe ? null : m.user_id);
-                  }}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
-                    isSelected
-                      ? "bg-accent ring-primary text-accent-foreground"
-                      : "bg-card ring-border text-muted-foreground hover:bg-muted"
+      {!isGuest && tripMembers.length > 1 && user && (() => {
+        const participantValue: ParticipantValue =
+          splitType === "split"
+            ? { kind: "split", participants }
+            : { kind: "personal", ownerId };
+        const handlePickerChange = (next: ParticipantValue) => {
+          if (next.kind === "personal") {
+            setSplitType("personal");
+            setOwnerId(next.ownerId);
+            setParticipants([]);
+          } else {
+            setSplitType("split");
+            setOwnerId(null);
+            setParticipants(next.participants);
+          }
+        };
+        // For split previews, divide by the actual sharer count (subset or all).
+        const sharerCount =
+          splitType === "split"
+            ? participants.length || tripMembers.length
+            : tripMembers.length;
+        return (
+          <div className="mt-6 space-y-4 border-t border-border/60 pt-6">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">這筆是誰的</Label>
+              <ParticipantPicker
+                members={tripMembers}
+                currentUserId={user.id}
+                value={participantValue}
+                onChange={handlePickerChange}
+                variant="full"
+                selfLabel="我的"
+              />
+              {splitType === "split" && amount && (
+                <p className="rounded-lg bg-warning-subtle px-3 py-2 text-xs text-warning-foreground tabular-nums">
+                  每人 {currency === "JPY" ? "¥" : "NT$"}{Math.round(Number(amount) / sharerCount).toLocaleString()}
+                  {participants.length > 0 && participants.length < tripMembers.length && (
+                    <span className="ml-1 text-warning-foreground/70">· {sharerCount} 人均分</span>
                   )}
-                >
-                  <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
-                  {isMe ? "我的" : m.profile?.display_name || "成員"}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => {
-                setSplitType("split");
-                setOwnerId(null);
-              }}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
-                splitType === "split"
-                  ? "bg-accent ring-primary text-accent-foreground"
-                  : "bg-card ring-border text-muted-foreground hover:bg-muted"
+                </p>
               )}
-            >
-              <Users className="h-4 w-4" />
-              均分 ({tripMembers.length} 人)
-            </button>
-          </div>
-          {splitType === "split" && amount && (
-            <p className="rounded-lg bg-warning-subtle px-3 py-2 text-xs text-warning-foreground tabular-nums">
-              每人 {currency === "JPY" ? "¥" : "NT$"}{Math.round(Number(amount) / tripMembers.length).toLocaleString()}
-            </p>
-          )}
-        </div>
+            </div>
 
-        {/* 誰付的 */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-foreground">誰付的</Label>
-          <div className="flex flex-wrap gap-2">
-            {tripMembers.map((m) => {
-              const isSelected = paidBy === m.user_id;
-              return (
-                <button
-                  key={m.user_id}
-                  type="button"
-                  onClick={() => setPaidBy(m.user_id)}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
-                    isSelected
-                      ? "bg-accent ring-primary text-accent-foreground"
-                      : "bg-card ring-border text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
-                  {m.user_id === user?.id ? "我付的" : m.profile?.display_name || "成員"}
-                </button>
-              );
-            })}
+            {/* 誰付的 */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">誰付的</Label>
+              <div className="flex flex-wrap gap-2">
+                {tripMembers.map((m) => {
+                  const isSelected = paidBy === m.user_id;
+                  return (
+                    <button
+                      key={m.user_id}
+                      type="button"
+                      onClick={() => setPaidBy(m.user_id)}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
+                        isSelected
+                          ? "bg-accent ring-primary text-accent-foreground"
+                          : "bg-card ring-border text-muted-foreground hover:bg-muted"
+                      )}
+                    >
+                      <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
+                      {m.user_id === user?.id ? "我付的" : m.profile?.display_name || "成員"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* === Group 4 — 補充 (店家 + 地點 / 備註) — collapsed by default === */}
       <div className="mt-6 space-y-4 border-t border-border/60 pt-6">

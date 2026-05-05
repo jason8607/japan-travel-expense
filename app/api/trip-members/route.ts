@@ -197,6 +197,31 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "清除消費歸屬失敗，成員未移除" }, { status: 500 });
     }
 
+    // Remove the member from any subset-split participant lists in this trip.
+    // Use a join via expense_id to avoid RLS issues (admin client bypasses RLS,
+    // but this filter still needs the trip scope).
+    const { data: tripExpenseIds } = await admin
+      .from("expenses")
+      .select("id")
+      .eq("trip_id", trip_id);
+    if (tripExpenseIds && tripExpenseIds.length > 0) {
+      const { error: participantCleanupError } = await admin
+        .from("expense_participants")
+        .delete()
+        .eq("user_id", user_id)
+        .in("expense_id", tripExpenseIds.map((e) => e.id));
+      if (participantCleanupError) {
+        console.error(
+          "trip-members: participant cleanup error:",
+          participantCleanupError.message,
+        );
+        return NextResponse.json(
+          { error: "清除分帳人選失敗，成員未移除" },
+          { status: 500 },
+        );
+      }
+    }
+
     const { error } = await admin
       .from("trip_members")
       .delete()

@@ -30,27 +30,41 @@ export function buildExpensesCsv(
     "分帳方式",
     "付款人",
     "歸屬人",
+    "均分人",
     "備註",
   ];
 
   const rows = expenses
     .sort((a, b) => a.expense_date.localeCompare(b.expense_date))
-    .map((e) => [
-      e.expense_date,
-      e.title,
-      e.title_ja || "",
-      e.amount_jpy.toString(),
-      e.amount_twd.toString(),
-      e.exchange_rate.toString(),
-      e.category,
-      e.payment_method,
-      e.store_name || "",
-      e.location || "",
-      e.split_type === "split" ? "均分" : "個人",
-      memberMap.get(e.paid_by) || e.profile?.display_name || "",
-      e.owner_id ? (memberMap.get(e.owner_id) || "") : "",
-      e.note || "",
-    ]);
+    .map((e) => {
+      // Subset participants → list names. Empty for split = all members
+      // (legacy / explicit "全部"); leave the cell blank to match historical
+      // CSVs and keep the column quiet.
+      const participantNames =
+        e.split_type === "split" && e.participants && e.participants.length > 0
+          ? e.participants
+              .map((id) => memberMap.get(id) || "")
+              .filter(Boolean)
+              .join("、")
+          : "";
+      return [
+        e.expense_date,
+        e.title,
+        e.title_ja || "",
+        e.amount_jpy.toString(),
+        e.amount_twd.toString(),
+        e.exchange_rate.toString(),
+        e.category,
+        e.payment_method,
+        e.store_name || "",
+        e.location || "",
+        e.split_type === "split" ? "均分" : "個人",
+        memberMap.get(e.paid_by) || e.profile?.display_name || "",
+        e.owner_id ? (memberMap.get(e.owner_id) || "") : "",
+        participantNames,
+        e.note || "",
+      ];
+    });
 
   const totalJpy = expenses.reduce((s, e) => s + e.amount_jpy, 0);
   const totalTwd = expenses.reduce((s, e) => s + e.amount_twd, 0);

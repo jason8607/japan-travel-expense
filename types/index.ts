@@ -68,6 +68,9 @@ export interface Expense {
   created_at: string;
   profile?: Profile;
   items?: ExpenseItem[];
+  // Subset split participants. Only meaningful when split_type === 'split'.
+  // Empty/undefined for split expenses means "all members" (legacy fallback).
+  participants?: string[];
 }
 
 export interface ExpenseItem {

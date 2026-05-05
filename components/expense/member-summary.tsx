@@ -44,7 +44,7 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
   const { categories } = useCategories();
 
   const { breakdowns } = useMemo(() => {
-    const memberCount = tripMembers.length || 1;
+    const allMemberIds = tripMembers.map((m) => m.user_id);
     const splitExps = expenses.filter((e) => e.split_type === "split");
 
     const result: MemberBreakdown[] = tripMembers.map((member) => {
@@ -56,12 +56,25 @@ export function MemberSummary({ expenses, tripMembers, onDelete }: MemberSummary
         amountJpy: expense.amount_jpy,
         amountTwd: expense.amount_twd,
       }));
-      const splitItems: MemberExpenseItem[] = splitExps.map((expense) => ({
-        expense,
-        amountJpy: Math.round(expense.amount_jpy / memberCount),
-        amountTwd: Math.round(expense.amount_twd / memberCount),
-        amountNote: `均分 · 原 ${formatJPY(expense.amount_jpy)}`,
-      }));
+      // For each split expense, only count this member if they're in the
+      // participant list (or if it's a legacy expense with no list = all members).
+      const splitItems: MemberExpenseItem[] = splitExps
+        .map((expense): MemberExpenseItem | null => {
+          const sharers = expense.participants?.length
+            ? expense.participants
+            : allMemberIds;
+          if (!sharers.includes(member.user_id)) return null;
+          const isSubset = sharers.length < allMemberIds.length;
+          return {
+            expense,
+            amountJpy: Math.round(expense.amount_jpy / sharers.length),
+            amountTwd: Math.round(expense.amount_twd / sharers.length),
+            amountNote: isSubset
+              ? `${sharers.length} 人均分 · 原 ${formatJPY(expense.amount_jpy)}`
+              : `均分 · 原 ${formatJPY(expense.amount_jpy)}`,
+          };
+        })
+        .filter((it): it is MemberExpenseItem => it !== null);
       const items = [...ownedItems, ...splitItems].sort((a, b) =>
         b.expense.expense_date.localeCompare(a.expense.expense_date)
       );

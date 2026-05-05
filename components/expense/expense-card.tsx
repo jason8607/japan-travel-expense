@@ -76,7 +76,19 @@ export function ExpenseCard({
             {categoryIcon} {expense.category}
           </Badge>
           {expense.split_type === "split" && (
-            <Users className="h-3 w-3 text-muted-foreground" aria-label="均分" />
+            // ParticipantPicker collapses "all members" into empty participants,
+            // so any non-empty list here is a subset and worth surfacing.
+            (expense.participants && expense.participants.length > 0) ? (
+              <span
+                className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground"
+                aria-label={`${expense.participants.length} 人均分`}
+              >
+                <Users className="h-3 w-3" />
+                {expense.participants.length} 人
+              </span>
+            ) : (
+              <Users className="h-3 w-3 text-muted-foreground" aria-label="均分" />
+            )
           )}
         </div>
       </div>

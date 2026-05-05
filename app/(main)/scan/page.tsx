@@ -155,6 +155,9 @@ export default function ScanPage() {
                 credit_card_id: data.creditCardId,
                 credit_card_plan_id: data.creditCardPlanId,
                 receipt_image_url: receiptImageUrl,
+                // Subset participants for split items; ignored by API for personal.
+                participants:
+                  item.split_type === "split" ? item.participants : undefined,
               }),
             });
 

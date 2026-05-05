@@ -1,6 +1,10 @@
 "use client";
 
 import { CreditCardPicker } from "@/components/expense/credit-card-picker";
+import {
+  ParticipantPicker,
+  type ParticipantValue,
+} from "@/components/expense/participant-picker";
 import { PaymentChips } from "@/components/expense/payment-chips";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +27,37 @@ export interface ReceiptItemWithOwner {
   tax_type: string;
   owner_id: string | null;
   split_type: "personal" | "split";
+  // Subset participants (only meaningful for split). Empty = all members
+  // (legacy / "全部均分").
+  participants: string[];
   category: Category;
+}
+
+function itemToParticipantValue(item: ReceiptItemWithOwner): ParticipantValue {
+  if (item.split_type === "split") {
+    return { kind: "split", participants: item.participants };
+  }
+  return { kind: "personal", ownerId: item.owner_id };
+}
+
+function applyParticipantValue(
+  item: ReceiptItemWithOwner,
+  value: ParticipantValue,
+): ReceiptItemWithOwner {
+  if (value.kind === "personal") {
+    return {
+      ...item,
+      split_type: "personal",
+      owner_id: value.ownerId,
+      participants: [],
+    };
+  }
+  return {
+    ...item,
+    split_type: "split",
+    owner_id: null,
+    participants: value.participants,
+  };
 }
 
 interface ReceiptConfirmProps {
@@ -62,6 +96,7 @@ export function ReceiptConfirm({
       _id: crypto.randomUUID(),
       owner_id: null,
       split_type: "personal" as const,
+      participants: [],
       category: "餐飲" as Category,
     }))
   );
@@ -95,23 +130,20 @@ export function ReceiptConfirm({
         tax_type: "reduced",
         owner_id: null,
         split_type: "personal" as const,
+        participants: [],
         category: "餐飲" as Category,
       },
     ]);
   };
 
-  const setItemOwner = (index: number, ownerId: string | null, splitType: "personal" | "split") => {
+  const setItemParticipantValue = (index: number, value: ParticipantValue) => {
     setItems((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, owner_id: ownerId, split_type: splitType } : item
-      )
+      prev.map((item, i) => (i === index ? applyParticipantValue(item, value) : item)),
     );
   };
 
-  const setAllOwner = (ownerId: string | null, splitType: "personal" | "split") => {
-    setItems((prev) =>
-      prev.map((item) => ({ ...item, owner_id: ownerId, split_type: splitType }))
-    );
+  const setAllParticipantValue = (value: ParticipantValue) => {
+    setItems((prev) => prev.map((item) => applyParticipantValue(item, value)));
   };
 
   const setItemCategory = (index: number, cat: Category) => {
@@ -163,26 +195,35 @@ export function ReceiptConfirm({
             ))}
           </div>
         </div>
-        {/* Quick assign owner */}
-        {hasMultipleMembers && (
+        {/* Quick assign owner — bulk action buttons that map all items to a
+            single ParticipantValue. Subset bulk is rare so we don't expose it
+            here; users can refine per-item below. */}
+        {hasMultipleMembers && user && (
           <div>
-            <p className="text-[10px] text-muted-foreground mb-1.5">歸屬</p>
+            <p className="text-[10px] text-muted-foreground mb-1.5">全部歸屬</p>
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
-                onClick={() => setAllOwner(null, "personal")}
+                onClick={() =>
+                  setAllParticipantValue({ kind: "personal", ownerId: null })
+                }
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium bg-primary/10 border-primary/25 text-primary"
               >
                 <UserAvatar avatarUrl={myProfile?.avatar_url} avatarEmoji={myProfile?.avatar_emoji} size="xs" />
                 全部我的
               </button>
               {tripMembers
-                .filter((m) => m.user_id !== user?.id)
+                .filter((m) => m.user_id !== user.id)
                 .map((m) => (
                   <button
                     key={m.user_id}
                     type="button"
-                    onClick={() => setAllOwner(m.user_id, "personal")}
+                    onClick={() =>
+                      setAllParticipantValue({
+                        kind: "personal",
+                        ownerId: m.user_id,
+                      })
+                    }
                     className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-border text-muted-foreground hover:bg-muted"
                   >
                     <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
@@ -191,7 +232,9 @@ export function ReceiptConfirm({
                 ))}
               <button
                 type="button"
-                onClick={() => setAllOwner(null, "split")}
+                onClick={() =>
+                  setAllParticipantValue({ kind: "split", participants: [] })
+                }
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-primary/50 text-primary bg-primary/10"
               >
                 <Users className="h-3 w-3" /> 全部均分
@@ -286,52 +329,19 @@ export function ReceiptConfirm({
                   )}
                 </div>
 
-                {/* Per-item owner chips */}
-                {hasMultipleMembers && (
-                  <div className="flex flex-wrap gap-1 px-3 pb-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setItemOwner(index, null, "personal")}
-                      className={cn(
-                        "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
-                        item.split_type === "personal" && item.owner_id === null
-                          ? "bg-primary/15 text-primary"
-                          : "bg-card text-muted-foreground hover:text-muted-foreground"
-                      )}
-                    >
-                      <UserAvatar avatarUrl={myProfile?.avatar_url} avatarEmoji={myProfile?.avatar_emoji} size="xs" />
-                      我
-                    </button>
-                    {tripMembers
-                      .filter((m) => m.user_id !== user?.id)
-                      .map((m) => (
-                        <button
-                          key={m.user_id}
-                          type="button"
-                          onClick={() => setItemOwner(index, m.user_id, "personal")}
-                          className={cn(
-                            "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
-                            item.split_type === "personal" && item.owner_id === m.user_id
-                              ? "bg-primary/15 text-primary"
-                              : "bg-card text-muted-foreground hover:text-muted-foreground"
-                          )}
-                        >
-                          <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
-                          {m.profile?.display_name || "成員"}
-                        </button>
-                      ))}
-                    <button
-                      type="button"
-                      onClick={() => setItemOwner(index, null, "split")}
-                      className={cn(
-                        "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
-                        item.split_type === "split"
-                          ? "bg-primary/15 text-primary"
-                          : "bg-card text-muted-foreground hover:text-muted-foreground"
-                      )}
-                    >
-                      👥 均分
-                    </button>
+                {/* Per-item participant picker (compact — Sheet handles subset).
+                    Self-label is just "我" because the receipt context already
+                    implies "this item". */}
+                {hasMultipleMembers && user && (
+                  <div className="px-3 pb-2.5">
+                    <ParticipantPicker
+                      members={tripMembers}
+                      currentUserId={user.id}
+                      value={itemToParticipantValue(item)}
+                      onChange={(value) => setItemParticipantValue(index, value)}
+                      variant="compact"
+                      selfLabel="我"
+                    />
                   </div>
                 )}
               </div>

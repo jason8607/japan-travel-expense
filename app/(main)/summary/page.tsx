@@ -98,12 +98,17 @@ export default function SummaryPage() {
       { date: "", amount: 0 }
     );
 
-    // Per-member spending (personal + split share)
+    // Per-member spending (personal + split share). For subset splits, only the
+    // listed participants pay a share; legacy splits with no participants fall
+    // back to "all members" so historical numbers stay stable.
+    const allMemberIds = tripMembers.map((m) => m.user_id);
     const memberSpend = tripMembers.map((m) => {
       let amount = 0;
       for (const e of expenses) {
         if (e.split_type === "split") {
-          amount += Math.floor(e.amount_jpy / tripMembers.length);
+          const sharers = e.participants?.length ? e.participants : allMemberIds;
+          if (!sharers.includes(m.user_id)) continue;
+          amount += Math.floor(e.amount_jpy / sharers.length);
         } else if ((e.owner_id || e.paid_by) === m.user_id) {
           amount += e.amount_jpy;
         }

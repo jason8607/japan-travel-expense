@@ -91,7 +91,10 @@ export function useExpenses() {
     return () => { mountedRef.current = false; };
   }, []);
 
-  // Realtime subscription
+  // Realtime subscription. We also listen to expense_participants because
+  // subset-split changes don't touch the parent expenses row but still affect
+  // settlement totals. RLS scopes notifications to the current user's trips,
+  // so a global filter is safe; the refetch itself is trip-scoped.
   useEffect(() => {
     if (!currentTrip || isGuest) return;
 
@@ -101,6 +104,11 @@ export function useExpenses() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "expenses", filter: `trip_id=eq.${currentTrip.id}` },
+        () => { fetchExpenses(); }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "expense_participants" },
         () => { fetchExpenses(); }
       )
       .subscribe();

@@ -28,8 +28,6 @@ export function calculateSettlements(
 ): { balances: MemberBalance[]; settlements: Settlement[] } {
   if (members.length < 2) return { balances: [], settlements: [] };
 
-  const memberCount = members.length;
-
   // Track how much each member paid and how much they owe
   const paid = new Map<string, number>();
   const owed = new Map<string, number>();
@@ -49,12 +47,17 @@ export function calculateSettlements(
     paid.set(expense.paid_by, (paid.get(expense.paid_by) || 0) + expense.amount_jpy);
 
     if (expense.split_type === "split") {
-      // Split evenly among all members, last member absorbs remainder
-      const share = Math.floor(expense.amount_jpy / memberCount);
-      const remainder = expense.amount_jpy - share * (memberCount - 1);
-      for (let i = 0; i < members.length; i++) {
-        const amount = i === members.length - 1 ? remainder : share;
-        owed.set(members[i].user_id, (owed.get(members[i].user_id) || 0) + amount);
+      // Subset split: prefer the explicit participants list, but fall back to
+      // all members for legacy expenses with no participants stored.
+      const sharers = expense.participants?.length
+        ? expense.participants.filter((id) => memberIds.has(id))
+        : members.map((m) => m.user_id);
+      if (sharers.length === 0) continue;
+      const share = Math.floor(expense.amount_jpy / sharers.length);
+      const remainder = expense.amount_jpy - share * (sharers.length - 1);
+      for (let i = 0; i < sharers.length; i++) {
+        const amount = i === sharers.length - 1 ? remainder : share;
+        owed.set(sharers[i], (owed.get(sharers[i]) || 0) + amount);
       }
     } else {
       // Personal expense: owner owes the full amount
