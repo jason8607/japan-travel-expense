@@ -9,7 +9,7 @@ import { FALLBACK_RATE, getExchangeRate, jpyToTwd, twdToJpy } from "@/lib/exchan
 import { addGuestExpense, updateGuestExpense } from "@/lib/guest-storage";
 import { cn } from "@/lib/utils";
 import type { Category, Expense, PaymentMethod, SplitType } from "@/types";
-import { Check, ChevronDown, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Calendar, Check, ChevronDown, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -22,6 +22,32 @@ import { PaymentChips } from "./payment-chips";
 const AMOUNT_MAX = 9_999_999;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 const DRAFT_DEBOUNCE_MS = 1000;
+
+// Render an ISO date (yyyy-mm-dd) into a glanceable label that mirrors how
+// people verbally check their own ledger: "today / yesterday" prefix for the
+// most common entry windows, otherwise a neutral yyyy/mm/dd. Avoids iOS's
+// verbose "2026年5月5日" native rendering.
+function formatExpenseDate(iso: string): string {
+  if (!iso) return "選擇日期";
+  const [yStr, mStr, dStr] = iso.split("-");
+  const y = Number(yStr);
+  const m = Number(mStr);
+  const d = Number(dStr);
+  if (!y || !m || !d) return iso;
+
+  const date = new Date(y, m - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((date.getTime() - today.getTime()) / 86_400_000);
+
+  const formatted = `${y} / ${String(m).padStart(2, "0")} / ${String(d).padStart(2, "0")}`;
+
+  if (diffDays === 0) return `今天 · ${formatted}`;
+  if (diffDays === -1) return `昨天 · ${formatted}`;
+  if (diffDays === -2) return `前天 · ${formatted}`;
+
+  return formatted;
+}
 
 interface ExpenseDraft {
   savedAt: number;
@@ -660,16 +686,43 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         />
       </div>
 
-      {/* 日期 */}
+      {/* 日期 — overlay an opacity-0 native picker on top of a custom face so
+          the iOS/Android system picker still opens, but we control the visible
+          chrome (avoids iOS's verbose "2026年5月5日" rendering and keeps the
+          field height/typography consistent with sibling inputs). */}
       <div className="space-y-1.5">
         <Label htmlFor="date" className="text-sm font-medium text-foreground">日期</Label>
-        <Input
-          id="date"
-          type="date"
-          value={expenseDate}
-          onChange={(e) => setExpenseDate(e.target.value)}
-          className="h-12 rounded-lg border-border"
-        />
+        <div className="relative h-12">
+          <input
+            id="date"
+            type="date"
+            value={expenseDate}
+            onChange={(e) => setExpenseDate(e.target.value)}
+            onClick={(e) => {
+              // Desktop browsers only open the picker when the small calendar
+              // glyph is clicked; since we hide that glyph (opacity-0), force
+              // the picker open on any click within the field. Wrapped in
+              // try/catch because non-user-gesture invocations throw.
+              try {
+                e.currentTarget.showPicker?.();
+              } catch {
+                /* fall back to native focus behaviour */
+              }
+            }}
+            aria-label="日期"
+            className="peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none opacity-0 outline-none"
+          />
+          <div
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none flex h-full items-center justify-between rounded-lg border border-input bg-card px-3 text-base text-foreground tabular-nums transition-colors",
+              "peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50"
+            )}
+          >
+            <span>{formatExpenseDate(expenseDate)}</span>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
       </div>
       </div>
 
