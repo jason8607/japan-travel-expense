@@ -1,22 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Image as ImageIcon, MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { UserAvatar } from "@/components/ui/user-avatar";
-import { formatJPY, formatTWD } from "@/lib/exchange-rate";
-import { DEFAULT_CATEGORIES } from "@/types";
-import type { Expense, CategoryItem } from "@/types";
-import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +17,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { formatJPY, formatTWD } from "@/lib/exchange-rate";
+import type { CategoryItem, Expense } from "@/types";
+import { DEFAULT_CATEGORIES } from "@/types";
+import { Image as ImageIcon, MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface ExpenseCardProps {
   expense: Expense;
@@ -143,19 +143,17 @@ export function ExpenseCard({
 
       {expense.receipt_image_url && (
         <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
-          <DialogContent className="max-w-sm p-2">
-            <DialogHeader>
-              <DialogTitle className="text-sm">收據照片</DialogTitle>
-              <DialogDescription className="sr-only">收據照片預覽</DialogDescription>
+          <DialogContent className="p-6 pt-10 sm:max-w-md">
+            <DialogHeader className="sr-only">
+              <DialogTitle>收據照片</DialogTitle>
+              <DialogDescription>{expense.title} 的收據預覽</DialogDescription>
             </DialogHeader>
-            <div className="relative w-full aspect-3/4 rounded-lg overflow-hidden bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={expense.receipt_image_url}
-                alt="收據照片"
-                className="w-full h-full object-contain"
-              />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={expense.receipt_image_url}
+              alt={`${expense.title} 的收據`}
+              className="mx-auto block h-auto max-h-[70vh] w-auto max-w-full rounded-lg"
+            />
           </DialogContent>
         </Dialog>
       )}
