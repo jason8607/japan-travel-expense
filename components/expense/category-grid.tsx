@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { useCategories } from "@/hooks/use-categories";
+import { cn } from "@/lib/utils";
 
 interface CategoryGridProps {
   value: string;
@@ -12,7 +12,7 @@ export function CategoryGrid({ value, onChange }: CategoryGridProps) {
   const { categories } = useCategories();
 
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-3 gap-2">
       {categories.map((cat) => (
         <button
           key={cat.id}

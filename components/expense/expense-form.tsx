@@ -9,7 +9,7 @@ import { FALLBACK_RATE, getExchangeRate, jpyToTwd, twdToJpy } from "@/lib/exchan
 import { addGuestExpense, updateGuestExpense } from "@/lib/guest-storage";
 import { cn } from "@/lib/utils";
 import type { Category, Expense, PaymentMethod, SplitType } from "@/types";
-import { Check, Image as ImageIcon, Loader2, Plus } from "lucide-react";
+import { Check, ChevronDown, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -272,10 +272,9 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       setNote(parsed.note);
       toast.success("已恢復未送出的草稿", {
         action: {
-          label: "重新開始",
+          label: "捨棄草稿",
           onClick: () => resetForm(),
         },
-  
       });
     } catch {
       sessionStorage.removeItem(draftKey);
@@ -430,7 +429,12 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             note: note || null,
           });
           if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
-          toast.success("已新增消費紀錄");
+          toast.success("已新增消費紀錄", {
+            action: {
+              label: "再記一筆",
+              onClick: () => router.push("/records/new"),
+            },
+          });
         }
         removeDraft();
         router.push("/records");
@@ -498,7 +502,12 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
 
         const result = await res.json();
         if (!res.ok) throw new Error(result.error || "儲存失敗");
-        toast.success("已新增消費紀錄");
+        toast.success("已新增消費紀錄", {
+          action: {
+            label: "再記一筆",
+            onClick: () => router.push("/records/new"),
+          },
+        });
       }
 
       removeDraft();
@@ -562,62 +571,25 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           <button
             type="button"
             onClick={() => setShowReceiptImage(!showReceiptImage)}
-            className="-mx-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-foreground outline-none transition-colors hover:bg-muted active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="-mx-2 inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-foreground outline-none transition-colors hover:bg-muted active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <ImageIcon className="h-4 w-4" />
             {showReceiptImage ? "收起收據照片" : "查看收據照片"}
           </button>
           {showReceiptImage && (
-            <div className="relative aspect-3/4 max-h-80 w-full overflow-hidden rounded-xl bg-muted ring-1 ring-foreground/10">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={editExpense.receipt_image_url}
-                alt="收據照片"
-                className="h-full w-full object-contain"
-              />
-            </div>
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={editExpense.receipt_image_url}
+              alt={`${editExpense.title} 的收據`}
+              className="mx-auto block h-auto max-h-80 w-auto max-w-full rounded-xl ring-1 ring-foreground/10"
+            />
           )}
         </div>
       )}
 
-      {/* === Group 1 — 輸入 (品名 / 幣別 / 金額 / 日期) === */}
+      {/* === Group 1 — 輸入 (金額 / 幣別 / 品名 / 日期) === */}
+      {/* Order maps to street-side cognition: see receipt → ¥1500 first, label later. */}
       <div className="space-y-4">
-      {/* 品名 */}
-      <div className="space-y-1.5">
-        <Label htmlFor="title" className="text-sm font-medium text-foreground">品名</Label>
-        <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="例：拉麵、新幹線車票"
-          required
-          maxLength={100}
-          className="h-12 rounded-lg border-border text-base focus-visible:ring-primary"
-        />
-      </div>
-
-      {/* 幣別 — segmented control */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium text-foreground">幣別</Label>
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-          {([["JPY", "¥ 日幣"], ["TWD", "NT$ 台幣"]] as const).map(([val, label]) => (
-            <button
-              key={val}
-              type="button"
-              onClick={() => setCurrency(val)}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm font-medium outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
-                currency === val
-                  ? "bg-card text-foreground ring-1 ring-foreground/10"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* 金額 (hero) */}
       <div className="space-y-1.5">
         <Label htmlFor="amount" className="text-sm font-medium text-foreground">
@@ -650,6 +622,42 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             <span className="text-destructive">金額不可超過 {AMOUNT_MAX.toLocaleString()}</span>
           </div>
         )}
+      </div>
+
+      {/* 幣別 — segmented control */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium text-foreground">幣別</Label>
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          {([["JPY", "¥ 日幣"], ["TWD", "NT$ 台幣"]] as const).map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => setCurrency(val)}
+              className={cn(
+                "rounded-md px-3 py-2 text-sm font-medium outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
+                currency === val
+                  ? "bg-card text-foreground ring-1 ring-foreground/10"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 品名 */}
+      <div className="space-y-1.5">
+        <Label htmlFor="title" className="text-sm font-medium text-foreground">品名</Label>
+        <Input
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="例：拉麵、新幹線車票"
+          required
+          maxLength={100}
+          className="h-12 rounded-lg border-border text-base focus-visible:ring-primary"
+        />
       </div>
 
       {/* 日期 */}
@@ -736,10 +744,10 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                 selfLabel="我的"
               />
               {splitType === "split" && amount && (
-                <p className="rounded-lg bg-warning-subtle px-3 py-2 text-xs text-warning-foreground tabular-nums">
+                <p className="rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground tabular-nums">
                   每人 {currency === "JPY" ? "¥" : "NT$"}{Math.round(Number(amount) / sharerCount).toLocaleString()}
                   {participants.length > 0 && participants.length < tripMembers.length && (
-                    <span className="ml-1 text-warning-foreground/70">· {sharerCount} 人均分</span>
+                    <span className="ml-1 text-accent-foreground/70">· {sharerCount} 人均分</span>
                   )}
                 </p>
               )}
@@ -757,14 +765,14 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                       type="button"
                       onClick={() => setPaidBy(m.user_id)}
                       className={cn(
-                        "flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
+                        "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
                         isSelected
                           ? "bg-accent ring-primary text-accent-foreground"
                           : "bg-card ring-border text-muted-foreground hover:bg-muted"
                       )}
                     >
                       <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
-                      {m.user_id === user?.id ? "我付的" : m.profile?.display_name || "成員"}
+                      {m.user_id === user?.id ? "我" : m.profile?.display_name || "成員"}
                     </button>
                   );
                 })}
@@ -775,23 +783,31 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
       })()}
 
       {/* === Group 4 — 補充 (店家 + 地點 / 備註) — collapsed by default === */}
-      <div className="mt-6 space-y-4 border-t border-border/60 pt-6">
-        {!detailsExpanded ? (
-          <button
-            type="button"
-            onClick={() => setDetailsExpanded(true)}
-            className="inline-flex items-center gap-1 self-start rounded-md text-xs text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+      <div className="mt-6 space-y-3 border-t border-border/60 pt-6">
+        <button
+          type="button"
+          onClick={() => setDetailsExpanded((v) => !v)}
+          aria-expanded={detailsExpanded}
+          aria-controls="expense-details"
+          className="-mx-2 inline-flex items-center gap-2 self-start rounded-md px-2 py-1 text-xs text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 transition-transform duration-200",
+              detailsExpanded && "rotate-180"
+            )}
+          />
+          更多細節
+          <span className="text-muted-foreground/60">（店家、地點、備註，皆為選填）</span>
+        </button>
+        {detailsExpanded && (
+          <div
+            id="expense-details"
+            className="animate-in fade-in slide-in-from-top-2 space-y-4 duration-200"
           >
-            <Plus className="h-3 w-3" />
-            更多細節（店家、地點、備註）
-          </button>
-        ) : (
-          <div className="animate-in fade-in slide-in-from-top-2 space-y-4 duration-200">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="store" className="text-sm font-medium text-muted-foreground">
-                  店家名稱 <span className="font-normal text-muted-foreground/60">（選填）</span>
-                </Label>
+                <Label htmlFor="store" className="text-sm font-medium text-muted-foreground">店家名稱</Label>
                 <Input
                   id="store"
                   value={storeName}
@@ -803,9 +819,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="location" className="text-sm font-medium text-muted-foreground">
-                  地點 <span className="font-normal text-muted-foreground/60">（選填）</span>
-                </Label>
+                <Label htmlFor="location" className="text-sm font-medium text-muted-foreground">地點</Label>
                 <Input
                   id="location"
                   value={location}
@@ -819,9 +833,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="note" className="text-sm font-medium text-muted-foreground">
-                備註 <span className="font-normal text-muted-foreground/60">（選填）</span>
-              </Label>
+              <Label htmlFor="note" className="text-sm font-medium text-muted-foreground">備註</Label>
               <Textarea
                 id="note"
                 value={note}

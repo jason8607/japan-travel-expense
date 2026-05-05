@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 import type { TripMember } from "@/types";
-import { Check, Settings2, Users } from "lucide-react";
+import { Settings2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 // Discriminated union: personal owns the whole expense; split divides it.
@@ -80,7 +80,14 @@ export function ParticipantPicker({
   // Inline panel uses a local draft so users can freely click people to add /
   // remove without triggering invalid intermediate values (1-person subset).
   // Draft is committed to the parent only via the Confirm button.
-  const [customOpen, setCustomOpen] = useState(false);
+  //
+  // Lazy init reads the initial prop so an edit form with an existing subset
+  // opens the panel on first paint. Subsequent open/close stays user-driven —
+  // do NOT sync this from `value` in an effect, or `confirmDraft` re-opens
+  // itself the moment value becomes a subset.
+  const [customOpen, setCustomOpen] = useState(() =>
+    isSubsetSplit(value, members.map((m) => m.user_id)),
+  );
   const [draftSubset, setDraftSubset] = useState<string[]>([]);
 
   // Initialize the draft when the panel opens. If the value is already a
@@ -94,12 +101,6 @@ export function ParticipantPicker({
       setDraftSubset([currentUserId]);
     }
   }, [customOpen, value, currentUserId]);
-
-  // If parent loads an edit form with an existing subset, auto-open the panel
-  // so the selection is visible / editable on first paint.
-  useEffect(() => {
-    if (subsetSplit) setCustomOpen(true);
-  }, [subsetSplit]);
 
   const allSplit = isAllMembersSplit(value, allMemberIds);
 
@@ -232,7 +233,7 @@ export function ParticipantPicker({
                   className={cn(
                     "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium ring-1 outline-none transition-colors active:translate-y-px focus-visible:ring-3 focus-visible:ring-ring/50",
                     checked
-                      ? "bg-card ring-primary text-foreground"
+                      ? "bg-accent ring-primary text-accent-foreground"
                       : "bg-card/40 ring-border text-muted-foreground hover:bg-card",
                   )}
                   aria-pressed={checked}
@@ -243,7 +244,6 @@ export function ParticipantPicker({
                     size="xs"
                   />
                   {memberLabel(m, isMe, selfLabel)}
-                  {checked && <Check className="h-3 w-3 text-primary" />}
                 </button>
               );
             })}
