@@ -75,18 +75,8 @@ export function ReceiptUpload({
           )}
         </div>
       ) : (
-        <div className="mx-4 rounded-xl bg-card p-10 ring-1 ring-foreground/10">
-          <div className="flex flex-col items-center gap-4">
-            <div className="rounded-xl bg-primary/10 p-4">
-              <Camera className="h-8 w-8 text-primary" />
-            </div>
-            <div className="text-center">
-              <p className="font-medium">拍照或上傳收據圖片</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                支援 JPG、PNG 格式
-              </p>
-            </div>
-          </div>
+        <div className="mx-4 rounded-xl bg-card p-12 ring-1 ring-foreground/10 flex justify-center">
+          <Camera className="h-10 w-10 text-muted-foreground" />
         </div>
       )}
 

@@ -63,15 +63,18 @@ export default function ScanPage() {
     }
   };
 
-  const handleConfirm = async (data: {
-    items: ReceiptItemWithOwner[];
-    paymentMethod: PaymentMethod;
-    creditCardId: string | null;
-    creditCardPlanId: string | null;
-    storeName: string;
-    storeNameJa: string;
-    date: string;
-  }) => {
+  const handleConfirm = async (
+    data: {
+      items: ReceiptItemWithOwner[];
+      paymentMethod: PaymentMethod;
+      creditCardId: string | null;
+      creditCardPlanId: string | null;
+      storeName: string;
+      storeNameJa: string;
+      date: string;
+    },
+    keepScanning: boolean = false,
+  ) => {
     if (!currentTrip) return;
     if (!isGuest && !user) return;
     setSaving(true);
@@ -106,8 +109,15 @@ export default function ScanPage() {
           savedCount++;
         }
         if (savedCount > 0) {
-          toast.success(`已儲存 ${savedCount} 筆消費`);
-          router.push("/records");
+          toast.success(
+            `已儲存 ${savedCount} 筆消費${keepScanning ? "，請拍下一張" : ""}`,
+          );
+          if (keepScanning) {
+            setOcrResult(null);
+            setReceiptImageFile(null);
+          } else {
+            router.push("/records");
+          }
         }
       } else {
         let receiptImageUrl: string | null = null;
@@ -167,8 +177,15 @@ export default function ScanPage() {
           })
         );
 
-        toast.success(`已儲存 ${results.length} 筆消費`);
-        router.push("/records");
+        toast.success(
+          `已儲存 ${results.length} 筆消費${keepScanning ? "，請拍下一張" : ""}`,
+        );
+        if (keepScanning) {
+          setOcrResult(null);
+          setReceiptImageFile(null);
+        } else {
+          router.push("/records");
+        }
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "儲存失敗";
@@ -209,9 +226,6 @@ export default function ScanPage() {
         <>
           <div className="px-4 mb-4">
             <h2 className="text-lg font-bold">確認收據內容</h2>
-            <p className="text-sm text-muted-foreground">
-              請確認或修改以下辨識結果
-            </p>
           </div>
           <ReceiptConfirm
             result={ocrResult}

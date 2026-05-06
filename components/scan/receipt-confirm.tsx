@@ -8,14 +8,15 @@ import {
 import { PaymentChips } from "@/components/expense/payment-chips";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useCategories } from "@/hooks/use-categories";
 import { useApp } from "@/lib/context";
-import { OCR_TO_PAYMENT_METHOD } from "@/lib/payment-methods";
-import { cn } from "@/lib/utils";
-import type { Category, OCRResult, PaymentMethod } from "@/types";
 import { getExchangeRate } from "@/lib/exchange-rate";
-import { ChevronDown, Plus, Trash2, Users } from "lucide-react";
+import { OCR_TO_PAYMENT_METHOD } from "@/lib/payment-methods";
+import { cn, formatExpenseDate } from "@/lib/utils";
+import type { Category, OCRResult, PaymentMethod } from "@/types";
+import { Calendar, ChevronDown, Loader2, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -64,15 +65,18 @@ function applyParticipantValue(
 
 interface ReceiptConfirmProps {
   result: OCRResult;
-  onConfirm: (data: {
-    items: ReceiptItemWithOwner[];
-    paymentMethod: PaymentMethod;
-    creditCardId: string | null;
-    creditCardPlanId: string | null;
-    storeName: string;
-    storeNameJa: string;
-    date: string;
-  }) => void;
+  onConfirm: (
+    data: {
+      items: ReceiptItemWithOwner[];
+      paymentMethod: PaymentMethod;
+      creditCardId: string | null;
+      creditCardPlanId: string | null;
+      storeName: string;
+      storeNameJa: string;
+      date: string;
+    },
+    keepScanning?: boolean,
+  ) => void;
   onCancel: () => void;
   saving: boolean;
 }
@@ -104,9 +108,9 @@ export function ReceiptConfirm({
 
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
 
-  const [storeName] = useState(initialResult.store_name);
+  const [storeName, setStoreName] = useState(initialResult.store_name);
   const [storeNameJa] = useState(initialResult.store_name_ja);
-  const [date] = useState(initialResult.date);
+  const [date, setDate] = useState(initialResult.date);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
 
   useEffect(() => {
@@ -178,31 +182,73 @@ export function ReceiptConfirm({
   };
 
   const hasMultipleMembers = tripMembers.length > 1;
+  const computedTotal = items.reduce(
+    (sum, item) => sum + item.quantity * item.unit_price,
+    0,
+  );
 
   return (
     <div className="space-y-4 px-4">
-      {/* Store info */}
-      <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="font-bold text-lg">{storeName}</h3>
-          <span className="text-sm text-muted-foreground tabular-nums">{date}</span>
+      {/* Receipt header — mirrors expense-form's labeled-Input pattern so the
+          confirm flow and the manual entry flow feel like the same chassis. */}
+      <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10 space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="receipt-store" className="text-sm font-medium text-foreground">店名</Label>
+          <Input
+            id="receipt-store"
+            value={storeName}
+            onChange={(e) => setStoreName(e.target.value)}
+            placeholder="例：一蘭拉麵"
+            enterKeyHint="next"
+            maxLength={100}
+            className="h-12 rounded-lg border-border"
+          />
+          {storeNameJa && (
+            <p className="px-1 text-xs text-muted-foreground truncate">{storeNameJa}</p>
+          )}
         </div>
-        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-          <p className="truncate">{storeNameJa}</p>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="receipt-date" className="text-sm font-medium text-foreground">日期</Label>
+          <div className="relative h-12">
+            <input
+              id="receipt-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              onClick={(e) => {
+                try {
+                  e.currentTarget.showPicker?.();
+                } catch {
+                  /* fall back to native focus behaviour */
+                }
+              }}
+              aria-label="日期"
+              className="peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none opacity-0 outline-none"
+            />
+            <div
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none flex h-full items-center justify-between rounded-lg border border-input bg-card px-3 text-base text-foreground tabular-nums transition-colors",
+                "peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50",
+              )}
+            >
+              <span className="truncate">{formatExpenseDate(date)}</span>
+              <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </div>
+          </div>
           {exchangeRate !== null && (
-            <span className="tabular-nums shrink-0">
+            <p className="px-1 text-xs text-muted-foreground tabular-nums">
               ¥1 ≈ NT${exchangeRate.toFixed(4)}
-            </span>
+            </p>
           )}
         </div>
       </div>
 
       {/* Quick assign buttons */}
-      <div className="rounded-xl bg-card p-3 ring-1 ring-foreground/10 space-y-2.5">
-        <p className="text-xs text-muted-foreground font-medium">快速指定全部品項</p>
-        {/* Quick assign category */}
+      <div className="rounded-xl bg-card p-3 ring-1 ring-foreground/10 space-y-3">
         <div>
-          <p className="text-[10px] text-muted-foreground mb-1.5">分類</p>
+          <p className="text-xs text-muted-foreground font-medium mb-1.5">快速分類</p>
           <div className="flex flex-wrap gap-1.5">
             {CATEGORIES.map((cat) => (
               <button
@@ -216,7 +262,7 @@ export function ReceiptConfirm({
                 className={cn(
                   "flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium transition-all",
                   items.every((it) => it.category === cat.value)
-                    ? "border-primary/30 bg-primary/10 text-primary"
+                    ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-border text-muted-foreground hover:bg-muted"
                 )}
               >
@@ -226,12 +272,9 @@ export function ReceiptConfirm({
             ))}
           </div>
         </div>
-        {/* Quick assign owner — bulk action buttons that map all items to a
-            single ParticipantValue. Subset bulk is rare so we don't expose it
-            here; users can refine per-item below. */}
         {hasMultipleMembers && user && (
           <div>
-            <p className="text-[10px] text-muted-foreground mb-1.5">全部歸屬</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1.5">快速歸屬</p>
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
@@ -240,7 +283,7 @@ export function ReceiptConfirm({
                     setAllParticipantValue({ kind: "personal", ownerId: null }),
                   )
                 }
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium bg-primary/10 border-primary/25 text-primary"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-primary/40 bg-primary/10 text-primary"
               >
                 <UserAvatar avatarUrl={myProfile?.avatar_url} avatarEmoji={myProfile?.avatar_emoji} size="xs" />
                 全部我的
@@ -275,7 +318,7 @@ export function ReceiptConfirm({
                     setAllParticipantValue({ kind: "split", participants: [] }),
                   )
                 }
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-primary/50 text-primary bg-primary/10"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-primary/40 bg-primary/10 text-primary"
               >
                 <Users className="h-3 w-3" /> 全部均分
               </button>
@@ -286,8 +329,23 @@ export function ReceiptConfirm({
 
       {/* Items with per-item owner */}
       <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="font-bold">購買明細</h4>
+        <div className="flex items-end justify-between mb-3">
+          <div>
+            <h4 className="font-bold">購買明細</h4>
+            <p className="text-xs text-muted-foreground tabular-nums">
+              合計 ¥{computedTotal.toLocaleString()}
+              {exchangeRate !== null && (
+                <span> · NT${(computedTotal * exchangeRate).toFixed(0)}</span>
+              )}
+            </p>
+            {initialResult.total > 0 &&
+              Math.abs(computedTotal - initialResult.total) > 100 && (
+                <p className="text-xs text-warning-foreground tabular-nums mt-0.5">
+                  收據顯示 ¥{initialResult.total.toLocaleString()},差 ¥
+                  {Math.abs(computedTotal - initialResult.total).toLocaleString()}
+                </p>
+              )}
+          </div>
           <button
             onClick={addItem}
             className="flex items-center gap-1 text-sm text-primary"
@@ -297,31 +355,32 @@ export function ReceiptConfirm({
           </button>
         </div>
 
-        <div className="space-y-3">
+        <div className="-mx-1 divide-y divide-border">
           {items.map((item, index) => {
             const currentCat = CATEGORIES.find((c) => c.value === item.category) || CATEGORIES[0];
             const isExpanded = expandedCategoryId === item._id;
 
             return (
-              <div key={item._id} className="rounded-xl bg-muted overflow-hidden">
-                <div className="flex items-start gap-3 p-3">
-                  <div className="shrink-0 w-6 h-6 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-bold">
+              <div key={item._id} className="px-1 py-3 first:pt-1 last:pb-1">
+                <div className="flex items-start gap-3">
+                  <div className="shrink-0 w-6 h-6 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-xs font-bold tabular-nums">
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
                     <Input
                       value={item.name}
                       onChange={(e) => updateItem(index, "name", e.target.value)}
-                      className="h-7 text-sm font-medium border-0 bg-transparent p-0 focus-visible:ring-0"
+                      placeholder="品項名稱"
+                      className="h-auto text-sm font-medium border-0 border-b border-transparent bg-transparent px-0 py-0.5 rounded-none shadow-none hover:border-border focus-visible:border-foreground focus-visible:ring-0 transition-colors"
                     />
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[10px] text-muted-foreground tabular-nums">
                       {item.name_ja} · {item.quantity} x ¥
                       {item.unit_price.toLocaleString()} (
                       {(item.tax_rate * 100).toFixed(0)}%)
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="font-bold text-sm">
+                    <span className="font-bold text-sm tabular-nums">
                       ¥{(item.quantity * item.unit_price).toLocaleString()}
                     </span>
                     <button
@@ -334,14 +393,11 @@ export function ReceiptConfirm({
                 </div>
 
                 {/* Per-item category selector */}
-                <div className="px-3 pb-2">
+                <div className="mt-2 ml-9">
                   <button
                     type="button"
                     onClick={() => setExpandedCategoryId(isExpanded ? null : item._id)}
-                    className={cn(
-                      "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
-                      "border border-border hover:border-border"
-                    )}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium ring-1 ring-border text-muted-foreground hover:bg-muted transition-colors"
                   >
                     <span className="text-sm leading-none">{currentCat.icon}</span>
                     {currentCat.label}
@@ -355,10 +411,10 @@ export function ReceiptConfirm({
                           type="button"
                           onClick={() => setItemCategory(index, cat.value)}
                           className={cn(
-                            "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all",
+                            "flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors",
                             item.category === cat.value
-                              ? "bg-primary/15 text-primary"
-                              : "bg-card text-muted-foreground hover:bg-muted"
+                              ? "bg-accent text-accent-foreground"
+                              : "bg-muted text-muted-foreground hover:bg-muted/70"
                           )}
                         >
                           <span className="text-sm leading-none">{cat.icon}</span>
@@ -373,7 +429,7 @@ export function ReceiptConfirm({
                     Self-label is just "我" because the receipt context already
                     implies "this item". */}
                 {hasMultipleMembers && user && (
-                  <div className="px-3 pb-2.5">
+                  <div className="mt-2 ml-9">
                     <ParticipantPicker
                       members={tripMembers}
                       currentUserId={user.id}
@@ -426,17 +482,48 @@ export function ReceiptConfirm({
           })
         }
         size="lg"
-        className="w-full"
+        className="w-full tabular-nums"
         disabled={saving}
       >
-        {saving ? "儲存中..." : `確認儲存 (${items.length} 筆)`}
+        {saving ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            儲存中
+          </>
+        ) : (
+          `確認儲存 (${items.length} 筆)`
+        )}
       </Button>
 
       <Button
-        variant="ghost"
+        variant="outline"
+        size="lg"
+        onClick={() =>
+          onConfirm(
+            {
+              items,
+              paymentMethod,
+              creditCardId: paymentMethod === "信用卡" ? creditCardId : null,
+              creditCardPlanId:
+                paymentMethod === "信用卡" ? creditCardPlanId : null,
+              storeName,
+              storeNameJa,
+              date,
+            },
+            true,
+          )
+        }
+        className="w-full"
+        disabled={saving}
+      >
+        儲存並再掃一張
+      </Button>
+
+      <Button
+        variant="outline"
         size="lg"
         onClick={onCancel}
-        className="w-full text-muted-foreground"
+        className="w-full"
         disabled={saving}
       >
         重新掃描
