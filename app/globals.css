@@ -48,6 +48,7 @@
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-success-subtle: var(--success-subtle);
+  --color-scan-laser: var(--scan-laser);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -112,6 +113,9 @@
   --success: oklch(0.723 0.219 149.579);
   --success-foreground: oklch(0.432 0.095 166.913);
   --success-subtle: oklch(0.962 0.044 156.743);
+  /* Signature exception — see DESIGN.md §2 Vermillion-Only-For-Scan Rule.
+     Reserved for OCR scanner sweep. Do not use anywhere else. */
+  --scan-laser: #FF3D33;
 }
 
 .dark,
@@ -156,6 +160,7 @@
   --success: oklch(0.696 0.17 162.48);
   --success-foreground: oklch(0.93 0.05 160.0);
   --success-subtle: oklch(0.26 0.06 160.0);
+  --scan-laser: #FF3D33;
 }
 
 [data-theme="japanese"] {
@@ -199,6 +204,7 @@
   --success: #5B6F55;
   --success-foreground: #23351F;
   --success-subtle: #E1E9DC;
+  --scan-laser: #FF3D33;
 }
 
 @layer base {
@@ -244,8 +250,53 @@
   }
 }
 
-/* OCR scanner laser sweep — ported verbatim from landing page mock */
+/* OCR scanner laser sweep — see DESIGN.md §5 Scanner Sweep (signature).
+   1px Scan Vermillion solid line + 4px halo, 2.4s linear sweep.
+   Color is theme-invariant per Vermillion-Only-For-Scan Rule. */
 @keyframes scanSweep {
   0% { transform: translateY(-100%); }
   100% { transform: translateY(100%); }
+}
+
+.scan-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent calc(50% - 4px),
+    color-mix(in srgb, var(--scan-laser) 12%, transparent) calc(50% - 0.5px),
+    var(--scan-laser) calc(50% - 0.5px),
+    var(--scan-laser) calc(50% + 0.5px),
+    color-mix(in srgb, var(--scan-laser) 12%, transparent) calc(50% + 0.5px),
+    transparent calc(50% + 4px)
+  );
+  animation: scanSweep 2.4s linear infinite;
+}
+
+.scan-sweep-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--scan-laser) 90%, transparent);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Halo would read as static decoration without motion — collapse to a 1px line.
+     Global rule already drops animation-duration to 0.01ms, so the line freezes
+     just below the receipt and effectively hides; the "辨識中…" pill carries status. */
+  .scan-sweep {
+    background: linear-gradient(
+      to bottom,
+      transparent calc(50% - 0.5px),
+      var(--scan-laser) calc(50% - 0.5px),
+      var(--scan-laser) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    );
+  }
 }

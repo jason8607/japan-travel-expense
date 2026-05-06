@@ -121,6 +121,7 @@ export interface OCRResult {
     unit_price: number;
     tax_rate: number;
     tax_type: TaxType;
+    category: Category;
   }[];
   total: number;
   payment_method: OCRPaymentCode;

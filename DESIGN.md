@@ -29,6 +29,7 @@ colors:
   chart-3: "oklch(0.65 0.13 150)"
   chart-4: "oklch(0.70 0.15 340)"
   chart-5: "oklch(0.65 0.13 40)"
+  scan-laser: "#FF3D33"
 typography:
   display:
     fontFamily: "Geist, ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', sans-serif"
@@ -164,6 +165,13 @@ components:
 ### Chart Palette
 - `chart-1`(`#2563EB`)為品牌色,其餘 `chart-2..5` 為協調色相(220 / 150 / 340 / 40),用 OKLCH 維持感知亮度一致。
 
+### Signature Exception
+
+- **Scan Vermillion** (`#FF3D33`):**僅**用於 OCR 拍照頁的雷射掃描動畫,是整個色系內唯一非品牌色的飽和色。
+- 為什麼留紅:條碼機 / 影印機 / 文件掃描器留下的「紅色雷射 = 機器正在運作」是極強的跨文化 mental model,藍色掃描線會破壞使用者對「掃描中」的本能感受。
+- 為什麼是 `#FF3D33` 而非 destructive 的 `oklch(0.577 0.245 27.325)`:色相往橘紅偏約 30°(離 destructive 的暗紅夠遠),亮度與飽和度更高,讀起來像「雷射光」而非「錯誤」。亦遠離日本國旗紅 `#BC002D` 的政治符號感。
+- 不會出現在按鈕、icon、文字、邊框、背景或任何其他元件。Scanner sweep 之外的任何使用都是違規。
+
 ### Named Rules
 
 **The One Action Color Rule.** 整個 App 在任何畫面上,**Signal Blue 的覆蓋面積不得超過 10%**。它的稀有性就是它的意義。如果一個畫面上有兩個藍色按鈕,改一個為 outline 或 ghost。
@@ -171,6 +179,8 @@ components:
 **The No-True-Black Rule.** 永遠不用 `#000` 或 `#FFF`。`Ink Slate` (`#0F172A`) 帶 220 hue,跟 Signal Blue 同色族,文字看起來才不會像螢光筆寫在紙上。
 
 **Themes Are Optional.** 系統內建 light(canonical)/ dark / japanese 三主題,但 PRODUCT.md 的視覺基準是 light。新元件先確保 light 完整,dark 用 `dark:` variant 處理,japanese 主題只在使用者主動切換時才需要保證可讀性。
+
+**The Vermillion-Only-For-Scan Rule.** Scan Vermillion (`#FF3D33`) 只用於 OCR 雷射掃描線。任何其他元件(按鈕、tag、icon、文字、邊框、背景)出現它都是違規 — 它不是品牌色第二位,是純粹的 signature exception。三主題下這個顏色不變(掃描線浮在收據圖片上,不依賴頁面背景對比)。
 
 ## 3. Typography
 
@@ -278,9 +288,11 @@ components:
 
 OCR 拍照頁的雷射掃描動畫,實作於 globals.css `@keyframes scanSweep`。
 
-- 1 條訊號藍 1px 線,從 -100% 到 100% Y 軸位移,2.4s 線性循環。
-- `prefers-reduced-motion: reduce` 環境下動畫降為 0.01ms(整套 App 通則)。
-- 是整個系統允許的「炫技」例外 — 因為它真實對應掃描行為。
+- 1 條 **Scan Vermillion** (`#FF3D33`) 1px 實線,搭配 4–6px 同色 12% 不透明 halo,從 -100% 到 100% Y 軸位移,2.4s 線性循環(linear easing,不可改 ease)。
+- **不可**改藍、不可改 destructive 暗紅、不可改成 ≥20% 不透明的厚漸層帶。已知反例:`rgba(209,75,61,0.3)` 30% 漸層帶 — 色相偏暗紅 + 厚度過高,被誤判為錯誤狀態,屬本規範後修正前的舊實作。
+- 「辨識中…」pill 跟著 sweep 同色系:Scan Vermillion 90% 底 + 白字 + Sparkles icon,圓角 999px,定位在收據預覽底部置中。
+- `prefers-reduced-motion: reduce` 環境下動畫降為 0.01ms(整套 App 通則),並隱藏 halo 只留純色 1px 線(避免靜態 halo 看起來像漸層裝飾)。
+- 是整個系統允許的「炫技」例外 — 它對應條碼機 / 影印機 / 文件掃描器留下的雷射 mental model,沒有更直覺的視覺替代品。Scan Vermillion 的稀有性 = 它的意義:不會出現在 scan 動畫之外任何位置。
 
 ## 6. Do's and Don'ts
 

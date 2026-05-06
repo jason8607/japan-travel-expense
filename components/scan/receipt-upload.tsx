@@ -48,7 +48,7 @@ export function ReceiptUpload({
   return (
     <div className={cn("space-y-4", className)}>
       {preview ? (
-        <div className="relative mx-4 rounded-2xl border bg-card p-4 shadow-sm">
+        <div className="relative mx-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
           <div className="relative w-full aspect-3/4 rounded-xl overflow-hidden bg-muted">
             <Image
               src={preview}
@@ -58,44 +58,10 @@ export function ReceiptUpload({
             />
             {isProcessing && (
               <>
-                <div
-                  className="pointer-events-none"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: "100%",
-                    background:
-                      "linear-gradient(180deg, transparent 0%, rgba(209,75,61,0.3) 48%, transparent 50%)",
-                    animation: "scanSweep 2.2s linear infinite",
-                  }}
-                />
-                <div
-                  className="pointer-events-none"
-                  style={{
-                    position: "absolute",
-                    bottom: 10,
-                    left: 10,
-                    right: 10,
-                    textAlign: "center",
-                    fontSize: 10,
-                    color: "#fff",
-                    fontWeight: 600,
-                    textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                      padding: "4px 10px",
-                      background: "rgba(209,75,61,0.9)",
-                      borderRadius: 999,
-                    }}
-                  >
-                    <Sparkles style={{ width: 10, height: 10 }} />
+                <div className="scan-sweep" aria-hidden />
+                <div className="pointer-events-none absolute bottom-2.5 left-2.5 right-2.5 text-center">
+                  <span className="scan-sweep-pill">
+                    <Sparkles className="h-2.5 w-2.5" />
                     辨識中…
                   </span>
                 </div>
@@ -109,9 +75,9 @@ export function ReceiptUpload({
           )}
         </div>
       ) : (
-        <div className="mx-4 rounded-3xl border-2 border-dashed border-border bg-card p-10 shadow-sm">
+        <div className="mx-4 rounded-xl bg-card p-10 ring-1 ring-foreground/10">
           <div className="flex flex-col items-center gap-4">
-            <div className="rounded-2xl bg-primary/10 p-4">
+            <div className="rounded-xl bg-primary/10 p-4">
               <Camera className="h-8 w-8 text-primary" />
             </div>
             <div className="text-center">
@@ -127,8 +93,8 @@ export function ReceiptUpload({
       <div className="flex gap-3 px-4">
         <Button
           onClick={() => cameraInputRef.current?.click()}
-          variant="outline"
-          className="flex-1 h-11"
+          size="lg"
+          className="flex-1"
           disabled={isProcessing}
         >
           <Camera className="h-4 w-4 mr-2" />
@@ -136,7 +102,9 @@ export function ReceiptUpload({
         </Button>
         <Button
           onClick={() => fileInputRef.current?.click()}
-          className="flex-1 h-11 bg-primary hover:bg-primary/90"
+          variant="outline"
+          size="lg"
+          className="flex-1"
           disabled={isProcessing}
         >
           <Upload className="h-4 w-4 mr-2" />

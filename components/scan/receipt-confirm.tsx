@@ -14,8 +14,10 @@ import { useApp } from "@/lib/context";
 import { OCR_TO_PAYMENT_METHOD } from "@/lib/payment-methods";
 import { cn } from "@/lib/utils";
 import type { Category, OCRResult, PaymentMethod } from "@/types";
+import { getExchangeRate } from "@/lib/exchange-rate";
 import { ChevronDown, Plus, Trash2, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export interface ReceiptItemWithOwner {
   _id: string;
@@ -97,7 +99,6 @@ export function ReceiptConfirm({
       owner_id: null,
       split_type: "personal" as const,
       participants: [],
-      category: "餐飲" as Category,
     }))
   );
 
@@ -106,6 +107,25 @@ export function ReceiptConfirm({
   const [storeName] = useState(initialResult.store_name);
   const [storeNameJa] = useState(initialResult.store_name_ja);
   const [date] = useState(initialResult.date);
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+
+  useEffect(() => {
+    getExchangeRate()
+      .then(setExchangeRate)
+      .catch(() => {
+        // Fail silent — confirm flow uses scan/page.tsx's own fetch on save.
+        // This display is informational; missing rate just hides the row.
+      });
+  }, []);
+
+  const runBulkWithUndo = (label: string, mutate: () => void) => {
+    const snapshot = items;
+    mutate();
+    toast.success(label, {
+      action: { label: "復原", onClick: () => setItems(snapshot) },
+      duration: 5000,
+    });
+  };
 
   const updateItem = (index: number, field: string, value: string | number) => {
     setItems((prev) =>
@@ -162,16 +182,23 @@ export function ReceiptConfirm({
   return (
     <div className="space-y-4 px-4">
       {/* Store info */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm">
+      <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-bold text-lg">{storeName}</h3>
-          <span className="text-sm text-muted-foreground">{date}</span>
+          <span className="text-sm text-muted-foreground tabular-nums">{date}</span>
         </div>
-        <p className="text-xs text-muted-foreground">{storeNameJa}</p>
+        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+          <p className="truncate">{storeNameJa}</p>
+          {exchangeRate !== null && (
+            <span className="tabular-nums shrink-0">
+              ¥1 ≈ NT${exchangeRate.toFixed(4)}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Quick assign buttons */}
-      <div className="rounded-2xl border bg-card p-3 shadow-sm space-y-2.5">
+      <div className="rounded-xl bg-card p-3 ring-1 ring-foreground/10 space-y-2.5">
         <p className="text-xs text-muted-foreground font-medium">快速指定全部品項</p>
         {/* Quick assign category */}
         <div>
@@ -181,7 +208,11 @@ export function ReceiptConfirm({
               <button
                 key={cat.value}
                 type="button"
-                onClick={() => setAllCategory(cat.value)}
+                onClick={() =>
+                  runBulkWithUndo(`已將全部設為「${cat.label}」`, () =>
+                    setAllCategory(cat.value),
+                  )
+                }
                 className={cn(
                   "flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium transition-all",
                   items.every((it) => it.category === cat.value)
@@ -205,7 +236,9 @@ export function ReceiptConfirm({
               <button
                 type="button"
                 onClick={() =>
-                  setAllParticipantValue({ kind: "personal", ownerId: null })
+                  runBulkWithUndo("已將全部設為「我的」", () =>
+                    setAllParticipantValue({ kind: "personal", ownerId: null }),
+                  )
                 }
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium bg-primary/10 border-primary/25 text-primary"
               >
@@ -214,26 +247,33 @@ export function ReceiptConfirm({
               </button>
               {tripMembers
                 .filter((m) => m.user_id !== user.id)
-                .map((m) => (
-                  <button
-                    key={m.user_id}
-                    type="button"
-                    onClick={() =>
-                      setAllParticipantValue({
-                        kind: "personal",
-                        ownerId: m.user_id,
-                      })
-                    }
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-border text-muted-foreground hover:bg-muted"
-                  >
-                    <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
-                    全部{m.profile?.display_name || "成員"}的
-                  </button>
-                ))}
+                .map((m) => {
+                  const memberLabel = m.profile?.display_name || "成員";
+                  return (
+                    <button
+                      key={m.user_id}
+                      type="button"
+                      onClick={() =>
+                        runBulkWithUndo(`已將全部設為「${memberLabel} 的」`, () =>
+                          setAllParticipantValue({
+                            kind: "personal",
+                            ownerId: m.user_id,
+                          }),
+                        )
+                      }
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-border text-muted-foreground hover:bg-muted"
+                    >
+                      <UserAvatar avatarUrl={m.profile?.avatar_url} avatarEmoji={m.profile?.avatar_emoji} size="xs" />
+                      全部{memberLabel}的
+                    </button>
+                  );
+                })}
               <button
                 type="button"
                 onClick={() =>
-                  setAllParticipantValue({ kind: "split", participants: [] })
+                  runBulkWithUndo("已將全部設為「均分」", () =>
+                    setAllParticipantValue({ kind: "split", participants: [] }),
+                  )
                 }
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium border-primary/50 text-primary bg-primary/10"
               >
@@ -245,7 +285,7 @@ export function ReceiptConfirm({
       </div>
 
       {/* Items with per-item owner */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm">
+      <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-bold">購買明細</h4>
           <button
@@ -351,7 +391,7 @@ export function ReceiptConfirm({
       </div>
 
       {/* Payment method picker */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm space-y-3">
+      <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10 space-y-3">
         <h4 className="font-bold text-sm">支付方式</h4>
         <PaymentChips
           value={paymentMethod}
@@ -385,7 +425,8 @@ export function ReceiptConfirm({
             date,
           })
         }
-        className="w-full h-12 text-base bg-primary hover:bg-primary/90"
+        size="lg"
+        className="w-full"
         disabled={saving}
       >
         {saving ? "儲存中..." : `確認儲存 (${items.length} 筆)`}
@@ -393,6 +434,7 @@ export function ReceiptConfirm({
 
       <Button
         variant="ghost"
+        size="lg"
         onClick={onCancel}
         className="w-full text-muted-foreground"
         disabled={saving}
