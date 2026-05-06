@@ -58,10 +58,44 @@ export function ReceiptUpload({
             />
             {isProcessing && (
               <>
-                <div className="scan-sweep" aria-hidden />
-                <div className="pointer-events-none absolute bottom-2.5 left-2.5 right-2.5 text-center">
-                  <span className="scan-sweep-pill">
-                    <Sparkles className="h-2.5 w-2.5" />
+                                <div
+                  className="pointer-events-none"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "100%",
+                    background:
+                      "linear-gradient(180deg, transparent 0%, rgba(209,75,61,0.3) 48%, transparent 50%)",
+                    animation: "scanSweep 2.2s linear infinite",
+                  }}
+                />
+                <div
+                  className="pointer-events-none"
+                  style={{
+                    position: "absolute",
+                    bottom: 10,
+                    left: 10,
+                    right: 10,
+                    textAlign: "center",
+                    fontSize: 10,
+                    color: "#fff",
+                    fontWeight: 600,
+                    textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "4px 10px",
+                      background: "rgba(209,75,61,0.9)",
+                      borderRadius: 999,
+                    }}
+                  >
+                    <Sparkles style={{ width: 10, height: 10 }} />
                     辨識中…
                   </span>
                 </div>
@@ -75,16 +109,23 @@ export function ReceiptUpload({
           )}
         </div>
       ) : (
-        <div className="mx-4 rounded-xl bg-card p-12 ring-1 ring-foreground/10 flex justify-center">
-          <Camera className="h-10 w-10 text-muted-foreground" />
+        <div className="mx-4 rounded-xl bg-card p-10 ring-1 ring-foreground/10">
+        <div className="flex flex-col items-center gap-4">
+        <Camera className="h-10 w-10 text-muted-foreground" />
+          <div className="text-center">
+            <p className="font-medium">拍照或上傳收據圖片</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              支援 JPG、PNG 格式
+            </p>
+          </div>
+        </div>
         </div>
       )}
 
       <div className="flex gap-3 px-4">
         <Button
           onClick={() => cameraInputRef.current?.click()}
-          size="lg"
-          className="flex-1"
+          className="flex-1 h-10"
           disabled={isProcessing}
         >
           <Camera className="h-4 w-4 mr-2" />
@@ -93,8 +134,7 @@ export function ReceiptUpload({
         <Button
           onClick={() => fileInputRef.current?.click()}
           variant="outline"
-          size="lg"
-          className="flex-1"
+          className="flex-1 h-10"
           disabled={isProcessing}
         >
           <Upload className="h-4 w-4 mr-2" />
