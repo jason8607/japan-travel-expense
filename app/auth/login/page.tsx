@@ -6,11 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
-export default function LoginPage() {
+function LoginContent() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,14 +18,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [duplicateEmail, setDuplicateEmail] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  const rawRedirect = searchParams.get("redirect") ?? "/";
+  const redirect =
+    rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+      ? rawRedirect
+      : "/";
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirect)}`,
       },
     });
     if (error) {
@@ -57,8 +64,7 @@ export default function LoginPage() {
         if (data.user && !data.session) {
           toast.success("註冊成功！請查看信箱驗證郵件");
         } else if (data.session) {
-          router.push("/");
-          router.refresh();
+          window.location.href = redirect;
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -66,7 +72,7 @@ export default function LoginPage() {
           password,
         });
         if (error) throw error;
-        window.location.href = "/";
+        window.location.href = redirect;
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "發生錯誤";
@@ -221,5 +227,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }

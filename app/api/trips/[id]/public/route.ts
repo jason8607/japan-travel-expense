@@ -11,7 +11,7 @@ export async function GET(
 
     const { data: trip, error } = await admin
       .from("trips")
-      .select("id, name, start_date, end_date")
+      .select("id, name, start_date, end_date, created_by")
       .eq("id", id)
       .single();
 
@@ -19,7 +19,21 @@ export async function GET(
       return NextResponse.json({ error: "找不到旅程" }, { status: 404 });
     }
 
-    return NextResponse.json({ trip });
+    const { data: owner } = await admin
+      .from("profiles")
+      .select("display_name, avatar_url, avatar_emoji")
+      .eq("id", trip.created_by)
+      .single();
+
+    return NextResponse.json({
+      trip: {
+        id: trip.id,
+        name: trip.name,
+        start_date: trip.start_date,
+        end_date: trip.end_date,
+      },
+      owner: owner ?? null,
+    });
   } catch {
     return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
