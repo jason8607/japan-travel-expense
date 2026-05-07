@@ -7,6 +7,7 @@ import {
 } from "@/components/expense/participant-picker";
 import { PaymentChips } from "@/components/expense/payment-chips";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -14,9 +15,9 @@ import { useCategories } from "@/hooks/use-categories";
 import { useApp } from "@/lib/context";
 import { getExchangeRate } from "@/lib/exchange-rate";
 import { OCR_TO_PAYMENT_METHOD } from "@/lib/payment-methods";
-import { cn, formatExpenseDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { Category, OCRResult, PaymentMethod } from "@/types";
-import { Calendar, ChevronDown, Loader2, Plus, Trash2, Users } from "lucide-react";
+import { ChevronDown, Loader2, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -210,33 +211,12 @@ export function ReceiptConfirm({
 
         <div className="space-y-1.5">
           <Label htmlFor="receipt-date" className="text-sm font-medium text-foreground">日期</Label>
-          <div className="relative h-12">
-            <input
-              id="receipt-date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              onClick={(e) => {
-                try {
-                  e.currentTarget.showPicker?.();
-                } catch {
-                  /* fall back to native focus behaviour */
-                }
-              }}
-              aria-label="日期"
-              className="peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none opacity-0 outline-none"
-            />
-            <div
-              aria-hidden="true"
-              className={cn(
-                "pointer-events-none flex h-full items-center justify-between rounded-lg border border-input bg-card px-3 text-base text-foreground tabular-nums transition-colors",
-                "peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50",
-              )}
-            >
-              <span className="truncate">{formatExpenseDate(date)}</span>
-              <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </div>
-          </div>
+          <DateInput
+            id="receipt-date"
+            value={date}
+            onChange={setDate}
+            ariaLabel="日期"
+          />
           {exchangeRate !== null && (
             <p className="px-1 text-xs text-muted-foreground tabular-nums">
               ¥1 ≈ NT${exchangeRate.toFixed(4)}

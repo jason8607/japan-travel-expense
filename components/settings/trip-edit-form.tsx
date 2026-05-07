@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
@@ -45,20 +46,20 @@ export function TripEditForm({
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">開始日期</Label>
-          <Input
-            type="date"
+          <DateInput
             value={startDate}
-            onChange={(e) => onChangeStartDate(e.target.value)}
-            className="h-10 rounded-lg text-sm"
+            onChange={onChangeStartDate}
+            size="sm"
+            ariaLabel="開始日期"
           />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">結束日期</Label>
-          <Input
-            type="date"
+          <DateInput
             value={endDate}
-            onChange={(e) => onChangeEndDate(e.target.value)}
-            className="h-10 rounded-lg text-sm"
+            onChange={onChangeEndDate}
+            size="sm"
+            ariaLabel="結束日期"
           />
         </div>
       </div>

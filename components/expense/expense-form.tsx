@@ -1,15 +1,16 @@
 "use client";
 
 import { useHeaderAction } from "@/components/layout/header-action-context";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useApp } from "@/lib/context";
 import { FALLBACK_RATE, getExchangeRate, jpyToTwd, twdToJpy } from "@/lib/exchange-rate";
 import { addGuestExpense, updateGuestExpense } from "@/lib/guest-storage";
-import { cn, formatExpenseDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { Category, Expense, PaymentMethod, SplitType } from "@/types";
-import { Calendar, Check, ChevronDown, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -660,43 +661,14 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         />
       </div>
 
-      {/* 日期 — overlay an opacity-0 native picker on top of a custom face so
-          the iOS/Android system picker still opens, but we control the visible
-          chrome (avoids iOS's verbose "2026年5月5日" rendering and keeps the
-          field height/typography consistent with sibling inputs). */}
       <div className="space-y-1.5">
         <Label htmlFor="date" className="text-sm font-medium text-foreground">日期</Label>
-        <div className="relative h-12">
-          <input
-            id="date"
-            type="date"
-            value={expenseDate}
-            onChange={(e) => setExpenseDate(e.target.value)}
-            onClick={(e) => {
-              // Desktop browsers only open the picker when the small calendar
-              // glyph is clicked; since we hide that glyph (opacity-0), force
-              // the picker open on any click within the field. Wrapped in
-              // try/catch because non-user-gesture invocations throw.
-              try {
-                e.currentTarget.showPicker?.();
-              } catch {
-                /* fall back to native focus behaviour */
-              }
-            }}
-            aria-label="日期"
-            className="peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none opacity-0 outline-none"
-          />
-          <div
-            aria-hidden="true"
-            className={cn(
-              "pointer-events-none flex h-full items-center justify-between rounded-lg border border-input bg-card px-3 text-base text-foreground tabular-nums transition-colors",
-              "peer-focus-visible:border-ring peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50"
-            )}
-          >
-            <span>{formatExpenseDate(expenseDate)}</span>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
+        <DateInput
+          id="date"
+          value={expenseDate}
+          onChange={setExpenseDate}
+          ariaLabel="日期"
+        />
       </div>
       </div>
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -71,22 +72,22 @@ export default function NewTripPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="start">開始日期</Label>
-            <Input
+            <DateInput
               id="start"
-              type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={setStartDate}
               required
+              ariaLabel="開始日期"
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="end">結束日期</Label>
-            <Input
+            <DateInput
               id="end"
-              type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={setEndDate}
               required
+              ariaLabel="結束日期"
             />
           </div>
         </div>
