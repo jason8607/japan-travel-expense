@@ -35,14 +35,6 @@ export interface TripMember {
   profile?: Profile;
 }
 
-export interface TripSchedule {
-  id: string;
-  trip_id: string;
-  date: string;
-  location: string;
-  region: string;
-}
-
 export interface Expense {
   id: string;
   trip_id: string;

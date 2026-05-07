@@ -680,7 +680,7 @@ export default function SettingsPage() {
           <DialogHeader>
             <DialogTitle>確定要刪除此旅程？</DialogTitle>
             <DialogDescription>
-              將永久刪除「{deleteTripTarget?.name}」以及其所有消費紀錄、行程安排與成員資料，此操作無法復原。
+              將永久刪除「{deleteTripTarget?.name}」以及其所有消費紀錄與成員資料，此操作無法復原。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

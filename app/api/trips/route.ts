@@ -120,7 +120,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "只有旅程建立者可以刪除" }, { status: 403 });
     }
 
-    // Related rows (trip_members, expenses, expense_items, trip_schedule)
+    // Related rows (trip_members, expenses, expense_items)
     // are removed automatically via ON DELETE CASCADE.
     const { error } = await admin.from("trips").delete().eq("id", id);
 

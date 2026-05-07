@@ -34,9 +34,6 @@ function getHeaderConfig(pathname: string, isEditingExpense: boolean): HeaderCon
   if (pathname === "/summary") return { title: "旅行總結", showBack: true };
   if (pathname === "/recap") return { title: "旅後回顧", showBack: true };
   if (pathname === "/trip/new") return { title: "建立新旅程", showBack: true };
-  if (/^\/trip\/[^/]+\/schedule$/.test(pathname)) {
-    return { title: "旅程日程", showBack: true };
-  }
   if (/^\/trip\/[^/]+\/invite$/.test(pathname)) {
     return { title: "邀請成員", showBack: true };
   }
