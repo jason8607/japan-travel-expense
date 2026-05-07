@@ -1,45 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useApp } from "@/lib/context";
-import { createClient } from "@/lib/supabase/client";
+import { AuthRequiredState } from "@/components/layout/auth-required-state";
+import { LoadingState } from "@/components/layout/loading-state";
+import { CategoryManager } from "@/components/settings/category-manager";
+import { CreditCardManager } from "@/components/settings/credit-card-manager";
+import { ThemeSwitcher } from "@/components/settings/theme-switcher";
+import { TripEditForm } from "@/components/settings/trip-edit-form";
+import { AvatarPicker } from "@/components/ui/avatar-picker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  LogOut,
-  User,
-  Plane,
-  Check,
-  UserPlus,
-  Copy,
-  Pencil,
-  Settings as SettingsIcon,
-  X,
-  Trash2,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { AvatarPicker } from "@/components/ui/avatar-picker";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { useApp } from "@/lib/context";
 import { updateGuestTrip } from "@/lib/guest-storage";
-import { CreditCardManager } from "@/components/settings/credit-card-manager";
-import { CategoryManager } from "@/components/settings/category-manager";
-import { ThemeSwitcher } from "@/components/settings/theme-switcher";
-import { AuthRequiredState } from "@/components/layout/auth-required-state";
-import { LoadingState } from "@/components/layout/loading-state";
-import type { Trip, TripMember, Profile } from "@/types";
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+import type { Profile, Trip, TripMember } from "@/types";
+import {
+  Check,
+  Copy,
+  LogOut,
+  Pencil,
+  Plane,
+  Settings as SettingsIcon,
+  User,
+  UserPlus,
+  X,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
   const {
@@ -337,16 +337,16 @@ export default function SettingsPage() {
 
         {/* Guest trip editing */}
         {currentTrip && (
-          <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+          <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
             <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
-              <h2 className="text-sm font-bold flex items-center gap-2">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Plane className="h-4 w-4 text-primary" />
                 試用旅程
               </h2>
               {!editingTrip ? (
                 <button
                   onClick={() => setEditingTrip(true)}
-                  className="text-xs text-primary flex items-center gap-1"
+                  className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
                 >
                   <Pencil className="h-3 w-3" />
                   編輯
@@ -354,7 +354,7 @@ export default function SettingsPage() {
               ) : (
                 <button
                   onClick={() => setEditingTrip(false)}
-                  className="text-xs text-muted-foreground flex items-center gap-1"
+                  className="text-xs text-muted-foreground flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
                 >
                   <X className="h-3 w-3" />
                   取消
@@ -363,53 +363,18 @@ export default function SettingsPage() {
             </div>
 
             {editingTrip ? (
-              <div className="p-4 space-y-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">旅程名稱</Label>
-                  <Input
-                    value={tripName}
-                    onChange={(e) => setTripName(e.target.value)}
-                    className="h-10 rounded-lg text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">開始日期</Label>
-                    <Input
-                      type="date"
-                      value={tripStart}
-                      onChange={(e) => setTripStart(e.target.value)}
-                      className="h-10 rounded-lg text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">結束日期</Label>
-                    <Input
-                      type="date"
-                      value={tripEnd}
-                      onChange={(e) => setTripEnd(e.target.value)}
-                      className="h-10 rounded-lg text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">旅程預算 (¥)</Label>
-                  <Input
-                    type="number"
-                    value={tripBudget}
-                    onChange={(e) => setTripBudget(e.target.value)}
-                    placeholder="選填"
-                    className="h-10 rounded-lg text-sm"
-                  />
-                </div>
-                <Button
-                  onClick={handleSaveGuestTrip}
-                  className="w-full h-10 bg-primary hover:bg-primary/90 rounded-lg text-sm"
-                  disabled={saving}
-                >
-                  {saving ? "儲存中..." : "儲存變更"}
-                </Button>
-              </div>
+              <TripEditForm
+                name={tripName}
+                startDate={tripStart}
+                endDate={tripEnd}
+                budget={tripBudget}
+                saving={saving}
+                onChangeName={setTripName}
+                onChangeStartDate={setTripStart}
+                onChangeEndDate={setTripEnd}
+                onChangeBudget={setTripBudget}
+                onSubmit={handleSaveGuestTrip}
+              />
             ) : (
               <div className="px-4 py-3">
                 <p className="font-medium text-sm">{currentTrip.name}</p>
@@ -460,10 +425,10 @@ export default function SettingsPage() {
       <div className="space-y-4 px-4">
 
       {/* ===== 旅程切換 ===== */}
-      <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
         <div className="px-4 py-3 border-b border-border/60">
-          <h2 className="text-sm font-bold flex items-center gap-2">
-            <Plane className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <Plane className="h-4 w-4 text-muted-foreground" />
             我的旅程
           </h2>
         </div>
@@ -475,7 +440,7 @@ export default function SettingsPage() {
                 key={trip.id}
                 onClick={() => handleSwitchTrip(trip)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
+                  "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset active:translate-y-px",
                   isActive ? "bg-primary/10" : "hover:bg-muted"
                 )}
               >
@@ -486,7 +451,7 @@ export default function SettingsPage() {
                   )}>
                     {trip.name}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {trip.start_date} ~ {trip.end_date}
                   </p>
                 </div>
@@ -508,13 +473,13 @@ export default function SettingsPage() {
 
       {/* ===== 當前旅程編輯 + 成員 ===== */}
       {currentTrip && (
-        <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
           <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
-            <h2 className="text-sm font-bold">旅程設定</h2>
+            <h2 className="text-sm font-semibold">旅程設定</h2>
             {!editingTrip ? (
               <button
                 onClick={() => setEditingTrip(true)}
-                className="text-xs text-primary flex items-center gap-1"
+                className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
               >
                 <Pencil className="h-3 w-3" />
                 編輯
@@ -522,7 +487,7 @@ export default function SettingsPage() {
             ) : (
               <button
                 onClick={() => setEditingTrip(false)}
-                className="text-xs text-muted-foreground flex items-center gap-1"
+                className="text-xs text-muted-foreground flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
               >
                 <X className="h-3 w-3" />
                 取消
@@ -531,65 +496,19 @@ export default function SettingsPage() {
           </div>
 
           {editingTrip ? (
-            <div className="p-4 space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">旅程名稱</Label>
-                <Input
-                  value={tripName}
-                  onChange={(e) => setTripName(e.target.value)}
-                  className="h-10 rounded-lg text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">開始日期</Label>
-                  <Input
-                    type="date"
-                    value={tripStart}
-                    onChange={(e) => setTripStart(e.target.value)}
-                    className="h-10 rounded-lg text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">結束日期</Label>
-                  <Input
-                    type="date"
-                    value={tripEnd}
-                    onChange={(e) => setTripEnd(e.target.value)}
-                    className="h-10 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">旅程預算 (¥)</Label>
-                <Input
-                  type="number"
-                  value={tripBudget}
-                  onChange={(e) => setTripBudget(e.target.value)}
-                  placeholder="選填"
-                  className="h-10 rounded-lg text-sm"
-                />
-              </div>
-              <Button
-                onClick={handleSaveTrip}
-                className="w-full h-10 bg-primary hover:bg-primary/90 rounded-lg text-sm"
-                disabled={saving}
-              >
-                {saving ? "儲存中..." : "儲存變更"}
-              </Button>
-              {isOwner && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDeleteTripTarget(currentTrip)}
-                  className="w-full h-10 rounded-lg text-sm text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                  disabled={saving}
-                >
-                  <Trash2 className="h-4 w-4 mr-1.5" />
-                  刪除此旅程
-                </Button>
-              )}
-            </div>
+            <TripEditForm
+              name={tripName}
+              startDate={tripStart}
+              endDate={tripEnd}
+              budget={tripBudget}
+              saving={saving}
+              onChangeName={setTripName}
+              onChangeStartDate={setTripStart}
+              onChangeEndDate={setTripEnd}
+              onChangeBudget={setTripBudget}
+              onSubmit={handleSaveTrip}
+              onDelete={isOwner ? () => setDeleteTripTarget(currentTrip) : undefined}
+            />
           ) : (
             <div className="px-4 py-3">
               <p className="font-medium text-sm">{currentTrip.name}</p>
@@ -610,7 +529,7 @@ export default function SettingsPage() {
               </span>
               <button
                 onClick={() => setShowInvite(!showInvite)}
-                className="text-xs text-primary flex items-center gap-1"
+                className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
               >
                 <UserPlus className="h-3 w-3" />
                 {showInvite ? "收起" : "邀請"}
@@ -623,13 +542,13 @@ export default function SettingsPage() {
                   <span className="text-sm flex-1">
                     {m.profile?.display_name || "成員"}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {m.role === "owner" ? "建立者" : "成員"}
                   </span>
                   {isOwner && m.role !== "owner" && (
                     <button
                       onClick={() => setRemoveTarget({ userId: m.user_id, name: m.profile?.display_name || "成員" })}
-                      className="p-1 text-muted-foreground/60 hover:text-destructive transition-colors"
+                      className="p-1 rounded text-muted-foreground/60 hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
                       aria-label={`移除${m.profile?.display_name || "成員"}`}
                     >
                       <X className="h-3.5 w-3.5" />
@@ -683,10 +602,10 @@ export default function SettingsPage() {
       <ThemeSwitcher />
 
       {/* ===== 個人資料 ===== */}
-      <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
         <div className="px-4 py-3 border-b border-border/60">
-          <h2 className="text-sm font-bold flex items-center gap-2">
-            <User className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <User className="h-4 w-4 text-muted-foreground" />
             個人資料
           </h2>
         </div>
@@ -744,10 +663,7 @@ export default function SettingsPage() {
             <Button variant="outline" onClick={() => setRemoveTarget(null)}>
               取消
             </Button>
-            <Button
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-              onClick={handleRemoveMember}
-            >
+            <Button variant="destructive" onClick={handleRemoveMember}>
               確定移除
             </Button>
           </DialogFooter>
@@ -776,7 +692,7 @@ export default function SettingsPage() {
               取消
             </Button>
             <Button
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              variant="destructive"
               onClick={handleDeleteTrip}
               disabled={deletingTrip}
             >
