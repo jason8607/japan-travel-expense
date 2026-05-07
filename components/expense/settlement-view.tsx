@@ -44,24 +44,19 @@ export function SettlementView({
   }
 
   return (
-    <div className="space-y-3">
-      <div>
-        <h2 className="text-sm font-semibold text-foreground">最小轉帳</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          依本趟旅程所有紀錄計算。
-        </p>
-      </div>
+    <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+      <h3 className="font-semibold text-sm mb-3">最小轉帳</h3>
 
       {settlements.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground text-center py-2">
           帳目已平衡，不需要額外轉帳
-        </div>
+        </p>
       ) : (
         <div className="space-y-2">
           {settlements.map((s, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 rounded-xl bg-primary/5 p-3 ring-1 ring-primary/20"
+              className="flex items-center gap-3 rounded-lg p-2.5"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <UserAvatar
@@ -82,7 +77,7 @@ export function SettlementView({
                   {s.toName}
                 </span>
               </div>
-              <div className="ml-auto text-sm font-bold shrink-0">
+              <div className="ml-auto text-sm font-semibold tabular-nums shrink-0">
                 ¥{s.amount.toLocaleString()}
               </div>
             </div>

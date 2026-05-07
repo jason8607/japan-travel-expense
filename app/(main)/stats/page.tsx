@@ -85,12 +85,12 @@ export default function StatsPage() {
       <div className="space-y-4 px-4">
         <DayTabs dates={dates} selected={selectedDate} onChange={setSelectedDate} tripStartDate={currentTrip?.start_date} />
 
-        <div className="rounded-2xl border bg-card p-4 shadow-sm text-center">
+        <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10 text-center">
           <p className="text-xs text-muted-foreground mb-1">
             {dateLabel ? `${dateLabel} 花費` : "全部花費"}
           </p>
-          <p className="text-2xl font-bold">{formatJPY(totalJpy)}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-2xl font-semibold tabular-nums">{formatJPY(totalJpy)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
             ≈ {formatTWD(totalTwd)} · {filtered.length} 筆
           </p>
         </div>
@@ -114,9 +114,9 @@ export default function StatsPage() {
 
         <Link
           href="/summary"
-          className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-3.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground shadow-sm transition-colors"
+          className="flex items-center justify-center gap-2 rounded-xl bg-card py-3.5 text-sm font-medium text-muted-foreground ring-1 ring-foreground/10 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
         >
-          <ClipboardList className="h-4 w-4 text-primary" />
+          <ClipboardList className="h-4 w-4 text-muted-foreground" />
           查看旅行總結
         </Link>
       </div>

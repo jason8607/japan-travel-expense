@@ -1,8 +1,8 @@
 "use client";
 
+import { SettlementView } from "@/components/expense/settlement-view";
 import { EmptyState } from "@/components/layout/empty-state";
 import { LoadingState } from "@/components/layout/loading-state";
-import { SettlementView } from "@/components/expense/settlement-view";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useCategories } from "@/hooks/use-categories";
 import { useCreditCards } from "@/hooks/use-credit-cards";
@@ -307,7 +307,7 @@ export default function SummaryPage() {
       <div className="text-center">
         <div className="flex items-center justify-center gap-2">
           <Plane className="h-5 w-5 text-primary" />
-          <h1 className="text-xl font-bold">{currentTrip.name}</h1>
+          <h1 className="text-xl font-semibold">{currentTrip.name}</h1>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           {currentTrip.start_date} ~ {currentTrip.end_date} · {stats.totalDays} 天
@@ -315,21 +315,21 @@ export default function SummaryPage() {
       </div>
 
       {/* Total spending hero card */}
-      <div className="rounded-2xl bg-linear-to-br from-primary to-primary/90 p-5 text-primary-foreground shadow-lg">
-        <p className="text-sm opacity-80 mb-1">旅程總花費</p>
-        <p className="text-3xl font-bold">{formatJPY(stats.totalJpy)}</p>
-        <p className="text-sm opacity-80 mt-1">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+        <p className="text-xs text-muted-foreground mb-1">旅程總花費</p>
+        <p className="text-2xl font-semibold tabular-nums text-foreground">{formatJPY(stats.totalJpy)}</p>
+        <p className="text-sm text-muted-foreground mt-1 tabular-nums">
           ≈ {formatTWD(stats.totalTwd)}
         </p>
         {stats.budgetUsed !== null && (
           <div className="mt-3">
-            <div className="flex items-center justify-between text-xs opacity-80 mb-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
               <span>預算使用</span>
-              <span>{stats.budgetUsed}% · {formatJPY(stats.budgetJpy!)}</span>
+              <span className="tabular-nums">{stats.budgetUsed}% · {formatJPY(stats.budgetJpy!)}</span>
             </div>
-            <div className="h-2 rounded-full bg-card/20">
+            <div className="h-1.5 rounded-full bg-muted">
               <div
-                className={`h-2 rounded-full transition-all ${stats.budgetUsed > 100 ? "bg-destructive" : "bg-card/80"}`}
+                className={`h-1.5 rounded-full transition-all ${stats.budgetUsed > 100 ? "bg-destructive" : "bg-primary"}`}
                 style={{ width: `${Math.min(stats.budgetUsed, 100)}%` }}
               />
             </div>
@@ -339,28 +339,28 @@ export default function SummaryPage() {
 
       {/* Quick stats grid */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl bg-card border border-border/60 p-3 shadow-sm text-center">
+        <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-3 text-center">
           <Receipt className="h-4 w-4 text-primary mx-auto mb-1" />
-          <p className="text-lg font-bold">{stats.count}</p>
+          <p className="text-lg font-semibold">{stats.count}</p>
           <p className="text-[10px] text-muted-foreground">筆消費</p>
         </div>
-        <div className="rounded-xl bg-card border border-border/60 p-3 shadow-sm text-center">
+        <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-3 text-center">
           <CalendarDays className="h-4 w-4 text-primary mx-auto mb-1" />
-          <p className="text-lg font-bold">{stats.activeDays}</p>
+          <p className="text-lg font-semibold">{stats.activeDays}</p>
           <p className="text-[10px] text-muted-foreground">天有消費</p>
         </div>
-        <div className="rounded-xl bg-card border border-border/60 p-3 shadow-sm text-center">
+        <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-3 text-center">
           <TrendingUp className="h-4 w-4 text-success mx-auto mb-1" />
-          <p className="text-lg font-bold">{formatJPY(stats.dailyAvgJpy)}</p>
+          <p className="text-lg font-semibold tabular-nums">{formatJPY(stats.dailyAvgJpy)}</p>
           <p className="text-[10px] text-muted-foreground">日均花費</p>
         </div>
       </div>
 
       {/* Top expense */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
         <div className="flex items-center gap-2 mb-2">
           <Crown className="h-4 w-4 text-warning" />
-          <h3 className="font-bold text-sm">最大筆消費</h3>
+          <h3 className="font-semibold text-sm">最大筆消費</h3>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex-1">
@@ -370,16 +370,16 @@ export default function SummaryPage() {
               {stats.topExpense.store_name && ` · ${stats.topExpense.store_name}`}
             </p>
           </div>
-          <p className="font-bold text-lg text-foreground">{formatJPY(stats.topExpense.amount_jpy)}</p>
+          <p className="font-semibold text-lg text-foreground tabular-nums">{formatJPY(stats.topExpense.amount_jpy)}</p>
         </div>
       </div>
 
       {/* Highest spending day */}
       {stats.maxDaySpend.date && (
-        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+        <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
           <div className="flex items-center gap-2 mb-2">
             <CalendarDays className="h-4 w-4 text-destructive" />
-            <h3 className="font-bold text-sm">花最多的一天</h3>
+            <h3 className="font-semibold text-sm">花最多的一天</h3>
           </div>
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
@@ -388,15 +388,15 @@ export default function SummaryPage() {
                 return `${format(d, "M/d")}(${DAY_LABELS[d.getDay()]})`;
               })()}
             </p>
-            <p className="font-bold text-lg text-foreground">{formatJPY(stats.maxDaySpend.amount)}</p>
+            <p className="font-semibold text-lg text-foreground tabular-nums">{formatJPY(stats.maxDaySpend.amount)}</p>
           </div>
         </div>
       )}
 
       {/* Category breakdown */}
       {stats.catData.length > 0 && (
-        <div className="rounded-2xl border bg-card p-4 shadow-sm">
-          <h3 className="font-bold text-sm mb-3">分類支出</h3>
+        <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+          <h3 className="font-semibold text-sm mb-3">分類支出</h3>
           <div className="flex items-center gap-4">
             <div className="shrink-0 w-28 h-28">
               <LazyPieChart data={stats.catData} />
@@ -412,7 +412,7 @@ export default function SummaryPage() {
                   <span className="text-muted-foreground text-xs">
                     {Math.round((item.value / stats.totalJpy) * 100)}%
                   </span>
-                  <span className="font-medium text-xs">{formatJPY(item.value)}</span>
+                  <span className="font-medium text-xs tabular-nums">{formatJPY(item.value)}</span>
                 </div>
               ))}
             </div>
@@ -421,8 +421,8 @@ export default function SummaryPage() {
       )}
 
       {/* Payment method breakdown */}
-      <div className="rounded-2xl border bg-card p-4 shadow-sm">
-        <h3 className="font-bold text-sm mb-3">支付方式</h3>
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+        <h3 className="font-semibold text-sm mb-3">支付方式</h3>
         <div className="space-y-2">
           {[...stats.payMap.entries()]
             .sort((a, b) => b[1] - a[1])
@@ -432,7 +432,7 @@ export default function SummaryPage() {
                 <div key={method} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <span>{method}</span>
-                    <span className="font-medium">{formatJPY(amount)} ({pct}%)</span>
+                    <span className="font-medium tabular-nums">{formatJPY(amount)} ({pct}%)</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-muted">
                     <div
@@ -448,8 +448,8 @@ export default function SummaryPage() {
 
       {/* Daily spending chart (text-based bars) */}
       {stats.dailyEntries.length > 1 && (
-        <div className="rounded-2xl border bg-card p-4 shadow-sm">
-          <h3 className="font-bold text-sm mb-3">每日花費</h3>
+        <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+          <h3 className="font-semibold text-sm mb-3">每日花費</h3>
           <div className="space-y-1.5">
             {stats.dailyEntries.map(([date, amount]) => {
               const pct = Math.round((amount / stats.maxDaySpend.amount) * 100);
@@ -464,7 +464,7 @@ export default function SummaryPage() {
                       className="h-4 rounded bg-primary/15 flex items-center justify-end px-1"
                       style={{ width: `${Math.max(pct, 8)}%` }}
                     >
-                      <span className="text-[9px] font-medium text-primary whitespace-nowrap">
+                      <span className="text-[9px] font-medium text-foreground whitespace-nowrap tabular-nums">
                         {formatJPY(amount)}
                       </span>
                     </div>
@@ -478,14 +478,14 @@ export default function SummaryPage() {
 
       {/* Per-member spending (only for multi-member trips) */}
       {!isGuest && tripMembers.length > 1 && (
-        <div className="rounded-2xl border bg-card p-4 shadow-sm">
-          <h3 className="font-bold text-sm mb-3">成員應付金額</h3>
+        <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+          <h3 className="font-semibold text-sm mb-3">成員花費</h3>
           <div className="space-y-2">
             {stats.memberSpend.map((m) => (
               <div key={m.userId} className="flex items-center gap-3">
                 <UserAvatar avatarUrl={m.avatarUrl} avatarEmoji={m.emoji} size="sm" />
                 <span className="text-sm flex-1">{m.name}</span>
-                <span className="font-medium text-sm">{formatJPY(m.amount)}</span>
+                <span className="font-medium text-sm tabular-nums">{formatJPY(m.amount)}</span>
               </div>
             ))}
           </div>
@@ -499,11 +499,11 @@ export default function SummaryPage() {
 
       {/* Credit card cashback */}
       {stats.cardStats.length > 0 && (
-        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+        <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
           <div className="flex items-center gap-2 mb-3">
             <CreditCardIcon className="h-4 w-4 text-primary" />
-            <h3 className="font-bold text-sm">信用卡回饋</h3>
-            <span className="ml-auto font-bold text-sm text-primary">
+            <h3 className="font-semibold text-sm">信用卡回饋</h3>
+            <span className="ml-auto font-semibold text-sm text-primary tabular-nums">
               {formatTWD(stats.totalCashback)}
             </span>
           </div>
@@ -512,11 +512,11 @@ export default function SummaryPage() {
               <div key={card.name} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-foreground">{card.name}</span>
-                  <span className="font-medium text-success">
+                  <span className="font-medium text-success tabular-nums">
                     +{formatTWD(card.cashback)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground tabular-nums">
                   <span>刷卡 {formatTWD(card.totalTwd)}</span>
                   {card.limit > 0 && (
                     <span>
