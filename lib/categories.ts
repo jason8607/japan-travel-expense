@@ -73,3 +73,18 @@ export function deleteCategory(id: string): boolean {
   if (filtered.length === items.length) return false;
   return saveCategories(filtered);
 }
+
+export function reorderCategories(orderedIds: string[]): boolean {
+  const items = getCategories();
+  const map = new Map(items.map((c) => [c.id, c]));
+  const reordered: CategoryItem[] = [];
+  for (const id of orderedIds) {
+    const item = map.get(id);
+    if (item) {
+      reordered.push(item);
+      map.delete(id);
+    }
+  }
+  for (const remaining of map.values()) reordered.push(remaining);
+  return saveCategories(reordered);
+}

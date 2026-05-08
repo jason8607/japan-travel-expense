@@ -111,7 +111,9 @@ export function ReceiptUpload({
       ) : (
         <div className="mx-4 rounded-xl bg-card p-10 ring-1 ring-foreground/10">
         <div className="flex flex-col items-center gap-4">
-        <Camera className="h-10 w-10 text-muted-foreground" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <Camera className="h-10 w-10 " />
+        </div>
           <div className="text-center">
             <p className="font-medium">拍照或上傳收據圖片</p>
             <p className="text-sm text-muted-foreground mt-1">

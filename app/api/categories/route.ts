@@ -181,6 +181,53 @@ export async function PUT(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const user = await getRequestUser(req);
+    if (!user) {
+      return NextResponse.json({ error: "未登入" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const orderedIds = body?.orderedIds;
+    if (!Array.isArray(orderedIds) || orderedIds.some((id) => typeof id !== "string")) {
+      return NextResponse.json({ error: "缺少排序資料" }, { status: 400 });
+    }
+
+    const admin = getAdminClient();
+
+    const { data: owned } = await admin
+      .from("custom_categories")
+      .select("id")
+      .eq("user_id", user.id);
+
+    const ownedIds = new Set((owned ?? []).map((r) => r.id));
+    if (orderedIds.some((id) => !ownedIds.has(id))) {
+      return NextResponse.json({ error: "無權限" }, { status: 403 });
+    }
+
+    const updates = orderedIds.map((id, index) =>
+      admin
+        .from("custom_categories")
+        .update({ sort_order: index })
+        .eq("id", id)
+        .eq("user_id", user.id)
+    );
+
+    const results = await Promise.all(updates);
+    const failure = results.find((r) => r.error);
+    if (failure?.error) {
+      console.error("categories PATCH error:", failure.error.message);
+      return NextResponse.json({ error: "更新排序失敗" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("categories PATCH error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const user = await getRequestUser(req);

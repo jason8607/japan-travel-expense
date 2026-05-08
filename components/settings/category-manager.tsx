@@ -13,9 +13,27 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LayoutGrid, Plus, Pencil, Trash2, X } from "lucide-react";
+import { LayoutGrid, Plus, Pencil, Trash2, X, GripVertical } from "lucide-react";
 import { useCategories } from "@/hooks/use-categories";
 import type { CategoryItem } from "@/types";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const COLOR_OPTIONS = [
   "#EF4444", "#F97316", "#F59E0B", "#84CC16", "#10B981",
@@ -30,7 +48,7 @@ const ICON_OPTIONS = [
 ];
 
 export function CategoryManager() {
-  const { categories, addCategory, updateCategory, deleteCategory } = useCategories();
+  const { categories, addCategory, updateCategory, deleteCategory, reorderCategories } = useCategories();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<CategoryItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CategoryItem | null>(null);
@@ -110,6 +128,23 @@ export function CategoryManager() {
     }
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = categories.findIndex((c) => c.id === active.id);
+    const newIndex = categories.findIndex((c) => c.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const orderedIds = arrayMove(categories, oldIndex, newIndex).map((c) => c.id);
+    const ok = await reorderCategories(orderedIds);
+    if (!ok) toast.error("排序失敗");
+  };
+
   return (
     <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
@@ -129,38 +164,20 @@ export function CategoryManager() {
         </button>
       </div>
 
-      <div className="divide-y divide-border/60">
-        {categories.map((item) => (
-          <div
-            key={item.id}
-            className="px-4 py-2.5 flex items-center gap-3"
-          >
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ backgroundColor: item.color + "18" }}
-            >
-              <span className="text-base">{item.icon}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{item.label}</p>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={() => openEdit(item)}
-                className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => setDeleteTarget(item)}
-                className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+          <ul className="divide-y divide-border/60">
+            {categories.map((item) => (
+              <SortableRow
+                key={item.id}
+                item={item}
+                onEdit={() => openEdit(item)}
+                onDelete={() => setDeleteTarget(item)}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
 
       {showForm && (
         <div className="border-t border-border/60 p-4 space-y-3 bg-muted/50">
@@ -272,5 +289,69 @@ export function CategoryManager() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function SortableRow({
+  item,
+  onEdit,
+  onDelete,
+}: {
+  item: CategoryItem;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+    position: "relative",
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`px-4 py-2.5 flex items-center gap-3 bg-card touch-none ${
+        isDragging ? "shadow-lg ring-1 ring-border" : ""
+      }`}
+    >
+      <button
+        type="button"
+        className="p-1 -ml-1 text-muted-foreground hover:text-foreground active:cursor-grabbing cursor-grab touch-none shrink-0"
+        aria-label="拖曳排序"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <div
+        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+        style={{ backgroundColor: item.color + "18" }}
+      >
+        <span className="text-base">{item.icon}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{item.label}</p>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          onClick={onEdit}
+          className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={onDelete}
+          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </li>
   );
 }

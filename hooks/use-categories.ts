@@ -9,6 +9,7 @@ import {
   addCategory as addLocalCategory,
   updateCategory as updateLocalCategory,
   deleteCategory as deleteLocalCategory,
+  reorderCategories as reorderLocalCategories,
 } from "@/lib/categories";
 
 // Module-level cache
@@ -172,12 +173,58 @@ export function useCategories() {
     [isGuest, user, initUserCategories, fetchCategories]
   );
 
+  const reorderCats = useCallback(
+    async (orderedIds: string[]): Promise<boolean> => {
+      if (isDefaultRef.current) await initUserCategories();
+
+      // optimistic local update
+      setCategories((prev) => {
+        const map = new Map(prev.map((c) => [c.id, c]));
+        const reordered: CategoryItem[] = [];
+        for (const id of orderedIds) {
+          const item = map.get(id);
+          if (item) {
+            reordered.push(item);
+            map.delete(id);
+          }
+        }
+        for (const remaining of map.values()) reordered.push(remaining);
+        return reordered;
+      });
+
+      if (isGuest || !user) {
+        const ok = reorderLocalCategories(orderedIds);
+        if (ok) setCategories(getLocalCategories());
+        return ok;
+      }
+
+      try {
+        const res = await fetch("/api/categories", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderedIds }),
+        });
+        if (!res.ok) {
+          await fetchCategories();
+          return false;
+        }
+        await fetchCategories();
+        return true;
+      } catch {
+        await fetchCategories();
+        return false;
+      }
+    },
+    [isGuest, user, initUserCategories, fetchCategories]
+  );
+
   return {
     categories,
     loading,
     addCategory: addCat,
     updateCategory: updateCat,
     deleteCategory: deleteCat,
+    reorderCategories: reorderCats,
     refresh: fetchCategories,
   };
 }
