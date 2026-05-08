@@ -476,7 +476,7 @@ export default function SettingsPage() {
         <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
           <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
             <h2 className="text-sm font-semibold">旅程設定</h2>
-            {!editingTrip ? (
+            {isOwner && (!editingTrip ? (
               <button
                 onClick={() => setEditingTrip(true)}
                 className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
@@ -492,10 +492,10 @@ export default function SettingsPage() {
                 <X className="h-3 w-3" />
                 取消
               </button>
-            )}
+            ))}
           </div>
 
-          {editingTrip ? (
+          {isOwner && editingTrip ? (
             <TripEditForm
               name={tripName}
               startDate={tripStart}
@@ -527,13 +527,15 @@ export default function SettingsPage() {
               <span className="text-xs font-medium text-muted-foreground">
                 成員 ({members.length || tripMembers.length})
               </span>
-              <button
-                onClick={() => setShowInvite(!showInvite)}
-                className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
-              >
-                <UserPlus className="h-3 w-3" />
-                {showInvite ? "收起" : "邀請"}
-              </button>
+              {isOwner && (
+                <button
+                  onClick={() => setShowInvite(!showInvite)}
+                  className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
+                >
+                  <UserPlus className="h-3 w-3" />
+                  {showInvite ? "收起" : "邀請"}
+                </button>
+              )}
             </div>
             <div className="px-4 pb-3 space-y-2">
               {(members.length > 0 ? members : tripMembers).map((m) => (
@@ -558,7 +560,7 @@ export default function SettingsPage() {
               ))}
             </div>
 
-            {showInvite && (
+            {isOwner && showInvite && (
               <div className="px-4 pb-4 space-y-2 border-t border-border/60 pt-3">
                 <form onSubmit={handleInvite} className="flex gap-2">
                   <Input

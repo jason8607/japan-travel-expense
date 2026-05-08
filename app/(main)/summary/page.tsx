@@ -34,18 +34,47 @@ const LazyPieChart = dynamic(
 );
 
 export default function SummaryPage() {
-  const { currentTrip, tripMembers, isGuest, loading: ctxLoading } = useApp();
+  const { user, currentTrip, tripMembers, isGuest, loading: ctxLoading } = useApp();
   const { expenses, loading } = useExpenses();
   const { categories } = useCategories();
   const { cards } = useCreditCards();
   const captureRef = useRef<HTMLDivElement>(null);
   const [capturing, setCapturing] = useState(false);
+  const [viewMode, setViewMode] = useState<"trip" | "mine">("trip");
+
+  const canToggle = !isGuest && tripMembers.length > 1;
+  const effectiveMode: "trip" | "mine" = canToggle ? viewMode : "mine";
 
   const stats = useMemo(() => {
     if (!currentTrip || expenses.length === 0) return null;
 
-    const totalJpy = expenses.reduce((s, e) => s + e.amount_jpy, 0);
-    const totalTwd = expenses.reduce((s, e) => s + e.amount_twd, 0);
+    // Build "my share" expense list — each expense reduced to current user's portion
+    const allMemberIds = tripMembers.map((m) => m.user_id);
+    const myShareExpenses = (() => {
+      if (isGuest || !user) return expenses;
+      const result: typeof expenses = [];
+      for (const e of expenses) {
+        if (e.split_type === "split") {
+          const sharers = e.participants?.length ? e.participants : allMemberIds;
+          if (!sharers.includes(user.id)) continue;
+          const ratio = 1 / sharers.length;
+          result.push({
+            ...e,
+            amount_jpy: Math.floor(e.amount_jpy * ratio),
+            amount_twd: Math.floor(e.amount_twd * ratio),
+          });
+        } else if ((e.owner_id || e.paid_by) === user.id) {
+          result.push(e);
+        }
+      }
+      return result;
+    })();
+
+    const sourceExpenses = effectiveMode === "mine" ? myShareExpenses : expenses;
+    if (sourceExpenses.length === 0) return null;
+
+    const totalJpy = sourceExpenses.reduce((s, e) => s + e.amount_jpy, 0);
+    const totalTwd = sourceExpenses.reduce((s, e) => s + e.amount_twd, 0);
 
     const tripStart = parseISO(currentTrip.start_date);
     const tripEnd = parseISO(currentTrip.end_date);
@@ -54,17 +83,17 @@ export default function SummaryPage() {
     const dailyAvgTwd = Math.round(totalTwd / totalDays);
 
     // Dates with expenses
-    const dateSet = new Set(expenses.map((e) => e.expense_date));
+    const dateSet = new Set(sourceExpenses.map((e) => e.expense_date));
     const activeDays = dateSet.size;
 
     // Top expense
-    const topExpense = expenses.reduce((max, e) =>
+    const topExpense = sourceExpenses.reduce((max, e) =>
       e.amount_jpy > max.amount_jpy ? e : max
     );
 
     // Category breakdown
     const catMap = new Map<string, number>();
-    for (const e of expenses) {
+    for (const e of sourceExpenses) {
       catMap.set(e.category, (catMap.get(e.category) || 0) + e.amount_jpy);
     }
     const topCategory = [...catMap.entries()].sort((a, b) => b[1] - a[1])[0];
@@ -83,13 +112,13 @@ export default function SummaryPage() {
 
     // Payment breakdown
     const payMap = new Map<string, number>();
-    for (const e of expenses) {
+    for (const e of sourceExpenses) {
       payMap.set(e.payment_method, (payMap.get(e.payment_method) || 0) + e.amount_jpy);
     }
 
     // Daily spending per date
     const dailyMap = new Map<string, number>();
-    for (const e of expenses) {
+    for (const e of sourceExpenses) {
       dailyMap.set(e.expense_date, (dailyMap.get(e.expense_date) || 0) + e.amount_jpy);
     }
     const dailyEntries = [...dailyMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
@@ -98,10 +127,8 @@ export default function SummaryPage() {
       { date: "", amount: 0 }
     );
 
-    // Per-member spending (personal + split share). For subset splits, only the
-    // listed participants pay a share; legacy splits with no participants fall
-    // back to "all members" so historical numbers stay stable.
-    const allMemberIds = tripMembers.map((m) => m.user_id);
+    // Per-member spending (personal + split share) — always uses full expenses,
+    // independent of view mode. Only displayed in trip mode.
     const memberSpend = tripMembers.map((m) => {
       let amount = 0;
       for (const e of expenses) {
@@ -122,11 +149,14 @@ export default function SummaryPage() {
       };
     }).sort((a, b) => b.amount - a.amount);
 
-    // Credit card cashback
+    // Credit card cashback — only count expenses paid by current user
     const creditExpenses = expenses.filter((e) => e.payment_method === "信用卡");
+    const myCreditExpenses = isGuest
+      ? creditExpenses
+      : creditExpenses.filter((e) => e.paid_by === user?.id);
     const cardStats = cards
       .map((card) => {
-        const cardExps = creditExpenses.filter((e) => e.credit_card_id === card.id);
+        const cardExps = myCreditExpenses.filter((e) => e.credit_card_id === card.id);
         if (cardExps.length === 0) return null;
 
         let cashback = 0;
@@ -150,9 +180,10 @@ export default function SummaryPage() {
 
     const totalCashback = cardStats.reduce((s, c) => s + c.cashback, 0);
 
-    // Budget usage
-    const budgetUsed = currentTrip.budget_jpy
-      ? Math.round((totalJpy / currentTrip.budget_jpy) * 100)
+    // Budget usage — only meaningful in trip view (budget is per-trip, not per-member)
+    const tripTotalJpy = expenses.reduce((s, e) => s + e.amount_jpy, 0);
+    const budgetUsed = effectiveMode === "trip" && currentTrip.budget_jpy
+      ? Math.round((tripTotalJpy / currentTrip.budget_jpy) * 100)
       : null;
 
     return {
@@ -162,7 +193,7 @@ export default function SummaryPage() {
       activeDays,
       dailyAvgJpy,
       dailyAvgTwd,
-      count: expenses.length,
+      count: sourceExpenses.length,
       topExpense,
       topCategory: topCatInfo
         ? { ...topCatInfo, amount: topCategory[1] }
@@ -177,7 +208,7 @@ export default function SummaryPage() {
       cardStats,
       totalCashback,
     };
-  }, [currentTrip, expenses, categories, tripMembers, cards]);
+  }, [currentTrip, expenses, categories, tripMembers, cards, isGuest, user, effectiveMode]);
 
   async function handleCaptureImage() {
     const el = captureRef.current;
@@ -255,10 +286,11 @@ export default function SummaryPage() {
       const res = await fetch(dataUrl);
       const blob = await res.blob();
 
+      const viewLabel = effectiveMode === "mine" ? "我的" : "旅程";
       const result = await shareOrDownloadFile(
         blob,
-        `${currentTrip.name}-總結.png`,
-        `${currentTrip.name} 旅行總結`
+        `${currentTrip.name}-${viewLabel}總結.png`,
+        `${currentTrip.name} ${viewLabel}總結`
       );
       if (result === "downloaded") toast.success("圖片已儲存");
     } catch (err) {
@@ -301,6 +333,34 @@ export default function SummaryPage() {
   return (
     <div className="pb-8">
       <div className="space-y-4 px-4">
+      {/* View mode toggle (multi-member trips only) */}
+      {canToggle && (
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-muted ring-1 ring-foreground/10">
+          <button
+            type="button"
+            onClick={() => setViewMode("trip")}
+            className={`flex-1 h-9 text-sm rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px ${
+              viewMode === "trip"
+                ? "bg-card text-foreground font-medium shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            旅程
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("mine")}
+            className={`flex-1 h-9 text-sm rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px ${
+              viewMode === "mine"
+                ? "bg-card text-foreground font-medium shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            自己
+          </button>
+        </div>
+      )}
+
       {/* Capturable content area */}
       <div ref={captureRef} className="space-y-4 bg-muted rounded-2xl p-4">
       {/* Header */}
@@ -316,7 +376,9 @@ export default function SummaryPage() {
 
       {/* Total spending hero card */}
       <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
-        <p className="text-xs text-muted-foreground mb-1">旅程總花費</p>
+        <p className="text-xs text-muted-foreground mb-1">
+          {effectiveMode === "mine" ? "我的總花費" : "旅程總花費"}
+        </p>
         <p className="text-2xl font-semibold tabular-nums text-foreground">{formatJPY(stats.totalJpy)}</p>
         <p className="text-sm text-muted-foreground mt-1 tabular-nums">
           ≈ {formatTWD(stats.totalTwd)}
@@ -476,8 +538,8 @@ export default function SummaryPage() {
         </div>
       )}
 
-      {/* Per-member spending (only for multi-member trips) */}
-      {!isGuest && tripMembers.length > 1 && (
+      {/* Per-member spending (only for multi-member trips, trip mode) */}
+      {effectiveMode === "trip" && !isGuest && tripMembers.length > 1 && (
         <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
           <h3 className="font-semibold text-sm mb-3">成員花費</h3>
           <div className="space-y-2">
@@ -492,17 +554,17 @@ export default function SummaryPage() {
         </div>
       )}
 
-      {/* Settlement */}
-      {!isGuest && tripMembers.length > 1 && (
+      {/* Settlement (trip mode only) */}
+      {effectiveMode === "trip" && !isGuest && tripMembers.length > 1 && (
         <SettlementView expenses={expenses} tripMembers={tripMembers} />
       )}
 
-      {/* Credit card cashback */}
-      {stats.cardStats.length > 0 && (
+      {/* Credit card cashback (mine view) */}
+      {effectiveMode === "mine" && stats.cardStats.length > 0 && (
         <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
           <div className="flex items-center gap-2 mb-3">
             <CreditCardIcon className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-sm">信用卡回饋</h3>
+            <h3 className="font-semibold text-sm">我的信用卡回饋</h3>
             <span className="ml-auto font-semibold text-sm text-primary tabular-nums">
               {formatTWD(stats.totalCashback)}
             </span>
@@ -552,16 +614,8 @@ export default function SummaryPage() {
         ) : (
           <Camera className="h-4 w-4" />
         )}
-        {capturing ? "產生中..." : "儲存為圖片"}
+        {capturing ? "產生中..." : "儲存圖片"}
       </button>
-
-      {/* Recap link */}
-      <Link
-        href="/recap"
-        className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-      >
-        ✨ 查看旅後回顧
-      </Link>
 
       {/* Export button */}
       <button
@@ -590,6 +644,14 @@ export default function SummaryPage() {
         <Download className="h-4 w-4" />
         匯出 CSV
       </button>
+
+      {/* Recap link */}
+      <Link
+        href="/recap"
+        className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+      >
+        ✨ 查看旅後回顧
+      </Link>
 
       <p className="text-center text-[11px] text-muted-foreground">
         {currentTrip.name} · 旅行總結

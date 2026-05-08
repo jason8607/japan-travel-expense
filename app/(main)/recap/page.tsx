@@ -58,7 +58,7 @@ interface CardConfig {
 }
 
 export default function RecapPage() {
-  const { currentTrip, loading: ctxLoading } = useApp();
+  const { user, currentTrip, isGuest, loading: ctxLoading } = useApp();
   const { expenses, loading } = useExpenses();
   const { categories } = useCategories();
   const { cards } = useCreditCards();
@@ -136,11 +136,15 @@ export default function RecapPage() {
     const creditExpenses = expenses.filter(
       (e) => e.payment_method === "信用卡"
     );
+    // Only count expenses paid by current user
+    const myCreditExpenses = isGuest
+      ? creditExpenses
+      : creditExpenses.filter((e) => e.paid_by === user?.id);
     let cappedCashback = 0;
     let topCashbackCardName: string | null = null;
     let topCashbackAmount = 0;
     for (const card of cards) {
-      const cardExps = creditExpenses.filter(
+      const cardExps = myCreditExpenses.filter(
         (e) => e.credit_card_id === card.id
       );
       let cardCb = 0;
@@ -185,7 +189,7 @@ export default function RecapPage() {
       totalCashback: cappedCashback,
       topCashbackCardName,
     };
-  }, [expenses, currentTrip, categories, cards]);
+  }, [expenses, currentTrip, categories, cards, isGuest, user?.id]);
 
   const wrapped = useMemo(() => {
     if (!stats || !currentTrip) return null;
@@ -310,6 +314,9 @@ export default function RecapPage() {
       pixelRatio: 2,
       quality: 1,
       cacheBust: true,
+      // Strip the card's drop-shadow during capture so the PNG corners
+      // outside the rounded shape are truly transparent.
+      style: { boxShadow: "none" },
       filter: (n: HTMLElement) =>
         !(n instanceof HTMLElement && n.dataset.exportHide === "true"),
     };
