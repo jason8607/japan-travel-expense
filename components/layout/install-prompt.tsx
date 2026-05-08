@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Download, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Download, Share, Smartphone, X } from "lucide-react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -10,6 +10,9 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 type Platform = "android" | "ios" | "other";
+
+const DISMISS_KEY = "install_prompt_dismissed";
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 function detectPlatform(): Platform {
   if (typeof navigator === "undefined") return "other";
@@ -27,36 +30,53 @@ function isStandalone(): boolean {
   return false;
 }
 
+function isRecentlyDismissed(): boolean {
+  if (typeof window === "undefined") return false;
+  const dismissed = localStorage.getItem(DISMISS_KEY);
+  if (!dismissed) return false;
+  const ts = Number(dismissed);
+  if (!Number.isNaN(ts) && Date.now() - ts < THIRTY_DAYS_MS) return true;
+  localStorage.removeItem(DISMISS_KEY);
+  return false;
+}
+
+// Returns true once the component is hydrated on the client. Uses
+// useSyncExternalStore so the SSR snapshot (`false`) matches the initial
+// client snapshot, avoiding hydration mismatches without setState-in-effect.
+const subscribeNoop = () => () => {};
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
+}
+
 export function InstallPrompt() {
+  const hydrated = useHydrated();
+
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [showIosGuide, setShowIosGuide] = useState(false);
-  const [platform, setPlatform] = useState<Platform>("other");
+
+  // Derived from `hydrated`; safe to compute during render because both
+  // detectPlatform/isStandalone/isRecentlyDismissed return SSR-safe defaults
+  // until hydration flips to true.
+  const platform: Platform = hydrated ? detectPlatform() : "other";
+  const showPrompt =
+    hydrated && !dismissed && !isStandalone() && !isRecentlyDismissed();
 
   useEffect(() => {
-    if (isStandalone()) return;
-
-    const dismissed = localStorage.getItem("install_prompt_dismissed");
-    if (dismissed) {
-      const ts = Number(dismissed);
-      const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-      if (!Number.isNaN(ts) && Date.now() - ts < THIRTY_DAYS) return;
-      localStorage.removeItem("install_prompt_dismissed");
-    }
-
-    setPlatform(detectPlatform());
-    setShowPrompt(true);
-
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
     const installedHandler = () => {
-      setShowPrompt(false);
+      setDismissed(true);
       setDeferredPrompt(null);
-      localStorage.setItem("install_prompt_dismissed", String(Date.now()));
+      localStorage.setItem(DISMISS_KEY, String(Date.now()));
     };
 
     window.addEventListener("beforeinstallprompt", handler);
@@ -75,9 +95,9 @@ export function InstallPrompt() {
       } catch {
         // browser cancelled or not supported
       }
-      setShowPrompt(false);
+      setDismissed(true);
       setDeferredPrompt(null);
-      localStorage.setItem("install_prompt_dismissed", String(Date.now()));
+      localStorage.setItem(DISMISS_KEY, String(Date.now()));
       return;
     }
 
@@ -86,9 +106,9 @@ export function InstallPrompt() {
   };
 
   const handleDismiss = () => {
-    setShowPrompt(false);
+    setDismissed(true);
     setShowIosGuide(false);
-    localStorage.setItem("install_prompt_dismissed", String(Date.now()));
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
   };
 
   if (!showPrompt) return null;
@@ -100,7 +120,7 @@ export function InstallPrompt() {
         style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
       >
         <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-lg border">
-          <div className="text-2xl">📱</div>
+          <div className="text-2xl"><Smartphone className="h-4 w-4" /></div>
           <div className="flex-1">
             <p className="text-sm font-medium">安裝到手機桌面</p>
             <p className="text-xs text-muted-foreground">
