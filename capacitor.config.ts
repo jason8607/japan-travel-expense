@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: "旅帳",
   webDir: "out",
   server: {
-    url: "https://japan-travel-expense.vercel.app",
+    url: "https://travelio-dev.vercel.app",
     cleartext: false,
   },
   ios: {
