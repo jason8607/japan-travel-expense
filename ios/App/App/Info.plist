@@ -45,5 +45,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>需要相機權限以拍攝收據進行 AI 辨識</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要相簿權限以選取收據照片</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>需要儲存匯出的圖片到相簿</string>
 </dict>
 </plist>
