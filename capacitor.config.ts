@@ -12,6 +12,7 @@ const config: CapacitorConfig = {
     contentInset: "automatic",
     limitsNavigationsToAppBoundDomains: false,
     scheme: "ryocho",
+    appendUserAgent: "RyochoNative",
   },
 };
 
