@@ -1,5 +1,14 @@
 import UIKit
+#if canImport(Capacitor)
 import Capacitor
+#else
+// Fallback shim so the app can compile when Capacitor isn't available (e.g., iOS < 15 target)
+class ApplicationDelegateProxy {
+    static let shared = ApplicationDelegateProxy()
+    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool { return false }
+    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool { return false }
+}
+#endif
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
