@@ -216,11 +216,14 @@
     /* iOS Safari / WKWebView: % height can be taller than the visible webview; this stabilizes the layout viewport */
     min-height: -webkit-fill-available;
     overscroll-behavior: none;
+    /* Reduces double-tap zoom on Chrome; pinch is already limited by viewport meta */
+    touch-action: manipulation;
   }
   body {
     @apply bg-background text-foreground h-full overflow-hidden;
     min-height: -webkit-fill-available;
     overscroll-behavior: none;
+    touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
   }
