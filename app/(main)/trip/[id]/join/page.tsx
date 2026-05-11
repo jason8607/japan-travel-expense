@@ -1,14 +1,16 @@
 "use client";
 
 import { LoadingState } from "@/components/layout/loading-state";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useApp } from "@/lib/context";
 import type { Trip } from "@/types";
 import { Plane } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Capacitor } from "@capacitor/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type PublicTrip = Pick<Trip, "id" | "name" | "start_date" | "end_date">;
 
@@ -32,7 +34,12 @@ export default function JoinTripPage() {
   const [retrying, setRetrying] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState(false);
+  const [showOpenInApp, setShowOpenInApp] = useState(false);
   const autoJoinAttemptedRef = useRef(false);
+
+  useEffect(() => {
+    setShowOpenInApp(!Capacitor.isNativePlatform());
+  }, []);
 
   const loadTrip = useCallback(async () => {
     setError(false);
@@ -233,6 +240,17 @@ export default function JoinTripPage() {
                 ? "加入中..."
                 : "加入旅程"}
           </Button>
+          {showOpenInApp && (
+            <a
+              href={`ryocho://trip/${tripId}/join`}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "w-full h-12 rounded-xl text-base font-medium"
+              )}
+            >
+              在旅帳 App 開啟
+            </a>
+          )}
           <Button
             size="lg"
             variant="ghost"
