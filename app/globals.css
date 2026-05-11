@@ -213,10 +213,13 @@
   }
   html {
     @apply font-sans h-full overflow-hidden;
+    /* iOS Safari / WKWebView: % height can be taller than the visible webview; this stabilizes the layout viewport */
+    min-height: -webkit-fill-available;
     overscroll-behavior: none;
   }
   body {
     @apply bg-background text-foreground h-full overflow-hidden;
+    min-height: -webkit-fill-available;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;

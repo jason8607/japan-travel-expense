@@ -21,5 +21,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     document.body.scrollTop = 0;
   }, [pathname]);
 
-  return <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>;
+  /* fixed inset-0: WKWebView/Capacitor often mis-resolves % height chains; this matches the visual viewport. */
+  return (
+    <div className="fixed inset-0 z-1 flex flex-col overflow-hidden overscroll-none bg-card">
+      {children}
+    </div>
+  );
 }
