@@ -60,7 +60,7 @@ export default function HomePage() {
 
   if (!user && !isGuest) {
     return (
-      <div className="flex flex-col items-center justify-center h-full px-4">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4">
         <Image
           src="/icon-transparent.png"
           alt="旅帳"
@@ -98,7 +98,7 @@ export default function HomePage() {
         title="建立你的第一趟旅程"
         description="設定旅程日期和預算，開始記錄每一筆日本旅行花費。"
         action={{ label: "建立旅程", href: "/trip/new" }}
-        className="h-full"
+        className="flex min-h-0 flex-1 flex-col justify-center"
       />
     );
   }
@@ -111,7 +111,7 @@ export default function HomePage() {
   const recent = expenses.slice(0, 3);
 
   return (
-    <div className="relative flex h-full flex-col">
+    <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto pb-6 pt-[env(safe-area-inset-top,0px)]">
       {/* Guest Banner */}
       {isGuest && (
