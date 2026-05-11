@@ -15,7 +15,7 @@
 
 # next.js
 /.next/
-/out/
+# /out/ is tracked as a Capacitor webDir placeholder (pure WebView mode)
 
 # production
 /build
