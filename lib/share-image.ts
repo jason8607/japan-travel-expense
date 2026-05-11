@@ -66,11 +66,43 @@ export async function shareImageNative(
   }
 }
 
+const blobToBase64 = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
 export async function shareOrDownloadFile(
   blob: Blob,
   filename: string,
   shareTitle: string
 ): Promise<"shared" | "downloaded"> {
+  // Native Capacitor app: write to cache then share via native sheet
+  if (typeof window !== "undefined" && "Capacitor" in window) {
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      if (Capacitor.isNativePlatform()) {
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const { Share } = await import("@capacitor/share");
+        const base64 = await blobToBase64(blob);
+        const fileResult = await Filesystem.writeFile({
+          path: filename,
+          data: base64,
+          directory: Directory.Cache,
+        });
+        await Share.share({ title: shareTitle, url: fileResult.uri });
+        return "shared";
+      }
+    } catch {
+      // fall through to web share / download
+    }
+  }
+
   // iOS standalone PWA always prefers share — `<a download>` opens an in-app
   // preview pane there instead of saving.
   const preferShare = isTouchDevice() || isIosStandalone();
