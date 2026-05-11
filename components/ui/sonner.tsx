@@ -7,10 +7,18 @@ import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
 
+  // Sonner portals to <body>, so AppShell's safe-area-inset padding does not
+  // reach it. Push toasts below the notch on iOS / Capacitor; falls back to
+  // 16px on devices without a safe-area inset.
+  const safeTopOffset = "calc(env(safe-area-inset-top, 0px) + 16px)"
+  const safeBottomOffset = "calc(env(safe-area-inset-bottom, 0px) + 16px)"
+
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      offset={{ top: safeTopOffset, bottom: safeBottomOffset }}
+      mobileOffset={{ top: safeTopOffset, bottom: safeBottomOffset }}
       icons={{
         success: (
           <CircleCheckIcon className="size-4" />
