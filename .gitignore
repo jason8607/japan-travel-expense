@@ -17,6 +17,12 @@
 /.next/
 # /out/ is tracked as a Capacitor webDir placeholder (pure WebView mode)
 
+# iOS Capacitor build artifacts
+ios/App/build/
+ios/App/Pods/
+ios/App/App/public/
+ios/DerivedData/
+
 # production
 /build
 
