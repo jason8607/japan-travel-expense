@@ -48,7 +48,7 @@ function MainShellInner({ children }: MainShellProps) {
   const headerAction = useHeaderActionSlot();
 
   return (
-    <div className="flex h-dvh flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {header && (
         <PageHeader
           title={header.title}

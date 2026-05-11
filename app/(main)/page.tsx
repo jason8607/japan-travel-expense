@@ -112,7 +112,7 @@ export default function HomePage() {
 
   return (
     <div className="relative flex h-full flex-col">
-      <div className="flex-1 min-h-0 overflow-y-auto pb-6">
+      <div className="flex-1 min-h-0 overflow-y-auto pb-6 pt-[env(safe-area-inset-top,0px)]">
       {/* Guest Banner */}
       {isGuest && (
         <div className="mx-4 mt-3 rounded-xl bg-warning-subtle border border-warning/30 px-4 py-3 flex items-center justify-between">

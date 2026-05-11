@@ -47,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="zh-TW"
-      className={`${geistSans.variable} h-full`}
+      className={`${geistSans.variable} min-h-dvh`}
       data-theme="light"
       suppressHydrationWarning
     >
@@ -55,7 +55,7 @@ export default function RootLayout({
         {/* Apply the user's saved theme before React hydrates to avoid FOUC. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className="h-full font-sans antialiased bg-card">
+      <body className="min-h-dvh font-sans antialiased bg-card">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:text-sm focus:font-medium"
@@ -64,7 +64,10 @@ export default function RootLayout({
         </a>
         <ThemeProvider>
           <AppProvider>
-            <div id="main-content" className="mx-auto max-w-lg min-h-full bg-background shadow-sm">
+            <div
+              id="main-content"
+              className="mx-auto flex h-dvh min-h-0 w-full max-w-lg flex-col overflow-hidden bg-background shadow-sm"
+            >
               {children}
             </div>
             <InstallPrompt />
