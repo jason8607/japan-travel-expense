@@ -60,33 +60,37 @@ export default function HomePage() {
 
   if (!user && !isGuest) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4">
-        <Image
-          src="/icon-transparent.png"
-          alt="旅帳"
-          width={72}
-          height={72}
-          className="mb-4"
-          priority
-        />
-        <h1 className="text-2xl font-bold mb-2">旅帳</h1>
-        <p className="text-muted-foreground text-sm mb-6 text-center">
-          旅遊智慧記帳 App
-          <br />
-          AI 收據辨識 · 即時統計 · 多人記帳
-        </p>
-        <Link
-          href="/auth/login"
-          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-xl font-medium"
-        >
-          開始使用
-        </Link>
-        <button
-          onClick={enterGuestMode}
-          className="mt-3 text-sm text-primary hover:text-primary font-medium transition-colors"
-        >
-          不登入，先試用 →
-        </button>
+      <div className="flex min-h-0 flex-1 flex-col px-6">
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <Image
+            src="/icon-transparent.png"
+            alt="旅帳"
+            width={72}
+            height={72}
+            className="mb-4"
+            priority
+          />
+          <h1 className="text-2xl font-bold mb-2">旅帳</h1>
+          <p className="text-muted-foreground text-sm">
+            旅遊智慧記帳 App
+            <br />
+            AI 收據辨識 · 即時統計 · 多人記帳
+          </p>
+        </div>
+        <div className="flex flex-col items-center gap-3 pb-8">
+          <Link
+            href="/auth/login"
+            className="inline-flex h-12 w-full max-w-xs items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:translate-y-px"
+          >
+            開始使用
+          </Link>
+          <button
+            onClick={enterGuestMode}
+            className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+          >
+            不登入，先試用 →
+          </button>
+        </div>
       </div>
     );
   }
