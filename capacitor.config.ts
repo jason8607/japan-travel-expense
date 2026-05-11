@@ -9,7 +9,10 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   ios: {
-    contentInset: "automatic",
+    // Disable WKWebView's automatic safe-area inset; we already apply
+    // env(safe-area-inset-*) on AppShell + BottomNav. Without this, iOS adds
+    // a second inset on top of CSS env() and content gets pushed down twice.
+    contentInset: "never",
     limitsNavigationsToAppBoundDomains: false,
     scheme: "ryocho",
     appendUserAgent: "RyochoNative",

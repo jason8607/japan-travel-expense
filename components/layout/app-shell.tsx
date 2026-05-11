@@ -21,9 +21,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     document.body.scrollTop = 0;
   }, [pathname]);
 
-  /* fixed inset-0: WKWebView/Capacitor often mis-resolves % height chains; this matches the visual viewport. */
+  /* fixed inset-0: WKWebView/Capacitor often mis-resolves % height chains; this matches the visual viewport.
+     The top safe-area inset lives here (not on inner scroll containers) so the notch reservation never
+     scrolls away. Bottom safe area is owned by BottomNav so absolute-positioned elements above it (FAB)
+     can sit flush against the nav without an extra gap. */
   return (
-    <div className="fixed inset-0 z-1 flex flex-col overflow-hidden overscroll-none bg-card">
+    <div className="fixed inset-0 z-1 flex flex-col overflow-hidden overscroll-none bg-card pt-[env(safe-area-inset-top,0px)]">
       {children}
     </div>
   );

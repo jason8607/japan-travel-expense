@@ -22,7 +22,7 @@ export function PageHeader({
   const router = useRouter();
 
   return (
-    <header className="shrink-0 border-b bg-card pt-[env(safe-area-inset-top,0px)]">
+    <header className="shrink-0 border-b bg-card">
       <div className="relative flex h-14 items-center justify-center px-4">
         {showBack && (
           backVariant === "close" ? (
