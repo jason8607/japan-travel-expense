@@ -19,7 +19,7 @@ export function LoadingState({
     <div
       className={cn(
         "flex items-center justify-center px-4",
-        variant === "screen" ? "min-h-dvh" : "min-h-full py-8",
+        variant === "screen" ? "min-h-0 flex-1 flex-col justify-center" : "min-h-full py-8",
         className
       )}
       role="status"

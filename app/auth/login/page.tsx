@@ -96,7 +96,7 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
+    <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
         <div className="text-center">

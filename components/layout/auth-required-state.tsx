@@ -16,7 +16,7 @@ export function AuthRequiredState({
   description = "登入後可以同步旅程資料、多人分帳，並保留所有記帳紀錄。",
 }: AuthRequiredStateProps) {
   return (
-    <div className="flex min-h-[calc(100dvh-5rem)] items-center justify-center px-4 py-4">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-4">
       <div className="w-full max-w-sm rounded-3xl bg-card p-6 text-center ring-1 ring-foreground/10">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Icon className="h-8 w-8" />

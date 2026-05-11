@@ -73,7 +73,7 @@ export default function SetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 bg-muted">
+    <div className="flex min-h-full flex-1 flex-col items-center justify-center px-4 bg-muted">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <div className="text-5xl mb-3">🔐</div>

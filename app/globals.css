@@ -211,15 +211,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans h-full overflow-hidden;
+    overscroll-behavior: none;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground h-full overflow-hidden;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
-  }
-  html {
-    @apply font-sans;
-    overscroll-behavior: none;
   }
 }
 
