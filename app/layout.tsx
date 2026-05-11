@@ -1,3 +1,4 @@
+import { DeepLinkHandler } from "@/components/layout/deep-link-handler";
 import { InstallPrompt } from "@/components/layout/install-prompt";
 import { ServiceWorkerRegister } from "@/components/layout/sw-register";
 import { Toaster } from "@/components/ui/sonner";
@@ -69,6 +70,7 @@ export default function RootLayout({
             <InstallPrompt />
             <Toaster position="top-center" />
             <ServiceWorkerRegister />
+            <DeepLinkHandler />
           </AppProvider>
         </ThemeProvider>
         <Analytics />

@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
+import { Browser } from "@capacitor/browser";
+import { isNativeApp } from "@/lib/capacitor";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -29,14 +31,21 @@ function LoginContent() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
+    const redirectTo = isNativeApp()
+      ? "ryocho://auth/callback"
+      : `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirect)}`;
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirect)}`,
-      },
+      options: { redirectTo, skipBrowserRedirect: isNativeApp() },
     });
     if (error) {
       toast.error(error.message);
+      setLoading(false);
+      return;
+    }
+    if (isNativeApp() && data.url) {
+      await Browser.open({ url: data.url });
       setLoading(false);
     }
   };
