@@ -1,0 +1,41 @@
+name: Ryocho
+options:
+  bundleIdPrefix: com.jasonchen
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: zh-Hant
+  defaultConfig: Debug
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    DEVELOPMENT_TEAM: ""
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    SWIFT_STRICT_CONCURRENCY: minimal
+
+targets:
+  Ryocho:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Ryocho
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jasonchen.ryocho.native
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
+        INFOPLIST_KEY_CFBundleDisplayName: "旅帳"
+        INFOPLIST_KEY_NSCameraUsageDescription: "需要相機權限以拍攝收據進行 AI 辨識"
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "需要相簿權限以選取收據照片"
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: "需要儲存匯出的圖片到相簿"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic

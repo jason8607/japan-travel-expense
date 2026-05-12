@@ -1,0 +1,437 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0966563E22D694F7805209B3 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A8AA4C8C5D145B4F91225D /* Haptics.swift */; };
+		278C97809A14220A6C112494 /* BigSummaryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F58C73973DAD0872C41A3C /* BigSummaryCard.swift */; };
+		41AD9AB6056BAE1E1CC94C81 /* MemberAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 157B4BBE5C121527FAC40C7A /* MemberAvatar.swift */; };
+		44C74E0880A3C49C3EE00BD4 /* DualStatGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95DE9A9C1BD2A1E534ACFA71 /* DualStatGrid.swift */; };
+		6CE4CC24923E8235CA960360 /* RyochoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BD3477800CC9BA78092134B /* RyochoApp.swift */; };
+		7ED025867DF55147BED089D0 /* CategoryPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A052D9B0B0B35DA92FF928F /* CategoryPill.swift */; };
+		7FE1FAE7D35DC813DD0ADDAF /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F221CA476EFB7B94295D78A /* Typography.swift */; };
+		A74B72669D2FE7C54783BD4A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CDE88FDF882E52CD685739D /* HomeView.swift */; };
+		AADC83AF6D67BB4D1DB0ACDF /* MockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390C1FDE63306E877064496E /* MockData.swift */; };
+		C06280011FBB49742F4C7140 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3935DBCC11F0BC563CACBE53 /* Models.swift */; };
+		D3F8A6F05C0848CCD12068BB /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EA19D9F1782E1C136E0DCAD /* Theme.swift */; };
+		DB7A76CA29828E6A36E805EB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E1CFE0053E92C51CECF4B41C /* Assets.xcassets */; };
+		DD41D8E5DD67D54D89ADFB46 /* ExpenseRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD1BA63E4ED50AAEE5EE4D4 /* ExpenseRow.swift */; };
+		DEFAB8F491A51EBA68D881D2 /* RatePill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160F593915631B8E3345D0BC /* RatePill.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0CDE88FDF882E52CD685739D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		157B4BBE5C121527FAC40C7A /* MemberAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberAvatar.swift; sourceTree = "<group>"; };
+		160F593915631B8E3345D0BC /* RatePill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatePill.swift; sourceTree = "<group>"; };
+		1BD3477800CC9BA78092134B /* RyochoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RyochoApp.swift; sourceTree = "<group>"; };
+		390C1FDE63306E877064496E /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
+		3935DBCC11F0BC563CACBE53 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		4F221CA476EFB7B94295D78A /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		7EA19D9F1782E1C136E0DCAD /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		88A8AA4C8C5D145B4F91225D /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
+		8A052D9B0B0B35DA92FF928F /* CategoryPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryPill.swift; sourceTree = "<group>"; };
+		95DE9A9C1BD2A1E534ACFA71 /* DualStatGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualStatGrid.swift; sourceTree = "<group>"; };
+		A85D15B309B7C78BA9C63E9C /* Ryocho.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Ryocho.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B4F58C73973DAD0872C41A3C /* BigSummaryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BigSummaryCard.swift; sourceTree = "<group>"; };
+		E1CFE0053E92C51CECF4B41C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FFD1BA63E4ED50AAEE5EE4D4 /* ExpenseRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseRow.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		328E91F9D8F6A22308C8ACFD /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				E1CFE0053E92C51CECF4B41C /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		32B647BED193F74EBD4A514D /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				8A052D9B0B0B35DA92FF928F /* CategoryPill.swift */,
+				FFD1BA63E4ED50AAEE5EE4D4 /* ExpenseRow.swift */,
+				157B4BBE5C121527FAC40C7A /* MemberAvatar.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		38E71C805AECF76E5121E545 /* Ryocho */ = {
+			isa = PBXGroup;
+			children = (
+				9C8CB49EF041CD0A13C6FAC5 /* App */,
+				ADC77FF8AC54AEA121B53E81 /* Core */,
+				C661DCCC43646D92F6329010 /* Features */,
+				328E91F9D8F6A22308C8ACFD /* Resources */,
+			);
+			path = Ryocho;
+			sourceTree = "<group>";
+		};
+		62874B733C9CE23E4544704B /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				B4F58C73973DAD0872C41A3C /* BigSummaryCard.swift */,
+				95DE9A9C1BD2A1E534ACFA71 /* DualStatGrid.swift */,
+				0CDE88FDF882E52CD685739D /* HomeView.swift */,
+				160F593915631B8E3345D0BC /* RatePill.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		65EC017CF624EFA0E028E99F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A85D15B309B7C78BA9C63E9C /* Ryocho.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		87D17C30208E1CA02EF92BA0 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				88A8AA4C8C5D145B4F91225D /* Haptics.swift */,
+				7EA19D9F1782E1C136E0DCAD /* Theme.swift */,
+				4F221CA476EFB7B94295D78A /* Typography.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		95BBF369D226417DEA729D10 = {
+			isa = PBXGroup;
+			children = (
+				38E71C805AECF76E5121E545 /* Ryocho */,
+				65EC017CF624EFA0E028E99F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9C8CB49EF041CD0A13C6FAC5 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				1BD3477800CC9BA78092134B /* RyochoApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A12BC0C2C329282A67F10D6C /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				390C1FDE63306E877064496E /* MockData.swift */,
+				3935DBCC11F0BC563CACBE53 /* Models.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		ADC77FF8AC54AEA121B53E81 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				32B647BED193F74EBD4A514D /* Components */,
+				87D17C30208E1CA02EF92BA0 /* Design */,
+				A12BC0C2C329282A67F10D6C /* Domain */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		C661DCCC43646D92F6329010 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				62874B733C9CE23E4544704B /* Home */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5FA8EB13952D65964C1BCBB8 /* Ryocho */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2BDD2BD6EC028528657A7781 /* Build configuration list for PBXNativeTarget "Ryocho" */;
+			buildPhases = (
+				661DB3BFF0E2F611C1AD5FDE /* Sources */,
+				D8E1CA06BDFFEC678BD927B3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Ryocho;
+			packageProductDependencies = (
+			);
+			productName = Ryocho;
+			productReference = A85D15B309B7C78BA9C63E9C /* Ryocho.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D9453365B9C6C117C12BDC34 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					5FA8EB13952D65964C1BCBB8 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 418BA81B3D566A0DE4E2AE16 /* Build configuration list for PBXProject "Ryocho" */;
+			developmentRegion = "zh-Hant";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				"zh-Hant",
+			);
+			mainGroup = 95BBF369D226417DEA729D10;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 65EC017CF624EFA0E028E99F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5FA8EB13952D65964C1BCBB8 /* Ryocho */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D8E1CA06BDFFEC678BD927B3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB7A76CA29828E6A36E805EB /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		661DB3BFF0E2F611C1AD5FDE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				278C97809A14220A6C112494 /* BigSummaryCard.swift in Sources */,
+				7ED025867DF55147BED089D0 /* CategoryPill.swift in Sources */,
+				44C74E0880A3C49C3EE00BD4 /* DualStatGrid.swift in Sources */,
+				DD41D8E5DD67D54D89ADFB46 /* ExpenseRow.swift in Sources */,
+				0966563E22D694F7805209B3 /* Haptics.swift in Sources */,
+				A74B72669D2FE7C54783BD4A /* HomeView.swift in Sources */,
+				41AD9AB6056BAE1E1CC94C81 /* MemberAvatar.swift in Sources */,
+				AADC83AF6D67BB4D1DB0ACDF /* MockData.swift in Sources */,
+				C06280011FBB49742F4C7140 /* Models.swift in Sources */,
+				DEFAB8F491A51EBA68D881D2 /* RatePill.swift in Sources */,
+				6CE4CC24923E8235CA960360 /* RyochoApp.swift in Sources */,
+				D3F8A6F05C0848CCD12068BB /* Theme.swift in Sources */,
+				7FE1FAE7D35DC813DD0ADDAF /* Typography.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		468324AE64B5D394EA2F4E77 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "旅帳";
+				INFOPLIST_KEY_NSCameraUsageDescription = "需要相機權限以拍攝收據進行 AI 辨識";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "需要儲存匯出的圖片到相簿";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要相簿權限以選取收據照片";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jasonchen.ryocho.native;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		7DB7517E112FF6C722B4ECF0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+		D3D253FE77B097122F32EDBC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "旅帳";
+				INFOPLIST_KEY_NSCameraUsageDescription = "需要相機權限以拍攝收據進行 AI 辨識";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "需要儲存匯出的圖片到相簿";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要相簿權限以選取收據照片";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jasonchen.ryocho.native;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F79D079FAB006E0B22749B6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2BDD2BD6EC028528657A7781 /* Build configuration list for PBXNativeTarget "Ryocho" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3D253FE77B097122F32EDBC /* Debug */,
+				468324AE64B5D394EA2F4E77 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		418BA81B3D566A0DE4E2AE16 /* Build configuration list for PBXProject "Ryocho" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F79D079FAB006E0B22749B6D /* Debug */,
+				7DB7517E112FF6C722B4ECF0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D9453365B9C6C117C12BDC34 /* Project object */;
+}
