@@ -16,14 +16,16 @@ struct WidgetSnapshot: Codable {
     }
 
     static let appGroupId = "group.com.jasonchen.ryocho"
-    static let storageKey = "widget_snapshot_v1"
+    static let snapshotFileName = "widget_snapshot_v1.json"
 
     static func load() -> WidgetSnapshot? {
         guard
-            let defaults = UserDefaults(suiteName: appGroupId),
-            let json = defaults.string(forKey: storageKey),
-            let data = json.data(using: .utf8)
+            let containerURL = FileManager.default.containerURL(
+                forSecurityApplicationGroupIdentifier: appGroupId
+            )
         else { return nil }
+        let fileURL = containerURL.appendingPathComponent(snapshotFileName)
+        guard let data = try? Data(contentsOf: fileURL) else { return nil }
         return try? JSONDecoder().decode(WidgetSnapshot.self, from: data)
     }
 }

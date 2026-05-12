@@ -6,18 +6,29 @@ import WidgetKit
 public class WidgetSyncPlugin: CAPPlugin {
 
     static let appGroupId = "group.com.jasonchen.ryocho"
-    static let snapshotKey = "widget_snapshot_v1"
+    static let snapshotFileName = "widget_snapshot_v1.json"
+
+    private static func snapshotFileURL() -> URL? {
+        FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupId)?
+            .appendingPathComponent(snapshotFileName)
+    }
 
     @objc func setSnapshot(_ call: CAPPluginCall) {
         guard let json = call.getString("json") else {
             call.reject("missing 'json' string")
             return
         }
-        guard let defaults = UserDefaults(suiteName: Self.appGroupId) else {
-            call.reject("App Group not accessible — check entitlements")
+        guard let fileURL = Self.snapshotFileURL() else {
+            call.reject("App Group container not accessible — check entitlements")
             return
         }
-        defaults.set(json, forKey: Self.snapshotKey)
+        do {
+            try json.data(using: .utf8)?.write(to: fileURL, options: .atomic)
+        } catch {
+            call.reject("Failed to write snapshot: \(error.localizedDescription)")
+            return
+        }
         if #available(iOS 14.0, *) {
             WidgetCenter.shared.reloadAllTimelines()
         }
@@ -25,11 +36,11 @@ public class WidgetSyncPlugin: CAPPlugin {
     }
 
     @objc func clear(_ call: CAPPluginCall) {
-        guard let defaults = UserDefaults(suiteName: Self.appGroupId) else {
-            call.reject("App Group not accessible — check entitlements")
+        guard let fileURL = Self.snapshotFileURL() else {
+            call.reject("App Group container not accessible — check entitlements")
             return
         }
-        defaults.removeObject(forKey: Self.snapshotKey)
+        try? FileManager.default.removeItem(at: fileURL)
         if #available(iOS 14.0, *) {
             WidgetCenter.shared.reloadAllTimelines()
         }
