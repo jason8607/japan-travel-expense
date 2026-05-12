@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useApp } from "@/lib/context";
 import { FALLBACK_RATE, getExchangeRate, jpyToTwd, twdToJpy } from "@/lib/exchange-rate";
+import { notifyExpensesMutated } from "@/lib/expenses-mutated";
 import { addGuestExpense, updateGuestExpense } from "@/lib/guest-storage";
 import { cn } from "@/lib/utils";
 import type { Category, Expense, PaymentMethod, SplitType } from "@/types";
@@ -413,6 +414,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
           });
           if (!result) { toast.error("儲存空間不足，請清理部分紀錄"); setSaving(false); return; }
           toast.success("已更新消費紀錄");
+          notifyExpensesMutated();
         } else {
           const result = addGuestExpense({
             title,
@@ -436,6 +438,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
               onClick: () => router.push("/records/new"),
             },
           });
+          notifyExpensesMutated();
         }
         removeDraft();
         router.push("/records");
@@ -475,6 +478,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
         const result = await res.json();
         if (!res.ok) throw new Error(result.error || "更新失敗");
         toast.success("已更新消費紀錄");
+        notifyExpensesMutated();
       } else {
         const res = await fetch("/api/expenses", {
           method: "POST",
@@ -509,6 +513,7 @@ export function ExpenseForm({ editExpense }: ExpenseFormProps) {
             onClick: () => router.push("/records/new"),
           },
         });
+        notifyExpensesMutated();
       }
 
       removeDraft();

@@ -8,16 +8,12 @@ import type {
   WidgetSettlement,
 } from "@/types/widget";
 
-const TOKYO_TZ = "Asia/Tokyo";
-
-function tokyoDateString(date: Date = new Date()): string {
-  const fmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TOKYO_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  return fmt.format(date);
+/** Calendar yyyy-MM-dd in the device local timezone (matches expense form + useExpenses todayTotal). */
+function localCalendarDateString(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function parseDate(yyyyMmDd: string): Date {
@@ -71,7 +67,7 @@ export function buildWidgetSnapshot({
   isLoggedIn,
   customCategories = [],
 }: BuildArgs): WidgetSnapshot {
-  const today = tokyoDateString();
+  const today = localCalendarDateString();
 
   const todayExpenses = expenses.filter((e) => e.expense_date === today);
   const spentJpy = todayExpenses.reduce((sum, e) => sum + (e.amount_jpy || 0), 0);

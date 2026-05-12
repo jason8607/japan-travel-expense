@@ -12,6 +12,7 @@ import { calculateTotalCashback } from "@/lib/cashback";
 import { useApp } from "@/lib/context";
 import { FALLBACK_RATE, formatJPY, formatTWD, getExchangeRate } from "@/lib/exchange-rate";
 import { deleteGuestExpense } from "@/lib/guest-storage";
+import { notifyExpensesMutated } from "@/lib/expenses-mutated";
 import { differenceInDays, parseISO } from "date-fns";
 import { Plane, Plus, ReceiptText } from "lucide-react";
 import Image from "next/image";
@@ -47,6 +48,7 @@ export default function HomePage() {
         if (!res.ok) throw new Error(data.error || "刪除失敗");
       }
       toast.success("已刪除");
+      notifyExpensesMutated();
       await refresh();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "刪除失敗";

@@ -9,6 +9,7 @@ import { ReceiptUpload } from "@/components/scan/receipt-upload";
 import { ReceiptConfirm } from "@/components/scan/receipt-confirm";
 import type { ReceiptItemWithOwner } from "@/components/scan/receipt-confirm";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
+import { notifyExpensesMutated } from "@/lib/expenses-mutated";
 import { toast } from "sonner";
 import type { OCRResult, PaymentMethod } from "@/types";
 import { Camera as CameraIcon } from "lucide-react";
@@ -112,6 +113,7 @@ export default function ScanPage() {
           toast.success(
             `已儲存 ${savedCount} 筆消費${keepScanning ? "，請拍下一張" : ""}`,
           );
+          notifyExpensesMutated();
           if (keepScanning) {
             setOcrResult(null);
             setReceiptImageFile(null);
@@ -180,6 +182,7 @@ export default function ScanPage() {
         toast.success(
           `已儲存 ${results.length} 筆消費${keepScanning ? "，請拍下一張" : ""}`,
         );
+        notifyExpensesMutated();
         if (keepScanning) {
           setOcrResult(null);
           setReceiptImageFile(null);

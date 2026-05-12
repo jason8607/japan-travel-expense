@@ -10,6 +10,7 @@ import { LoadingState } from "@/components/layout/loading-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useExpenses } from "@/hooks/use-expenses";
 import { useApp } from "@/lib/context";
+import { notifyExpensesMutated } from "@/lib/expenses-mutated";
 import { deleteGuestExpense } from "@/lib/guest-storage";
 import { ClipboardList, Plane, Plus } from "lucide-react";
 import Link from "next/link";
@@ -61,6 +62,7 @@ export default function RecordsPage() {
         if (!res.ok) throw new Error(data.error || "刪除失敗");
       }
       toast.success("已刪除");
+      notifyExpensesMutated();
       await refresh();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "刪除失敗";

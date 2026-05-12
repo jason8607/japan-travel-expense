@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useApp } from "@/lib/context";
 import { createClient } from "@/lib/supabase/client";
+import { EXPENSES_MUTATED_EVENT } from "@/lib/expenses-mutated";
 import { getGuestExpenses } from "@/lib/guest-storage";
 import type { Expense } from "@/types";
 
@@ -30,6 +31,7 @@ export function useExpenses() {
   const fetchExpenses = useCallback(async () => {
     if (isGuest) {
       const data = getGuestExpenses();
+      if (currentTrip) expenseCache.set(currentTrip.id, data);
       setExpenses(data);
       setLoading(false);
       setError(null);
@@ -115,6 +117,16 @@ export function useExpenses() {
 
     return () => { supabase.removeChannel(channel); };
   }, [currentTrip?.id, fetchExpenses, isGuest]);
+
+  // Root layout (widget sync) and pages each have their own `useExpenses` state; mutations
+  // elsewhere must nudge every instance via a window event.
+  useEffect(() => {
+    const onMutated = () => {
+      void fetchExpenses();
+    };
+    window.addEventListener(EXPENSES_MUTATED_EVENT, onMutated);
+    return () => window.removeEventListener(EXPENSES_MUTATED_EVENT, onMutated);
+  }, [fetchExpenses]);
 
   const todayTotal = expenses
     .filter((e) => e.expense_date === getLocalDateString())

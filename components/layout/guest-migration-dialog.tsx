@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useApp } from "@/lib/context";
+import { notifyExpensesMutated } from "@/lib/expenses-mutated";
 import { getGuestExpenses, getGuestTrip, clearGuestData } from "@/lib/guest-storage";
 import { getExchangeRate, jpyToTwd } from "@/lib/exchange-rate";
 import {
@@ -85,6 +86,8 @@ export function GuestMigrationDialog() {
       const trips = await refreshTrips();
       const migrated = trips.find((t: { id: string }) => t.id === newTripId);
       if (migrated) setCurrentTrip(migrated);
+
+      notifyExpensesMutated();
 
       const failCount = guestExpenses.length - successCount;
       if (failCount > 0) {
