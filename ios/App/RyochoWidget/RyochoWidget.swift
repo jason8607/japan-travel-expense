@@ -8,15 +8,16 @@ struct SnapshotEntry: TimelineEntry {
 
 struct SnapshotProvider: TimelineProvider {
     func placeholder(in context: Context) -> SnapshotEntry {
-        SnapshotEntry(date: Date(), snapshot: nil)
+        SnapshotEntry(date: Date(), snapshot: .sample)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SnapshotEntry) -> Void) {
-        completion(SnapshotEntry(date: Date(), snapshot: WidgetSnapshot.load()))
+        let snapshot = context.isPreview ? .sample : (WidgetSnapshot.load() ?? .sample)
+        completion(SnapshotEntry(date: Date(), snapshot: snapshot))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SnapshotEntry>) -> Void) {
-        let entry = SnapshotEntry(date: Date(), snapshot: WidgetSnapshot.load())
+        let entry = SnapshotEntry(date: Date(), snapshot: WidgetSnapshot.load() ?? .sample)
         let next = Calendar.current.date(byAdding: .minute, value: 30, to: Date()) ?? Date().addingTimeInterval(1800)
         completion(Timeline(entries: [entry], policy: .after(next)))
     }
