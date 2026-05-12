@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AppProvider } from "@/lib/context";
 import { THEME_INIT_SCRIPT, ThemeProvider } from "@/lib/theme-context";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
@@ -84,6 +85,7 @@ export default function RootLayout({
                   <ServiceWorkerRegister />
                   <DeepLinkHandler />
                   <Analytics />
+                  <SpeedInsights />
                 </div>
               </div>
             </div>
