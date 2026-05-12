@@ -20,7 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { isNativeApp } from "@/lib/capacitor";
 import { useApp } from "@/lib/context";
+import { widgetSync } from "@/lib/native/widget-sync";
 import { updateGuestTrip } from "@/lib/guest-storage";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -293,6 +295,9 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    if (isNativeApp()) {
+      await widgetSync.clear();
+    }
     router.push("/auth/login");
     router.refresh();
   };

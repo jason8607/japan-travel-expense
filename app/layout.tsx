@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { DeepLinkHandler } from "@/components/layout/deep-link-handler";
+import { WidgetNativeSync } from "@/components/layout/widget-native-sync";
 import { InstallPrompt } from "@/components/layout/install-prompt";
 import { ServiceWorkerRegister } from "@/components/layout/sw-register";
 import { Toaster } from "@/components/ui/sonner";
@@ -70,6 +71,7 @@ export default function RootLayout({
           <ThemeProvider>
             <div className="relative flex w-full min-h-0 flex-1 flex-col overflow-hidden">
               <AppProvider>
+                <WidgetNativeSync />
                 <div
                   id="main-content"
                   className="mx-auto flex min-h-0 flex-1 flex-col overflow-hidden w-full max-w-lg bg-background shadow-sm"
