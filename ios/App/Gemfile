@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# Run via `npm run cap:sync:ios` (prepends Homebrew Ruby to PATH) or manually:
+#   cd ios/App && export PATH="$(brew --prefix ruby)/bin:$PATH" && bundle exec pod install
 source "https://rubygems.org"
 
 # CocoaPods 1.16.x ships xcodeproj 1.27.0, which raises:
