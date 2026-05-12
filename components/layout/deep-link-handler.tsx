@@ -5,13 +5,14 @@ import { Browser } from "@capacitor/browser";
 import { createClient } from "@/lib/supabase/client";
 
 const TRIP_JOIN_RE = /^ryocho:\/\/trip\/([^/?#]+)\/join(?:\?|#|$)/;
-const SHORTCUT_RE = /^ryocho:\/\/shortcut\/(new|scan|summary)(?:\?|#|$)/;
+const SHORTCUT_RE = /^ryocho:\/\/shortcut\/(new|scan|summary|stats)(?:\?|#|$)/;
 const WIDGET_NAV_RE = /^ryocho:\/\/widget\/(today|categories|summary)(?:\?|#|$)/;
 
 const SHORTCUT_PATH: Record<string, string> = {
   new: "/records/new",
   scan: "/scan",
   summary: "/summary",
+  stats: "/stats",
 };
 
 const WIDGET_NAV_PATH: Record<string, string> = {

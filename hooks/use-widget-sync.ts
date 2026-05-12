@@ -15,7 +15,7 @@ export function useWidgetSync(): void {
     useApp();
   const { expenses, loading: expensesLoading } = useExpenses();
   const { categories } = useCategories();
-  const { cards } = useCreditCards();
+  const { cards, loading: cardsLoading } = useCreditCards();
 
   const latestRef = useRef({
     currentTrip,
@@ -27,16 +27,19 @@ export function useWidgetSync(): void {
     categories,
     cards,
   });
-  latestRef.current = {
-    currentTrip,
-    tripMembers,
-    profile,
-    user,
-    isGuest,
-    expenses,
-    categories,
-    cards,
-  };
+
+  useEffect(() => {
+    latestRef.current = {
+      currentTrip,
+      tripMembers,
+      profile,
+      user,
+      isGuest,
+      expenses,
+      categories,
+      cards,
+    };
+  });
 
   useEffect(() => {
     if (!isNativeApp()) return;
@@ -45,6 +48,7 @@ export function useWidgetSync(): void {
     // before the parent init await completes).
     if (appLoading) return;
     if (expensesLoading) return;
+    if (cardsLoading) return;
 
     const handle = setTimeout(() => {
       const snapshot = buildWidgetSnapshot({
@@ -72,6 +76,7 @@ export function useWidgetSync(): void {
     isGuest,
     categories,
     cards,
+    cardsLoading,
   ]);
 
   useEffect(() => {

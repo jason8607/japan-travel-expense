@@ -25,9 +25,9 @@ struct QuickProvider: TimelineProvider {
 struct QuickActionsView17: View {
     @Environment(\.colorScheme) private var colorScheme
 
-    private let newURL     = URL(string: "ryocho://shortcut/new")!
-    private let scanURL    = URL(string: "ryocho://shortcut/scan")!
-    private let summaryURL = URL(string: "ryocho://shortcut/summary")!
+    private let newURL   = URL(string: "ryocho://shortcut/new")!
+    private let scanURL  = URL(string: "ryocho://shortcut/scan")!
+    private let statsURL = URL(string: "ryocho://shortcut/stats")!
 
     var body: some View {
         let p = colorScheme == .dark ? WidgetPalette.dark : WidgetPalette.light
@@ -64,7 +64,7 @@ struct QuickActionsView17: View {
                 QuickTile(
                     title: "統計",
                     systemImage: "chart.bar",
-                    url: summaryURL,
+                    url: statsURL,
                     iconColor: p.ink,
                     palette: p
                 )
@@ -128,7 +128,7 @@ struct QuickActionsLegacyView: View {
             HStack(spacing: 8) {
                 legacyTile(icon: "square.and.pencil", label: "記帳",  iconColor: p.ink,  p: p)
                 legacyTile(icon: "doc.viewfinder",   label: "掃描",  iconColor: p.blue, p: p)
-                legacyTile(icon: "chart.bar",         label: "統計",  iconColor: p.ink,  p: p)
+                legacyTile(icon: "chart.bar", label: "統計", iconColor: p.ink, p: p)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
