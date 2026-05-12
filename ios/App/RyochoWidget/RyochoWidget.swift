@@ -22,40 +22,40 @@ struct SnapshotProvider: TimelineProvider {
     }
 }
 
-struct RyochoWidgetEntryView: View {
+// MARK: - Entry view dispatches to small / medium
+
+struct RyochoTodayEntryView: View {
     @Environment(\.widgetFamily) private var family
     var entry: SnapshotEntry
 
     var body: some View {
         switch family {
         case .systemSmall:
-            SmallWidgetView(entry: entry)
-        case .systemMedium:
-            MediumWidgetView(entry: entry)
-        case .systemLarge:
-            LargeWidgetView(entry: entry)
+            TodaySmallView(entry: entry)
         default:
-            SmallWidgetView(entry: entry)
+            TodayMediumView(entry: entry)
         }
     }
 }
 
-struct RyochoWidget: Widget {
+// MARK: - Widget registration
+
+struct RyochoTodayWidget: Widget {
     let kind: String = "RyochoWidget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: SnapshotProvider()) { entry in
             if #available(iOSApplicationExtension 17.0, *) {
-                RyochoWidgetEntryView(entry: entry)
+                RyochoTodayEntryView(entry: entry)
                     .containerBackground(.fill.tertiary, for: .widget)
             } else {
-                RyochoWidgetEntryView(entry: entry)
+                RyochoTodayEntryView(entry: entry)
                     .padding()
                     .background(Color(.systemBackground))
             }
         }
-        .configurationDisplayName("旅帳")
-        .description("今日花費與行程摘要")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .configurationDisplayName("旅帳 · 今日")
+        .description("今日花費金額與類別分布")
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

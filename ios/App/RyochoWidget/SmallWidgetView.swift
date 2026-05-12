@@ -1,8 +1,11 @@
 import WidgetKit
 import SwiftUI
 
-struct SmallWidgetView: View {
+// MARK: - Small widget · variant A: large number + thin progress bar
+
+struct TodaySmallView: View {
     let entry: SnapshotEntry
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Group {
@@ -17,65 +20,87 @@ struct SmallWidgetView: View {
 
     @ViewBuilder
     private func content(snapshot: WidgetSnapshot) -> some View {
+        let p = colorScheme == .dark ? WidgetPalette.dark : WidgetPalette.light
+        let spent = snapshot.today.spentJpy
+        let budget = snapshot.today.budgetJpy
+        let pct: Double = (budget != nil && budget! > 0) ? min(1.0, spent / budget!) : 0
+
         VStack(alignment: .leading, spacing: 0) {
-            Text("今日花費")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
-                .textCase(nil)
+            // Header: 今日 · MM/DD
+            HStack(spacing: 4) {
+                Text("今日")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(p.smoke)
+                Text("·")
+                    .font(.system(size: 11))
+                    .foregroundStyle(p.smoke.opacity(0.5))
+                Text(todayLabel())
+                    .font(.system(size: 11).monospacedDigit())
+                    .foregroundStyle(p.smoke)
+            }
 
-            Spacer(minLength: 4)
+            Spacer(minLength: 0)
 
-            Text(WidgetFormat.jpy(snapshot.today.spentJpy))
-                .font(.system(size: 26, weight: .bold, design: .rounded))
-                .foregroundStyle(.primary)
-                .minimumScaleFactor(0.6)
+            // Currency prefix
+            Text("¥")
+                .font(.system(size: 11))
+                .foregroundStyle(p.smoke)
+                .padding(.bottom, -2)
+
+            // Main amount
+            Text(WidgetFormat.number(spent))
+                .font(.system(size: 32, weight: .semibold).monospacedDigit())
+                .foregroundStyle(p.ink)
+                .minimumScaleFactor(0.55)
                 .lineLimit(1)
 
-            if let remaining = snapshot.today.remainingJpy {
-                Text(remainingLabel(remaining))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(remaining < 0 ? .red : .secondary)
-                    .padding(.top, 2)
-            }
+            // TWD equivalent
+            Text("NT$ \(WidgetFormat.number(snapshot.today.spentTwd))")
+                .font(.system(size: 11).monospacedDigit())
+                .foregroundStyle(p.smoke)
+                .padding(.top, 4)
 
-            Spacer()
+            // Progress bar + labels
+            if let budget = budget, budget > 0 {
+                VStack(alignment: .leading, spacing: 6) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 999)
+                                .fill(p.mist)
+                                .frame(height: 4)
+                            RoundedRectangle(cornerRadius: 999)
+                                .fill(pct >= 1.0 ? Color(hex: "#EF4444") : p.blue)
+                                .frame(width: geo.size.width * CGFloat(pct), height: 4)
+                        }
+                    }
+                    .frame(height: 4)
 
-            if let trip = snapshot.trip {
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(Color(hex: "#2563EB"))
-                        .frame(width: 6, height: 6)
-                    Text(trip.name)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    HStack {
+                        Text("\(Int((pct * 100).rounded()))%")
+                            .font(.system(size: 10).monospacedDigit())
+                            .foregroundStyle(p.smoke)
+                        Spacer()
+                        Text("/ \(WidgetFormat.jpy(budget))")
+                            .font(.system(size: 10).monospacedDigit())
+                            .foregroundStyle(p.smoke)
+                    }
                 }
-            } else {
-                Text("尚未選擇旅程")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                .padding(.top, 12)
+            } else if let trip = snapshot.trip {
+                Text(trip.name)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(p.smoke)
+                    .lineLimit(1)
+                    .padding(.top, 12)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    private func remainingLabel(_ remaining: Double) -> String {
-        if remaining >= 0 {
-            return "今日預算剩 \(WidgetFormat.jpy(remaining))"
-        }
-        return "超支 \(WidgetFormat.jpy(-remaining))"
-    }
-}
-
-struct LoginPromptView: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("旅帳")
-                .font(.system(size: 14, weight: .semibold))
-            Text("請開啟 app 開始記帳")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    private func todayLabel() -> String {
+        let d = Date()
+        let m = Calendar.current.component(.month, from: d)
+        let day = Calendar.current.component(.day, from: d)
+        return "\(m)/\(day)"
     }
 }

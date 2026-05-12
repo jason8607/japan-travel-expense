@@ -5,6 +5,7 @@ import { App as CapacitorApp } from "@capacitor/app";
 import { useApp } from "@/lib/context";
 import { useExpenses } from "@/hooks/use-expenses";
 import { useCategories } from "@/hooks/use-categories";
+import { useCreditCards } from "@/hooks/use-credit-cards";
 import { isNativeApp } from "@/lib/capacitor";
 import { buildWidgetSnapshot } from "@/lib/widget-snapshot";
 import { widgetSync } from "@/lib/native/widget-sync";
@@ -14,6 +15,7 @@ export function useWidgetSync(): void {
     useApp();
   const { expenses, loading: expensesLoading } = useExpenses();
   const { categories } = useCategories();
+  const { cards } = useCreditCards();
 
   const latestRef = useRef({
     currentTrip,
@@ -23,6 +25,7 @@ export function useWidgetSync(): void {
     isGuest,
     expenses,
     categories,
+    cards,
   });
   latestRef.current = {
     currentTrip,
@@ -32,6 +35,7 @@ export function useWidgetSync(): void {
     isGuest,
     expenses,
     categories,
+    cards,
   };
 
   useEffect(() => {
@@ -51,6 +55,7 @@ export function useWidgetSync(): void {
         isGuest,
         isLoggedIn: Boolean(user) || isGuest || Boolean(currentTrip),
         customCategories: categories,
+        cards,
       });
       widgetSync.write(snapshot);
     }, 600);
@@ -66,6 +71,7 @@ export function useWidgetSync(): void {
     user,
     isGuest,
     categories,
+    cards,
   ]);
 
   useEffect(() => {
@@ -81,6 +87,7 @@ export function useWidgetSync(): void {
         isGuest: s.isGuest,
         isLoggedIn: Boolean(s.user) || s.isGuest || Boolean(s.currentTrip),
         customCategories: s.categories,
+        cards: s.cards,
       });
       widgetSync.write(snapshot);
     });

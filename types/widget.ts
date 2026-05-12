@@ -6,6 +6,21 @@ export interface WidgetSnapshot {
   today: WidgetTodaySummary;
   todayByCategory: WidgetCategorySlice[];
   trip: WidgetTripSummary | null;
+  cashback: WidgetCashback | null;
+}
+
+export interface WidgetCashback {
+  totalTwd: number;
+  cardCount: number;
+  averageRate: number;
+  topCard: WidgetCashbackTop | null;
+}
+
+export interface WidgetCashbackTop {
+  cardName: string;
+  cashbackTwd: number;
+  rateLabel: string;
+  rate: number;
 }
 
 export interface WidgetTodaySummary {

@@ -4,7 +4,10 @@ import WidgetKit
 @main
 struct RyochoWidgetBundle: WidgetBundle {
     var body: some Widget {
-        RyochoWidget()
-        RyochoShortcutsWidget()
+        RyochoTodayWidget()
+        BudgetRingWidget()
+        QuickActionsWidget()
+        CashbackWidget()
+        TrendWidget()
     }
 }

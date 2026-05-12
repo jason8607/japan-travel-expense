@@ -1,4 +1,4 @@
-import type { Trip, Expense, TripMember, CategoryItem, Profile } from "@/types";
+import type { Trip, Expense, TripMember, CategoryItem, Profile, CreditCard } from "@/types";
 import { DEFAULT_CATEGORIES } from "@/types";
 import { calculateSettlements } from "@/lib/settlement";
 import type {
@@ -6,6 +6,8 @@ import type {
   WidgetCategorySlice,
   WidgetTripSummary,
   WidgetSettlement,
+  WidgetCashback,
+  WidgetCashbackTop,
 } from "@/types/widget";
 
 /** Calendar yyyy-MM-dd in the device local timezone (matches expense form + useExpenses todayTotal). */
@@ -49,6 +51,67 @@ function resolveCategory(
   return { label: value, icon: "📦", color: "#8E7C65" };
 }
 
+function buildCashback(expenses: Expense[], cards: CreditCard[]): WidgetCashback | null {
+  if (cards.length === 0) return null;
+  const creditExpenses = expenses.filter((e) => e.payment_method === "信用卡");
+  if (creditExpenses.length === 0) return null;
+
+  let totalTwd = 0;
+  let totalWeightedRate = 0;
+  let totalRateWeight = 0;
+  let topCard: WidgetCashbackTop | null = null;
+  let topCashback = 0;
+  let cardCount = 0;
+
+  for (const card of cards) {
+    const cardExpenses = creditExpenses.filter((e) => e.credit_card_id === card.id);
+    if (cardExpenses.length === 0) continue;
+
+    const cardTwd = cardExpenses.reduce((s, e) => s + e.amount_twd, 0);
+    let cardCashback = 0;
+    let effectiveRate = card.cashback_rate;
+
+    if (card.plans && card.plans.length > 0) {
+      cardCashback = card.plans.reduce((s, plan) => {
+        const planTwd = cardExpenses
+          .filter((e) => e.credit_card_plan_id === plan.id)
+          .reduce((sum, e) => sum + e.amount_twd, 0);
+        return s + Math.round((planTwd * plan.cashback_rate) / 100);
+      }, 0);
+      effectiveRate = cardTwd > 0 ? (cardCashback / cardTwd) * 100 : card.cashback_rate;
+    } else {
+      cardCashback = Math.round((cardTwd * card.cashback_rate) / 100);
+    }
+
+    cardCashback = Math.min(cardCashback, card.cashback_limit);
+    totalTwd += cardCashback;
+    totalWeightedRate += effectiveRate * cardTwd;
+    totalRateWeight += cardTwd;
+    cardCount++;
+
+    if (cardCashback > topCashback) {
+      topCashback = cardCashback;
+      const rateLabel = `${effectiveRate.toFixed(1)}% 海外消費`;
+      topCard = {
+        cardName: card.name,
+        cashbackTwd: cardCashback,
+        rateLabel,
+        rate: effectiveRate,
+      };
+    }
+  }
+
+  if (cardCount === 0) return null;
+
+  const averageRate = totalRateWeight > 0 ? totalWeightedRate / totalRateWeight : 0;
+  return {
+    totalTwd: Math.round(totalTwd),
+    cardCount,
+    averageRate: Math.round(averageRate * 10) / 10,
+    topCard,
+  };
+}
+
 interface BuildArgs {
   trip: Trip | null;
   expenses: Expense[];
@@ -57,6 +120,7 @@ interface BuildArgs {
   isGuest: boolean;
   isLoggedIn: boolean;
   customCategories?: CategoryItem[];
+  cards?: CreditCard[];
 }
 
 export function buildWidgetSnapshot({
@@ -66,6 +130,7 @@ export function buildWidgetSnapshot({
   isGuest,
   isLoggedIn,
   customCategories = [],
+  cards = [],
 }: BuildArgs): WidgetSnapshot {
   const today = localCalendarDateString();
 
@@ -144,6 +209,12 @@ export function buildWidgetSnapshot({
     };
   }
 
+  const tripExpenses = trip
+    ? expenses.filter(
+        (e) => e.expense_date >= trip.start_date && e.expense_date <= trip.end_date,
+      )
+    : expenses;
+
   return {
     version: 1,
     isLoggedIn,
@@ -157,5 +228,6 @@ export function buildWidgetSnapshot({
     },
     todayByCategory,
     trip: tripSummary,
+    cashback: buildCashback(tripExpenses, cards),
   };
 }
