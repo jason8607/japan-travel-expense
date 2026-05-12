@@ -5,5 +5,6 @@ import WidgetKit
 struct RyochoWidgetBundle: WidgetBundle {
     var body: some Widget {
         RyochoWidget()
+        RyochoShortcutsWidget()
     }
 }

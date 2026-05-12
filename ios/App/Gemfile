@@ -1,0 +1,14 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# CocoaPods 1.16.x ships xcodeproj 1.27.0, which raises:
+#   Unable to find compatibility version string for object version `70`
+# when Xcode 26 writes objectVersion 70. Use Xcodeproj from GitHub until a
+# release newer than 1.27.0 is published to RubyGems.
+gem "cocoapods", "~> 1.16"
+# Ruby 3.4+ / 4.x: CFPropertyList still requires `kconv`; use the `nkf` gem shim.
+gem "nkf"
+gem "xcodeproj",
+    git: "https://github.com/CocoaPods/Xcodeproj.git",
+    ref: "c12d2ae619ae42f947a6b07d865f69948c752df5"

@@ -5,6 +5,20 @@ import { Browser } from "@capacitor/browser";
 import { createClient } from "@/lib/supabase/client";
 
 const TRIP_JOIN_RE = /^ryocho:\/\/trip\/([^/?#]+)\/join(?:\?|#|$)/;
+const SHORTCUT_RE = /^ryocho:\/\/shortcut\/(new|scan|summary)(?:\?|#|$)/;
+const WIDGET_NAV_RE = /^ryocho:\/\/widget\/(today|categories|summary)(?:\?|#|$)/;
+
+const SHORTCUT_PATH: Record<string, string> = {
+  new: "/records/new",
+  scan: "/scan",
+  summary: "/summary",
+};
+
+const WIDGET_NAV_PATH: Record<string, string> = {
+  today: "/",
+  categories: "/records",
+  summary: "/summary",
+};
 
 export function DeepLinkHandler() {
   useEffect(() => {
@@ -26,6 +40,21 @@ export function DeepLinkHandler() {
       if (joinMatch) {
         const tripId = joinMatch[1];
         window.location.href = `/trip/${tripId}/join`;
+        return;
+      }
+
+      const shortcutMatch = url.match(SHORTCUT_RE);
+      if (shortcutMatch) {
+        const path = SHORTCUT_PATH[shortcutMatch[1]];
+        if (path) window.location.href = path;
+        return;
+      }
+
+      const widgetNavMatch = url.match(WIDGET_NAV_RE);
+      if (widgetNavMatch) {
+        const path = WIDGET_NAV_PATH[widgetNavMatch[1]];
+        if (path) window.location.href = path;
+        return;
       }
     });
     return () => {
