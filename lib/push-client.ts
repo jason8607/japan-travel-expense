@@ -102,3 +102,4 @@ export async function updateDailyHour(hour: number): Promise<{ ok: true } | { ok
   }
   return { ok: true };
 }
+

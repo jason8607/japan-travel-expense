@@ -1,0 +1,67 @@
+name: Daily Reminder Cron
+
+# Pings the Vercel-hosted /api/cron/daily-reminder endpoint every hour. The endpoint then
+# decides which subscribers' local hour matches and sends the push.
+#
+# Why GitHub Actions instead of vercel.json crons?
+#   Vercel Hobby plan caps cron execution at once-per-day, which would force a single fixed
+#   UTC time for all subscribers and defeat the per-user "remind me at HH:00 in my timezone"
+#   feature. GitHub Actions cron is free, runs hourly without restriction, and lets us keep
+#   the precise scheduling logic on the server side.
+#
+# Required configuration (set once in GitHub repo settings):
+#   Settings > Secrets and variables > Actions
+#     - Variable APP_URL      (e.g. https://travelio.vercel.app, no trailing slash)
+#     - Secret   CRON_SECRET  (must match the CRON_SECRET set in Vercel project env)
+
+on:
+  schedule:
+    # Run at :05 every hour to sidestep the :00 spike that GitHub Actions cron sometimes
+    # delays. The endpoint compares "current local hour" so a few minutes of drift is fine.
+    - cron: "5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-reminder
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Trigger daily-reminder endpoint
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -u
+          if [ -z "${APP_URL:-}" ]; then
+            echo "::error::Missing repo variable APP_URL"
+            exit 1
+          fi
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::Missing repo secret CRON_SECRET"
+            exit 1
+          fi
+
+          response=$(mktemp)
+          status=$(curl -sS -X GET \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Accept: application/json" \
+            -o "${response}" \
+            -w "%{http_code}" \
+            "${APP_URL%/}/api/cron/daily-reminder")
+
+          echo "HTTP ${status}"
+          echo "Body:"
+          cat "${response}"
+          echo
+
+          if [ "${status}" != "200" ]; then
+            echo "::error::daily-reminder endpoint returned non-200"
+            exit 1
+          fi

@@ -9,9 +9,10 @@ interface SubscriptionRow extends PushSubscriptionRow {
 }
 
 /**
- * Fires hourly via vercel.json cron. Finds subscriptions whose configured local hour matches the
- * current local hour in their timezone, then sends a push. Vercel Cron auto-attaches an
- * Authorization: Bearer <CRON_SECRET> header when CRON_SECRET is set in env.
+ * Fires hourly via GitHub Actions cron (.github/workflows/daily-reminder.yml). Vercel Hobby
+ * cron caps at once-per-day, so we host the schedule on GitHub Actions instead — it pings
+ * this endpoint every hour with the CRON_SECRET bearer token. We then find subscriptions
+ * whose configured local hour matches the current local hour in their timezone and push.
  */
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
