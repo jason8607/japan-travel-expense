@@ -60,5 +60,7 @@
 	<string>需要相簿權限以選取收據照片</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>需要儲存匯出的圖片到相簿</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>用於每日消費提醒及信用卡回饋上限通知</string>
 </dict>
 </plist>
