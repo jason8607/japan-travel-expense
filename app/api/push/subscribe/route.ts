@@ -8,6 +8,7 @@ interface SubscribeBody {
   auth?: string;
   daily_reminder_hour?: number;
   timezone?: string;
+  cashback_alert_enabled?: boolean;
 }
 
 export async function POST(req: NextRequest) {
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
 
     const hour = clampHour(body.daily_reminder_hour);
     const tz = body.timezone || "Asia/Tokyo";
+    const cashbackEnabled = body.cashback_alert_enabled ?? true;
 
     const admin = getAdminClient();
     const { error } = await admin
@@ -34,6 +36,7 @@ export async function POST(req: NextRequest) {
           auth: body.auth,
           daily_reminder_hour: hour,
           timezone: tz,
+          cashback_alert_enabled: cashbackEnabled,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id,endpoint" }
@@ -52,14 +55,25 @@ export async function PATCH(req: NextRequest) {
     const user = await getRequestUser(req);
     if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
 
-    const body = (await req.json()) as { endpoint?: string; daily_reminder_hour?: number };
+    const body = (await req.json()) as {
+      endpoint?: string;
+      daily_reminder_hour?: number;
+      cashback_alert_enabled?: boolean;
+    };
     if (!body.endpoint) return NextResponse.json({ error: "缺少 endpoint" }, { status: 400 });
 
-    const hour = clampHour(body.daily_reminder_hour);
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (body.daily_reminder_hour !== undefined) {
+      updates.daily_reminder_hour = clampHour(body.daily_reminder_hour);
+    }
+    if (body.cashback_alert_enabled !== undefined) {
+      updates.cashback_alert_enabled = body.cashback_alert_enabled;
+    }
+
     const admin = getAdminClient();
     const { error } = await admin
       .from("push_subscriptions")
-      .update({ daily_reminder_hour: hour, updated_at: new Date().toISOString() })
+      .update(updates)
       .eq("user_id", user.id)
       .eq("endpoint", body.endpoint);
 

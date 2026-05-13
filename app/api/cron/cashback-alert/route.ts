@@ -39,10 +39,11 @@ export async function GET(req: NextRequest) {
 
   const admin = getAdminClient();
 
-  // 1. All active push subscriptions grouped by user
+  // 1. All active push subscriptions that have opted in to cashback alerts
   const { data: subs, error: subsErr } = await admin
     .from("push_subscriptions")
-    .select("id, user_id, endpoint, p256dh, auth");
+    .select("id, user_id, endpoint, p256dh, auth")
+    .eq("cashback_alert_enabled", true);
 
   if (subsErr) return NextResponse.json({ error: subsErr.message }, { status: 500 });
   if (!subs || subs.length === 0) return NextResponse.json({ sent: 0, skipped: 0 });

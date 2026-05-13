@@ -23,6 +23,7 @@ import {
   isPushSupported,
   subscribePush,
   unsubscribePush,
+  updateCashbackAlert,
   updateDailyHour,
 } from "@/lib/push-client";
 import { cn } from "@/lib/utils";
@@ -138,18 +139,42 @@ export function NotificationSettings() {
   };
 
   const handleToggleCashback = async (enabled: boolean) => {
-    if (enabled && mode === "native" && !permissionGranted) {
-      setBusy(true);
-      const granted = await ensureNativePermission();
-      setBusy(false);
-      setPermissionGranted(granted);
-      if (!granted) {
-        toast.error("請至 iOS 設定 → 旅帳 → 通知 開啟權限");
-        return;
+    setBusy(true);
+    try {
+      if (mode === "native") {
+        if (enabled && !permissionGranted) {
+          const granted = await ensureNativePermission();
+          setPermissionGranted(granted);
+          if (!granted) {
+            toast.error("請至 iOS 設定 → 旅帳 → 通知 開啟權限");
+            return;
+          }
+        }
+      } else {
+        // web mode: need a push subscription to receive server-side alerts
+        const sub = await getCurrentSubscription();
+        if (sub) {
+          // already subscribed — just flip the server flag
+          const res = await updateCashbackAlert(enabled);
+          if (!res.ok) {
+            toast.error(res.error);
+            return;
+          }
+        } else if (enabled) {
+          // no subscription yet — create one (without daily reminder) so the cron can reach the user
+          const res = await subscribePush({ cashbackAlertEnabled: true });
+          if (!res.ok) {
+            toast.error(res.error);
+            return;
+          }
+          setPermissionGranted(true);
+        }
       }
+      persist({ ...prefs, cashbackWarningEnabled: enabled });
+      toast.success(enabled ? "已開啟回饋上限提醒" : "已關閉回饋上限提醒");
+    } finally {
+      setBusy(false);
     }
-    persist({ ...prefs, cashbackWarningEnabled: enabled });
-    toast.success(enabled ? "已開啟回饋上限提醒" : "已關閉回饋上限提醒");
   };
 
   const handleThresholdChange = (threshold: CashbackThreshold) => {
@@ -205,54 +230,52 @@ export function NotificationSettings() {
           )}
         </div>
 
-        {/* Cashback warning - native only for now */}
-        {mode === "native" && (
-          <div className="px-4 py-3 space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium flex items-center gap-1.5">
-                  <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
-                  信用卡回饋上限提醒
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  當卡片本旅程回饋接近上限時通知，提醒換卡或調整支付方式。
-                </p>
-              </div>
-              <Toggle
-                checked={prefs.cashbackWarningEnabled}
-                disabled={busy}
-                onChange={handleToggleCashback}
-              />
+        {/* Cashback warning */}
+        <div className="px-4 py-3 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium flex items-center gap-1.5">
+                <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                信用卡回饋上限提醒
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                刷卡金額達回饋上限的 80% 或 100% 時發出推播，提醒換卡或調整支付方式。
+              </p>
             </div>
-
-            {prefs.cashbackWarningEnabled && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-muted-foreground">提醒門檻</span>
-                {THRESHOLD_OPTIONS.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => handleThresholdChange(t)}
-                    className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-medium transition-colors active:translate-y-px focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                      prefs.cashbackWarningThreshold === t
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground hover:bg-muted/80"
-                    )}
-                  >
-                    {t}%
-                  </button>
-                ))}
-              </div>
-            )}
+            <Toggle
+              checked={prefs.cashbackWarningEnabled}
+              disabled={busy}
+              onChange={handleToggleCashback}
+            />
           </div>
-        )}
+
+          {prefs.cashbackWarningEnabled && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground">提醒門檻</span>
+              {THRESHOLD_OPTIONS.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => handleThresholdChange(t)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md text-xs font-medium transition-colors active:translate-y-px focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                    prefs.cashbackWarningThreshold === t
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground hover:bg-muted/80"
+                  )}
+                >
+                  {t}%
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {mode === "web" && (
           <div className="px-4 py-3 flex items-start gap-2 text-xs text-muted-foreground">
             <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>
-              在 Safari/iOS 使用前請先將旅帳加入主畫面，否則無法收到推播。信用卡上限提醒目前只在 iOS App 內提供。
+              在 Safari/iOS 使用前請先將旅帳加入主畫面，否則無法收到推播。
             </span>
           </div>
         )}

@@ -27,7 +27,20 @@ export async function getCurrentSubscription(): Promise<PushSubscription | null>
   return reg.pushManager.getSubscription();
 }
 
-export async function subscribePush(hour: number): Promise<{ ok: true } | { ok: false; error: string }> {
+interface SubscribeOptions {
+  /** Local hour (0-23) for the daily reminder. Omit to skip daily reminder. */
+  dailyReminderHour?: number;
+  cashbackAlertEnabled?: boolean;
+}
+
+export async function subscribePush(
+  hourOrOptions: number | SubscribeOptions
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const opts: SubscribeOptions =
+    typeof hourOrOptions === "number"
+      ? { dailyReminderHour: hourOrOptions }
+      : hourOrOptions;
+
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   if (!publicKey) return { ok: false, error: "缺少 VAPID public key 設定" };
   if (!isPushSupported()) return { ok: false, error: "此瀏覽器不支援推播（iOS 需先加入主畫面）" };
@@ -55,8 +68,9 @@ export async function subscribePush(hour: number): Promise<{ ok: true } | { ok: 
       endpoint: subscription.endpoint,
       p256dh: json.keys?.p256dh,
       auth: json.keys?.auth,
-      daily_reminder_hour: hour,
+      daily_reminder_hour: opts.dailyReminderHour ?? null,
       timezone: tz,
+      cashback_alert_enabled: opts.cashbackAlertEnabled ?? true,
     }),
   });
   if (!res.ok) {
@@ -95,6 +109,27 @@ export async function updateDailyHour(hour: number): Promise<{ ok: true } | { ok
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ endpoint: subscription.endpoint, daily_reminder_hour: hour }),
+  });
+  if (!res.ok) {
+    const { error } = await res.json().catch(() => ({ error: "更新失敗" }));
+    return { ok: false, error };
+  }
+  return { ok: true };
+}
+
+/** Toggle the server-side cashback alert for the current push subscription. */
+export async function updateCashbackAlert(
+  enabled: boolean
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const reg = await getRegistration();
+  if (!reg) return { ok: false, error: "Service Worker 尚未註冊" };
+  const subscription = await reg.pushManager.getSubscription();
+  if (!subscription) return { ok: false, error: "尚未訂閱推播" };
+
+  const res = await fetch("/api/push/subscribe", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint: subscription.endpoint, cashback_alert_enabled: enabled }),
   });
   if (!res.ok) {
     const { error } = await res.json().catch(() => ({ error: "更新失敗" }));
