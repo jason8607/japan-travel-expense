@@ -5,6 +5,31 @@ export function isPushSupported(): boolean {
   return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
 
+/**
+ * Ask the browser for notification permission (must run from a user gesture, e.g. button click).
+ * Use on desktop / PWA settings before or alongside enabling push features.
+ */
+export async function requestWebNotificationPermission(): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
+  if (!isPushSupported()) {
+    return { ok: false, error: "此瀏覽器不支援通知（iOS Safari 需先加入主畫面）" };
+  }
+  let perm = Notification.permission;
+  if (perm === "granted") return { ok: true };
+  if (perm === "denied") {
+    return {
+      ok: false,
+      error: "通知已被封鎖，請在瀏覽器網址列或網站設定中允許此網站的通知",
+    };
+  }
+  perm = await Notification.requestPermission();
+  if (perm !== "granted") {
+    return { ok: false, error: "通知權限未授權" };
+  }
+  return { ok: true };
+}
+
 function urlBase64ToUint8Array(base64String: string): BufferSource {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");

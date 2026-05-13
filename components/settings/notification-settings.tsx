@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, BellOff, CreditCard, Info, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { isNativeApp } from "@/lib/capacitor";
@@ -21,6 +21,7 @@ import {
 import {
   getCurrentSubscription,
   isPushSupported,
+  requestWebNotificationPermission,
   subscribePush,
   unsubscribePush,
   updateCashbackAlert,
@@ -43,7 +44,14 @@ export function NotificationSettings() {
   const [mode, setMode] = useState<Mode>("unsupported");
   const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
   const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
+  const [webNotifPermission, setWebNotifPermission] = useState<NotificationPermission>("default");
   const [busy, setBusy] = useState<boolean>(false);
+
+  const refreshWebPermissionState = useCallback(async () => {
+    setWebNotifPermission(typeof Notification !== "undefined" ? Notification.permission : "denied");
+    const sub = await getCurrentSubscription();
+    setPermissionGranted(!!sub && Notification.permission === "granted");
+  }, []);
 
   useEffect(() => {
     const m = detectMode();
@@ -54,11 +62,10 @@ export function NotificationSettings() {
         const status = await getNativePermissionStatus();
         setPermissionGranted(status?.display === "granted");
       } else if (m === "web") {
-        const sub = await getCurrentSubscription();
-        setPermissionGranted(!!sub && Notification.permission === "granted");
+        await refreshWebPermissionState();
       }
     })();
-  }, []);
+  }, [refreshWebPermissionState]);
 
   if (mode === "unsupported") {
     return (
@@ -75,6 +82,21 @@ export function NotificationSettings() {
       </div>
     );
   }
+
+  const handleAllowWebNotifications = async () => {
+    setBusy(true);
+    try {
+      const res = await requestWebNotificationPermission();
+      if (!res.ok) {
+        toast.error(res.error);
+      } else {
+        toast.success("已允許此網站顯示通知");
+      }
+      await refreshWebPermissionState();
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const persist = (next: NotificationPrefs) => {
     setPrefs(next);
@@ -105,6 +127,7 @@ export function NotificationSettings() {
             return;
           }
           setPermissionGranted(true);
+          setWebNotifPermission(Notification.permission);
         } else {
           const res = await unsubscribePush();
           if (!res.ok) {
@@ -154,7 +177,13 @@ export function NotificationSettings() {
         // web mode: need a push subscription to receive server-side alerts
         const sub = await getCurrentSubscription();
         if (sub) {
-          // already subscribed — just flip the server flag
+          if (enabled) {
+            const perm = await requestWebNotificationPermission();
+            if (!perm.ok) {
+              toast.error(perm.error);
+              return;
+            }
+          }
           const res = await updateCashbackAlert(enabled);
           if (!res.ok) {
             toast.error(res.error);
@@ -168,6 +197,7 @@ export function NotificationSettings() {
             return;
           }
           setPermissionGranted(true);
+          setWebNotifPermission(Notification.permission);
         }
       }
       persist({ ...prefs, cashbackWarningEnabled: enabled });
@@ -191,6 +221,26 @@ export function NotificationSettings() {
       </div>
 
       <div className="divide-y divide-border/60">
+        {mode === "web" && webNotifPermission !== "granted" && (
+          <div className="px-4 py-3 space-y-2 bg-muted/30">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {webNotifPermission === "denied"
+                ? "瀏覽器已封鎖此網站的通知。請在網址列的網站設定或瀏覽器隱私權設定中，改為允許通知後再重新整理頁面。"
+                : "在電腦版要收到推播前，請先允許此網站的通知權限（需由您點按鈕觸發，瀏覽器才會顯示詢問視窗）。"}
+            </p>
+            {webNotifPermission !== "denied" && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={handleAllowWebNotifications}
+                className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 active:translate-y-px focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+              >
+                允許網站顯示通知
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Daily reminder */}
         <div className="px-4 py-3 space-y-3">
           <div className="flex items-start justify-between gap-3">
@@ -275,7 +325,8 @@ export function NotificationSettings() {
           <div className="px-4 py-3 flex items-start gap-2 text-xs text-muted-foreground">
             <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>
-              在 Safari/iOS 使用前請先將旅帳加入主畫面，否則無法收到推播。
+              電腦版可先點上方「允許網站顯示通知」，或開啟下方開關時一併授權。在 Safari/iOS
+              使用前請先將旅帳加入主畫面，否則無法收到推播。
             </span>
           </div>
         )}
