@@ -209,12 +209,6 @@ export function buildWidgetSnapshot({
     };
   }
 
-  const tripExpenses = trip
-    ? expenses.filter(
-        (e) => e.expense_date >= trip.start_date && e.expense_date <= trip.end_date,
-      )
-    : expenses;
-
   return {
     version: 1,
     isLoggedIn,
@@ -228,6 +222,6 @@ export function buildWidgetSnapshot({
     },
     todayByCategory,
     trip: tripSummary,
-    cashback: buildCashback(tripExpenses, cards),
+    cashback: buildCashback(expenses, cards),
   };
 }
