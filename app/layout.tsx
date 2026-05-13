@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { DeepLinkHandler } from "@/components/layout/deep-link-handler";
+import { NotificationBridge } from "@/components/layout/notification-bridge";
 import { WidgetNativeSync } from "@/components/layout/widget-native-sync";
 import { InstallPrompt } from "@/components/layout/install-prompt";
 import { ServiceWorkerRegister } from "@/components/layout/sw-register";
@@ -72,6 +73,7 @@ export default function RootLayout({
             <div className="relative flex w-full min-h-0 flex-1 flex-col overflow-hidden">
               <AppProvider>
                 <WidgetNativeSync />
+                <NotificationBridge />
                 <div
                   id="main-content"
                   className="mx-auto flex min-h-0 flex-1 flex-col overflow-hidden w-full max-w-lg bg-background shadow-sm"

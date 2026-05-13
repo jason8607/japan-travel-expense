@@ -4,6 +4,7 @@ import { AuthRequiredState } from "@/components/layout/auth-required-state";
 import { LoadingState } from "@/components/layout/loading-state";
 import { CategoryManager } from "@/components/settings/category-manager";
 import { CreditCardManager } from "@/components/settings/credit-card-manager";
+import { NotificationSettings } from "@/components/settings/notification-settings";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 import { TripEditForm } from "@/components/settings/trip-edit-form";
 import { AvatarPicker } from "@/components/ui/avatar-picker";
@@ -604,6 +605,9 @@ export default function SettingsPage() {
 
       {/* ===== 分類管理 ===== */}
       <CategoryManager />
+
+      {/* ===== 通知 ===== */}
+      <NotificationSettings />
 
       {/* ===== 外觀主題 ===== */}
       <ThemeSwitcher />
