@@ -83,7 +83,11 @@ function buildCashback(expenses: Expense[], cards: CreditCard[]): WidgetCashback
       cardCashback = Math.round((cardTwd * card.cashback_rate) / 100);
     }
 
-    cardCashback = Math.min(cardCashback, card.cashback_limit);
+    const maxCashback =
+      card.cashback_limit > 0 && card.cashback_rate > 0
+        ? Math.round((card.cashback_limit * card.cashback_rate) / 100)
+        : Infinity;
+    cardCashback = Math.min(cardCashback, maxCashback);
     totalTwd += cardCashback;
     totalWeightedRate += effectiveRate * cardTwd;
     totalRateWeight += cardTwd;

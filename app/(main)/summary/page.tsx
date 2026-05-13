@@ -173,7 +173,12 @@ export default function SummaryPage() {
           cashback = Math.round((totalTwdCard * card.cashback_rate) / 100);
         }
 
-        const capped = card.cashback_limit > 0 ? Math.min(cashback, card.cashback_limit) : cashback;
+        // cashback_limit is the spending threshold (NTD). Max cashback = threshold × base rate.
+        const maxCashback =
+          card.cashback_limit > 0 && card.cashback_rate > 0
+            ? Math.round((card.cashback_limit * card.cashback_rate) / 100)
+            : Infinity;
+        const capped = Math.min(cashback, maxCashback);
         return { name: card.name, totalTwd: totalTwdCard, cashback: capped, limit: card.cashback_limit };
       })
       .filter((c): c is NonNullable<typeof c> => c !== null);
@@ -582,16 +587,16 @@ export default function SummaryPage() {
                   <span>刷卡 {formatTWD(card.totalTwd)}</span>
                   {card.limit > 0 && (
                     <span>
-                      上限 {formatTWD(card.limit)}
-                      {card.cashback >= card.limit && " · 已達上限"}
+                      刷滿 {formatTWD(card.limit)}
+                      {card.totalTwd >= card.limit && " · 已達上限"}
                     </span>
                   )}
                 </div>
                 {card.limit > 0 && (
                   <div className="h-1.5 rounded-full bg-muted">
                     <div
-                      className={`h-1.5 rounded-full transition-all ${card.cashback >= card.limit ? "bg-warning" : "bg-success"}`}
-                      style={{ width: `${Math.min(Math.round((card.cashback / card.limit) * 100), 100)}%` }}
+                      className={`h-1.5 rounded-full transition-all ${card.totalTwd >= card.limit ? "bg-warning" : "bg-success"}`}
+                      style={{ width: `${Math.min(Math.round((card.totalTwd / card.limit) * 100), 100)}%` }}
                     />
                   </div>
                 )}

@@ -24,6 +24,8 @@ interface CardStat {
   card: CreditCard;
   totalTwd: number;
   cashbackEarned: number;
+  spendingThreshold: number;
+  hasThreshold: boolean;
   progress: number;
   isMaxed: boolean;
   txCount: number;
@@ -77,16 +79,20 @@ function calcCardStat(card: CreditCard, cardExpenses: Expense[]): CardStat {
     totalCashback = Math.round((totalTwd * card.cashback_rate) / 100);
   }
 
-  const progress = Math.min(
-    (totalCashback / card.cashback_limit) * 100,
-    100
-  );
-  const isMaxed = totalCashback >= card.cashback_limit;
+  // cashback_limit is the spending threshold (NTD spent to max out cashback).
+  const spendingThreshold = card.cashback_limit > 0 ? card.cashback_limit : 0;
+  const hasThreshold = spendingThreshold > 0;
+  const progress = hasThreshold
+    ? Math.min((totalTwd / spendingThreshold) * 100, 100)
+    : 0;
+  const isMaxed = hasThreshold && totalTwd >= spendingThreshold;
 
   return {
     card,
     totalTwd,
     cashbackEarned: totalCashback,
+    spendingThreshold,
+    hasThreshold,
     progress,
     isMaxed,
     txCount: cardExpenses.length,
@@ -150,6 +156,8 @@ export function CashbackChart({ expenses }: CashbackChartProps) {
             card,
             totalTwd,
             cashbackEarned,
+            spendingThreshold,
+            hasThreshold,
             progress,
             isMaxed,
             txCount,
@@ -174,12 +182,14 @@ export function CashbackChart({ expenses }: CashbackChartProps) {
                       isMaxed ? maxedColor : "text-primary"
                     )}
                   >
-                    NT${cashbackEarned.toLocaleString()}
+                    NT${totalTwd.toLocaleString()}
                   </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {" "}
-                    / NT${card.cashback_limit.toLocaleString()}
-                  </span>
+                  {hasThreshold && (
+                    <span className="text-[11px] text-muted-foreground">
+                      {" "}
+                      / NT${spendingThreshold.toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -196,19 +206,28 @@ export function CashbackChart({ expenses }: CashbackChartProps) {
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>
-                  消費 NT${totalTwd.toLocaleString()} · {txCount} 筆
-                </span>
-                {isMaxed ? (
-                  <span className={cn(maxedColor, "font-medium")}>
-                    已達上限
-                  </span>
+                <span>{txCount} 筆</span>
+                {hasThreshold ? (
+                  isMaxed ? (
+                    <span className={cn(maxedColor, "font-medium")}>
+                      已達上限
+                    </span>
+                  ) : (
+                    <span>
+                      還能刷 NT$
+                      {Math.max(spendingThreshold - totalTwd, 0).toLocaleString()}
+                    </span>
+                  )
                 ) : (
-                  <span>
-                    還差 NT$
-                    {(card.cashback_limit - cashbackEarned).toLocaleString()}
-                  </span>
+                  <span>無上限</span>
                 )}
+              </div>
+
+              <div className="text-[11px] text-muted-foreground">
+                已回饋{" "}
+                <span className="text-primary font-medium">
+                  NT${cashbackEarned.toLocaleString()}
+                </span>
               </div>
 
               {hasPlans && planBreakdown.length > 0 && (
@@ -230,11 +249,6 @@ export function CashbackChart({ expenses }: CashbackChartProps) {
                         </span>
                         <span className="text-muted-foreground">
                           NT${p.totalTwd.toLocaleString()}
-                          {p.cashback > 0 && (
-                            <span className="text-primary ml-1">
-                              +NT${p.cashback.toLocaleString()}
-                            </span>
-                          )}
                         </span>
                       </div>
                     ))}

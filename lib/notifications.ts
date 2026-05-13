@@ -63,19 +63,19 @@ function cardNotificationId(cardId: string): number {
 export async function sendCashbackWarning(params: {
   cardId: string;
   cardName: string;
-  cashback: number;
+  spent: number;
   limit: number;
   threshold: number;
 }): Promise<void> {
   if (!isNativeApp()) return;
-  const { cardId, cardName, cashback, limit, threshold } = params;
-  const percent = Math.round((cashback / limit) * 100);
+  const { cardId, cardName, spent, limit, threshold } = params;
+  const percent = Math.round((spent / limit) * 100);
   await LocalNotifications.schedule({
     notifications: [
       {
         id: cardNotificationId(cardId),
-        title: `${cardName} 已用 ${percent}% 回饋上限`,
-        body: `本旅程累積回饋 NT$${cashback}/${limit}（達 ${threshold}% 門檻），可以考慮換張卡了。`,
+        title: `${cardName} 已刷 ${percent}% 刷卡上限`,
+        body: `本旅程已刷 NT$${spent.toLocaleString()}/${limit.toLocaleString()}（達 ${threshold}% 門檻），快接近上限了。`,
       },
     ],
   });

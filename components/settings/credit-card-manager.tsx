@@ -75,7 +75,7 @@ export function CreditCardManager() {
     }
     const limitNum = parseFloat(limit);
     if (isNaN(limitNum) || limitNum <= 0) {
-      toast.error("請輸入有效的回饋上限");
+      toast.error("請輸入有效的刷卡上限");
       return;
     }
 
@@ -204,7 +204,7 @@ export function CreditCardManager() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{card.name}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  回饋 {getCardRateDisplay(card)} · 上限 NT${card.cashback_limit.toLocaleString()}
+                  回饋 {getCardRateDisplay(card)} · 刷滿 NT${card.cashback_limit.toLocaleString()}
                 </p>
                 {card.plans && card.plans.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
@@ -277,12 +277,12 @@ export function CreditCardManager() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">回饋上限 (NT$)</Label>
+                <Label className="text-xs text-muted-foreground">刷卡上限 (NT$)</Label>
                 <Input
                   type="number"
                   value={limit}
                   onChange={(e) => setLimit(e.target.value)}
-                  placeholder="例：500"
+                  placeholder="例：30000"
                   min="0"
                   className="h-10 rounded-lg text-sm"
                 />
@@ -292,12 +292,12 @@ export function CreditCardManager() {
 
           {plans.length > 0 && (
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">回饋上限 (NT$，所有方案共用)</Label>
+              <Label className="text-xs text-muted-foreground">刷卡上限 (NT$，所有方案共用)</Label>
               <Input
                 type="number"
                 value={limit}
                 onChange={(e) => setLimit(e.target.value)}
-                placeholder="例：500"
+                placeholder="例：30000"
                 min="0"
                 className="h-10 rounded-lg text-sm"
               />

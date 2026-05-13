@@ -159,8 +159,11 @@ export default function RecapPage() {
         const twd = cardExps.reduce((s, e) => s + e.amount_twd, 0);
         cardCb = Math.round((twd * card.cashback_rate) / 100);
       }
-      const capped =
-        card.cashback_limit > 0 ? Math.min(cardCb, card.cashback_limit) : cardCb;
+      const maxCashback =
+        card.cashback_limit > 0 && card.cashback_rate > 0
+          ? Math.round((card.cashback_limit * card.cashback_rate) / 100)
+          : Infinity;
+      const capped = Math.min(cardCb, maxCashback);
       cappedCashback += capped;
       if (capped > topCashbackAmount) {
         topCashbackAmount = capped;

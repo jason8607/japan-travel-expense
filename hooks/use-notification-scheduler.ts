@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 import { useCreditCards } from "@/hooks/use-credit-cards";
 import { useExpenses } from "@/hooks/use-expenses";
 import { isNativeApp } from "@/lib/capacitor";
-import { calculateCardCashback } from "@/lib/cashback";
 import { useApp } from "@/lib/context";
 import { loadPrefs } from "@/lib/notification-prefs";
 import {
@@ -79,14 +78,17 @@ export function useNotificationScheduler(): void {
 
       for (const card of cards) {
         if (card.cashback_limit <= 0) continue;
-        const cashback = calculateCardCashback(expenses, card);
-        const percent = (cashback / card.cashback_limit) * 100;
+        const creditExpenses = expenses.filter(
+          (e) => e.payment_method === "信用卡" && e.credit_card_id === card.id
+        );
+        const spent = creditExpenses.reduce((s, e) => s + e.amount_twd, 0);
+        const percent = (spent / card.cashback_limit) * 100;
         if (percent < threshold) continue;
         if (hasNotified(currentTrip.id, card.id, threshold)) continue;
         await sendCashbackWarning({
           cardId: card.id,
           cardName: card.name,
-          cashback,
+          spent,
           limit: card.cashback_limit,
           threshold,
         });

@@ -34,6 +34,12 @@ export function calculateTotalCashback(
 
   return cards.reduce((total, card) => {
     const cardCashback = calculateCardCashback(creditExpenses, card);
-    return total + Math.min(cardCashback, card.cashback_limit);
+    // cashback_limit now stores spending threshold (NTD spent to max out).
+    // Max cashback = threshold × base rate.
+    const maxCashback =
+      card.cashback_limit > 0 && card.cashback_rate > 0
+        ? Math.round((card.cashback_limit * card.cashback_rate) / 100)
+        : Infinity;
+    return total + Math.min(cardCashback, maxCashback);
   }, 0);
 }
