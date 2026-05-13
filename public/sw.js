@@ -1,4 +1,4 @@
-const CACHE_NAME = "tabikake-v1";
+const CACHE_NAME = "tabikake-v2";
 const STATIC_ASSETS = ["/", "/records", "/scan", "/stats", "/settings"];
 
 self.addEventListener("install", (event) => {
@@ -19,6 +19,40 @@ self.addEventListener("activate", (event) => {
     )
   );
   self.clients.claim();
+});
+
+self.addEventListener("push", (event) => {
+  let payload = { title: "旅帳", body: "" };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch (_) {
+    if (event.data) payload.body = event.data.text();
+  }
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: payload.tag,
+      data: { url: payload.url || "/" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          client.navigate(targetUrl).catch(() => {});
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
+    })
+  );
 });
 
 self.addEventListener("fetch", (event) => {
