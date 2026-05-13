@@ -42,7 +42,8 @@ export async function updateSession(request: NextRequest) {
     p.match(/^\/trip\/[^/]+\/join$/) ||
     p.match(/^\/api\/trips\/[^/]+\/public$/) ||
     p === "/api/exchange-rate" ||
-    p === "/api/ocr";
+    p === "/api/ocr" ||
+    p.startsWith("/api/cron/");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
