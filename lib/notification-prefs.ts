@@ -4,12 +4,16 @@ const STORAGE_KEY = "ryocho.notification-prefs.v1";
 
 export type CashbackThreshold = 80 | 95;
 
+export type BudgetThreshold = 80 | 100;
+
 export interface NotificationPrefs {
   dailyReminderEnabled: boolean;
   /** 0-23, local time. */
   dailyReminderHour: number;
   cashbackWarningEnabled: boolean;
   cashbackWarningThreshold: CashbackThreshold;
+  dailyBudgetWarningEnabled: boolean;
+  dailyBudgetWarningThreshold: BudgetThreshold;
 }
 
 export const DEFAULT_PREFS: NotificationPrefs = {
@@ -17,6 +21,8 @@ export const DEFAULT_PREFS: NotificationPrefs = {
   dailyReminderHour: 21,
   cashbackWarningEnabled: false,
   cashbackWarningThreshold: 80,
+  dailyBudgetWarningEnabled: false,
+  dailyBudgetWarningThreshold: 80,
 };
 
 export function loadPrefs(): NotificationPrefs {
@@ -32,6 +38,12 @@ export function loadPrefs(): NotificationPrefs {
       dailyReminderHour: clampHour(parsed.dailyReminderHour ?? DEFAULT_PREFS.dailyReminderHour),
       cashbackWarningThreshold:
         parsed.cashbackWarningThreshold === 95 ? 95 : 80,
+      dailyBudgetWarningEnabled:
+        typeof parsed.dailyBudgetWarningEnabled === "boolean"
+          ? parsed.dailyBudgetWarningEnabled
+          : DEFAULT_PREFS.dailyBudgetWarningEnabled,
+      dailyBudgetWarningThreshold:
+        parsed.dailyBudgetWarningThreshold === 100 ? 100 : 80,
     };
   } catch {
     return DEFAULT_PREFS;
