@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
-import { useApp } from "@/lib/context";
 import { useCreditCards } from "@/hooks/use-credit-cards";
-import type { CreditCard, Expense } from "@/types";
+import { useApp } from "@/lib/context";
 import { cn } from "@/lib/utils";
+import type { CreditCard, Expense } from "@/types";
 import { CreditCard as CreditCardIcon, Settings } from "lucide-react";
 import Link from "next/link";
+import { useMemo } from "react";
 
 interface CashbackChartProps {
   expenses: Expense[];
@@ -116,7 +116,7 @@ export function CashbackChart({ expenses }: CashbackChartProps) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-sm flex items-center gap-2">
           <CreditCardIcon className="h-4 w-4 text-primary" />
-          信用卡回饋進度
+          信用卡回饋
         </h3>
         <Link
           href="/settings"
