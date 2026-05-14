@@ -1,11 +1,13 @@
 import { LocalNotifications, type PermissionStatus, type ScheduleOptions } from "@capacitor/local-notifications";
 import { isNativeApp } from "@/lib/capacitor";
+import { showWebNotification, ensureWebPermission } from "@/lib/notifications-web";
 
 /** Stable IDs so we can re-schedule / cancel by intent. */
 export const NOTIFICATION_IDS = {
   dailyReminder: 1001,
   /** Cashback warnings use a deterministic offset per card hash so the same card never duplicates. */
   cashbackBase: 2000,
+  dailyBudget: 3000,
 };
 
 export async function notificationsAvailable(): Promise<boolean> {
@@ -79,4 +81,38 @@ export async function sendCashbackWarning(params: {
       },
     ],
   });
+}
+
+/**
+ * Unified permission gate for notifications — branches by platform.
+ * Returns true if notifications can be shown (permission granted).
+ */
+export async function ensureNotificationPermission(): Promise<boolean> {
+  if (isNativeApp()) return ensurePermission();
+  return ensureWebPermission();
+}
+
+export async function notifyDailyBudget(params: {
+  tripName: string;
+  spent: number;
+  budget: number;
+  threshold: 80 | 100;
+}): Promise<void> {
+  const { tripName, spent, budget, threshold } = params;
+  const percent = Math.round((spent / budget) * 100);
+  const title =
+    threshold === 100
+      ? `${tripName} 今日預算已超支`
+      : `${tripName} 今日已用 ${percent}% 預算`;
+  const body =
+    `今日花費 ¥${spent.toLocaleString()} / ¥${budget.toLocaleString()}，` +
+    (threshold === 100 ? "已超出預算。" : "接近上限了。");
+
+  if (isNativeApp()) {
+    await LocalNotifications.schedule({
+      notifications: [{ id: NOTIFICATION_IDS.dailyBudget, title, body }],
+    });
+    return;
+  }
+  showWebNotification(title, body, `daily-budget-${threshold}`);
 }
