@@ -5,13 +5,17 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { isNativeApp } from "@/lib/capacitor";
+import { effectiveDailyBudgetJpy, isDailyBudgetDerived } from "@/lib/budget";
+import { useApp } from "@/lib/context";
 import {
   DEFAULT_PREFS,
   loadPrefs,
   savePrefs,
+  type BudgetThreshold,
   type CashbackThreshold,
   type NotificationPrefs,
 } from "@/lib/notification-prefs";
+import { ensureWebPermission } from "@/lib/notifications-web";
 import {
   cancelDailyReminder,
   ensurePermission as ensureNativePermission,
@@ -31,6 +35,7 @@ import { cn } from "@/lib/utils";
 
 const HOUR_OPTIONS = [18, 20, 21, 22] as const;
 const THRESHOLD_OPTIONS: CashbackThreshold[] = [80, 95];
+const BUDGET_THRESHOLD_OPTIONS: BudgetThreshold[] = [80, 100];
 
 type Mode = "native" | "web" | "unsupported";
 
@@ -46,6 +51,14 @@ export function NotificationSettings() {
   const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
   const [webNotifPermission, setWebNotifPermission] = useState<NotificationPermission>("default");
   const [busy, setBusy] = useState<boolean>(false);
+
+  const { currentTrip, tripMembers, user, isGuest } = useApp();
+
+  const selfMember = currentTrip
+    ? tripMembers.find((m) => m.user_id === (isGuest ? "guest" : (user?.id ?? "")))
+    : undefined;
+  const hasDailyBudget = !!(selfMember && currentTrip && effectiveDailyBudgetJpy(selfMember, currentTrip));
+  const isDerived = !!(selfMember && isDailyBudgetDerived(selfMember));
 
   const refreshWebPermissionState = useCallback(async () => {
     setWebNotifPermission(typeof Notification !== "undefined" ? Notification.permission : "denied");
@@ -211,6 +224,38 @@ export function NotificationSettings() {
     persist({ ...prefs, cashbackWarningThreshold: threshold });
   };
 
+  const handleToggleBudgetWarning = async (enabled: boolean) => {
+    setBusy(true);
+    try {
+      if (mode === "native") {
+        if (enabled && !permissionGranted) {
+          const granted = await ensureNativePermission();
+          setPermissionGranted(granted);
+          if (!granted) {
+            toast.error("請至 iOS 設定 → 旅帳 → 通知 開啟權限");
+            return;
+          }
+        }
+      } else if (mode === "web") {
+        if (enabled) {
+          const granted = await ensureWebPermission();
+          if (!granted) {
+            toast.error("請允許瀏覽器顯示通知");
+            return;
+          }
+        }
+      }
+      persist({ ...prefs, dailyBudgetWarningEnabled: enabled });
+      toast.success(enabled ? "已開啟每日預算警示" : "已關閉每日預算警示");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleBudgetThresholdChange = (threshold: BudgetThreshold) => {
+    persist({ ...prefs, dailyBudgetWarningThreshold: threshold });
+  };
+
   return (
     <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
       <div className="px-4 py-3 border-b border-border/60">
@@ -317,6 +362,56 @@ export function NotificationSettings() {
                   {t}%
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Daily budget warning */}
+        <div className="px-4 py-3 border-t border-border/60 space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">每日預算警示</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                今日個人花費達門檻時立即提醒
+              </p>
+            </div>
+            <Toggle
+              checked={prefs.dailyBudgetWarningEnabled}
+              disabled={busy}
+              onChange={handleToggleBudgetWarning}
+            />
+          </div>
+
+          {prefs.dailyBudgetWarningEnabled && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground">提醒門檻</span>
+                {BUDGET_THRESHOLD_OPTIONS.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => handleBudgetThresholdChange(t)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-xs font-medium transition-colors active:translate-y-px focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                      prefs.dailyBudgetWarningThreshold === t
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground hover:bg-muted/80"
+                    )}
+                  >
+                    {t}%
+                  </button>
+                ))}
+              </div>
+              {!hasDailyBudget && (
+                <p className="text-[11px] text-muted-foreground">
+                  請先在旅程設定填寫個人每日或總預算
+                </p>
+              )}
+              {hasDailyBudget && isDerived && (
+                <p className="text-[11px] text-muted-foreground">
+                  目前使用個人總 ÷ 天數自動計算每日預算
+                </p>
+              )}
             </div>
           )}
         </div>
