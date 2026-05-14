@@ -11,6 +11,7 @@ import { useApp } from "@/lib/context";
 import { formatJPY, formatTWD } from "@/lib/exchange-rate";
 import { buildExpensesCsv } from "@/lib/export";
 import { shareOrDownloadFile } from "@/lib/share-image";
+import { effectiveDailyBudgetJpy, isDailyBudgetDerived, todayInJapan, todaySpentJpy } from "@/lib/budget";
 import { differenceInDays, format, parseISO } from "date-fns";
 import {
   CalendarDays,
@@ -191,6 +192,24 @@ export default function SummaryPage() {
       ? Math.round((tripTotalJpy / currentTrip.budget_jpy) * 100)
       : null;
 
+    // Personal budget tracking — only meaningful in mine view
+    const currentUserIdForBudget = isGuest ? "guest" : (user?.id ?? null);
+    const selfMember = currentUserIdForBudget
+      ? tripMembers.find((m) => m.user_id === currentUserIdForBudget)
+      : undefined;
+
+    const personalTotalBudget = effectiveMode === "mine" ? (selfMember?.total_budget_jpy ?? null) : null;
+    const personalDailyBudget =
+      effectiveMode === "mine" && selfMember && currentTrip
+        ? effectiveDailyBudgetJpy(selfMember, currentTrip)
+        : null;
+    const personalDailyDerived = selfMember ? isDailyBudgetDerived(selfMember) : false;
+    const today = todayInJapan();
+    const personalDailySpent =
+      effectiveMode === "mine" && currentUserIdForBudget
+        ? todaySpentJpy(expenses, currentUserIdForBudget, today, allMemberIds)
+        : 0;
+
     return {
       totalJpy,
       totalTwd,
@@ -212,6 +231,10 @@ export default function SummaryPage() {
       budgetJpy: currentTrip.budget_jpy,
       cardStats,
       totalCashback,
+      personalTotalBudget,
+      personalDailyBudget,
+      personalDailyDerived,
+      personalDailySpent,
     };
   }, [currentTrip, expenses, categories, tripMembers, cards, isGuest, user, effectiveMode]);
 
@@ -399,6 +422,54 @@ export default function SummaryPage() {
                 className={`h-1.5 rounded-full transition-all ${stats.budgetUsed > 100 ? "bg-destructive" : "bg-primary"}`}
                 style={{ width: `${Math.min(stats.budgetUsed, 100)}%` }}
               />
+            </div>
+          </div>
+        )}
+
+        {effectiveMode === "mine" && stats.personalTotalBudget != null && (
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <span>個人總預算</span>
+              <span className="tabular-nums">
+                {formatJPY(stats.totalJpy)} / {formatJPY(stats.personalTotalBudget)}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted">
+              <div
+                className="h-1.5 rounded-full bg-primary transition-all"
+                style={{
+                  width: `${Math.min(100, (stats.totalJpy / stats.personalTotalBudget) * 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {effectiveMode === "mine" && stats.personalDailyBudget != null && (
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <span>
+                今日預算
+                {stats.personalDailyDerived && (
+                  <span className="ml-1 opacity-60">（自動）</span>
+                )}
+              </span>
+              <span className="tabular-nums">
+                {formatJPY(stats.personalDailySpent)} / {formatJPY(stats.personalDailyBudget)}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted">
+              {(() => {
+                const pct = (stats.personalDailySpent / stats.personalDailyBudget) * 100;
+                const tone =
+                  pct >= 100 ? "bg-destructive" : pct >= 80 ? "bg-amber-500" : "bg-primary";
+                return (
+                  <div
+                    className={`h-1.5 rounded-full transition-all ${tone}`}
+                    style={{ width: `${Math.min(100, pct)}%` }}
+                  />
+                );
+              })()}
             </div>
           </div>
         )}
