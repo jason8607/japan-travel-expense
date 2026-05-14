@@ -33,6 +33,8 @@ export interface TripMember {
   user_id: string;
   role: MemberRole;
   profile?: Profile;
+  total_budget_jpy: number | null;
+  daily_budget_jpy: number | null;
 }
 
 export interface Expense {
