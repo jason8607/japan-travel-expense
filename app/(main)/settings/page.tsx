@@ -7,6 +7,7 @@ import { CreditCardManager } from "@/components/settings/credit-card-manager";
 import { NotificationSettings } from "@/components/settings/notification-settings";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 import { TripEditForm } from "@/components/settings/trip-edit-form";
+import { TripForm } from "@/components/trip/trip-form";
 import { AvatarPicker } from "@/components/ui/avatar-picker";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +36,7 @@ import {
   LogOut,
   Pencil,
   Plane,
+  Plus,
   Settings as SettingsIcon,
   SlidersHorizontal,
   User,
@@ -43,7 +45,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
@@ -97,6 +99,41 @@ export default function SettingsPage() {
   const [deleteTripTarget, setDeleteTripTarget] = useState<Trip | null>(null);
   const [deletingTrip, setDeletingTrip] = useState(false);
 
+  // New trip inline form (same expand pattern as 旅程設定 → 編輯)
+  const [creatingNewTrip, setCreatingNewTrip] = useState(false);
+  const [newTripName, setNewTripName] = useState("");
+  const [newTripStart, setNewTripStart] = useState("");
+  const [newTripEnd, setNewTripEnd] = useState("");
+  const [newTripBudget, setNewTripBudget] = useState("");
+  const [newTripSaving, setNewTripSaving] = useState(false);
+
+  const resetNewTripForm = useCallback(() => {
+    setNewTripName("");
+    setNewTripStart("");
+    setNewTripEnd("");
+    setNewTripBudget("");
+  }, []);
+
+  const startCreatingNewTrip = useCallback(() => {
+    setEditingTrip(false);
+    resetNewTripForm();
+    setCreatingNewTrip(true);
+  }, [resetNewTripForm]);
+
+  const cancelCreatingNewTrip = useCallback(() => {
+    if (newTripSaving) return;
+    setCreatingNewTrip(false);
+    resetNewTripForm();
+  }, [newTripSaving, resetNewTripForm]);
+
+  const toggleTripsOpen = useCallback(() => {
+    if (tripsOpen) {
+      setCreatingNewTrip(false);
+      resetNewTripForm();
+    }
+    setTripsOpen(!tripsOpen);
+  }, [tripsOpen, resetNewTripForm]);
+
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || "");
@@ -139,6 +176,8 @@ export default function SettingsPage() {
   const handleSwitchTrip = (trip: Trip) => {
     setCurrentTrip(trip);
     setEditingTrip(false);
+    setCreatingNewTrip(false);
+    resetNewTripForm();
     setShowInvite(false);
     toast.success(`已切換至「${trip.name}」`);
   };
@@ -332,6 +371,47 @@ export default function SettingsPage() {
     router.refresh();
   };
 
+  const handleCreateNewTrip = async () => {
+    if (!user) {
+      toast.error("請先登入");
+      return;
+    }
+    if (!newTripName.trim()) {
+      toast.error("請輸入旅程名稱");
+      return;
+    }
+    if (!newTripStart || !newTripEnd) {
+      toast.error("請選擇旅程日期");
+      return;
+    }
+    setNewTripSaving(true);
+    try {
+      const res = await fetch("/api/trips", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newTripName.trim(),
+          start_date: newTripStart,
+          end_date: newTripEnd,
+          budget_jpy: newTripBudget ? Number(newTripBudget) : null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "建立失敗");
+
+      await refreshTrips();
+      setCurrentTrip(data.trip);
+      toast.success("旅程已建立");
+      setCreatingNewTrip(false);
+      resetNewTripForm();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "建立失敗";
+      toast.error(message);
+    } finally {
+      setNewTripSaving(false);
+    }
+  };
+
   const handleSaveGuestTrip = () => {
     if (!currentTrip) return;
     setSaving(true);
@@ -479,16 +559,41 @@ export default function SettingsPage() {
 
       {/* ===== 旅程切換 ===== */}
       <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-        <button
-          onClick={() => setTripsOpen(!tripsOpen)}
-          className={`w-full px-4 py-3 flex items-center justify-between ${tripsOpen ? "border-b border-border/60" : ""}`}
-        >
-          <span className="text-sm font-semibold flex items-center gap-2">
-            <Plane className="h-4 w-4" />
-            我的旅程
-          </span>
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${tripsOpen ? "rotate-180" : ""}`} />
-        </button>
+        <div className={`px-4 py-3 flex items-center gap-2 ${tripsOpen ? "border-b border-border/60" : ""}`}>
+          <button
+            type="button"
+            onClick={toggleTripsOpen}
+            className="flex-1 flex items-center gap-2 min-w-0 text-left"
+          >
+            <Plane className="h-4 w-4 shrink-0" />
+            <span className="text-sm font-semibold">我的旅程</span>
+          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {tripsOpen && (!creatingNewTrip ? (
+              <button
+                type="button"
+                onClick={startCreatingNewTrip}
+                className="text-xs text-primary flex items-center gap-1"
+              >
+                <Plus className="h-3 w-3" />
+                新增
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={cancelCreatingNewTrip}
+                disabled={newTripSaving}
+                className="text-xs text-muted-foreground flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px disabled:pointer-events-none disabled:opacity-50"
+              >
+                <X className="h-3 w-3" />
+                取消
+              </button>
+            ))}
+            <button type="button" onClick={toggleTripsOpen}>
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${tripsOpen ? "rotate-180" : ""}`} />
+            </button>
+          </div>
+        </div>
         {tripsOpen && (
           <>
           <div className="divide-y divide-border/60">
@@ -521,13 +626,24 @@ export default function SettingsPage() {
             );
           })}
         </div>
-        <div className="px-4 py-3 border-t border-border/60">
-          <Link href="/trip/new">
-            <Button variant="outline" size="sm" className="w-full text-sm rounded-lg">
-              + 建立新旅程
-            </Button>
-          </Link>
-        </div>
+          {creatingNewTrip && (
+            <div className="border-t border-border/60">
+              <TripForm
+                name={newTripName}
+                startDate={newTripStart}
+                endDate={newTripEnd}
+                budget={newTripBudget}
+                saving={newTripSaving}
+                submitLabel="建立旅程"
+                savingLabel="建立中…"
+                onChangeName={setNewTripName}
+                onChangeStartDate={setNewTripStart}
+                onChangeEndDate={setNewTripEnd}
+                onChangeBudget={setNewTripBudget}
+                onSubmit={handleCreateNewTrip}
+              />
+            </div>
+          )}
           </>
         )}
       </div>
@@ -546,7 +662,11 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2 shrink-0">
               {tripSettingsOpen && isOwner && (!editingTrip ? (
                 <button
-                  onClick={() => setEditingTrip(true)}
+                  onClick={() => {
+                    setCreatingNewTrip(false);
+                    resetNewTripForm();
+                    setEditingTrip(true);
+                  }}
                   className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
                 >
                   <Pencil className="h-3 w-3" />
