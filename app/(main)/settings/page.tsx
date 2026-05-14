@@ -7,7 +7,6 @@ import { CreditCardManager } from "@/components/settings/credit-card-manager";
 import { NotificationSettings } from "@/components/settings/notification-settings";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 import { TripEditForm } from "@/components/settings/trip-edit-form";
-import { PersonalBudgetForm } from "@/components/trip/personal-budget-form";
 import { AvatarPicker } from "@/components/ui/avatar-picker";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,6 +73,8 @@ export default function SettingsPage() {
   const [tripStart, setTripStart] = useState("");
   const [tripEnd, setTripEnd] = useState("");
   const [tripBudget, setTripBudget] = useState("");
+  const [tripPersonalTotal, setTripPersonalTotal] = useState("");
+  const [tripPersonalDaily, setTripPersonalDaily] = useState("");
 
   // Member invite
   const [showInvite, setShowInvite] = useState(false);
@@ -105,6 +106,15 @@ export default function SettingsPage() {
       if (!isGuest) loadMembers(currentTrip.id);
     }
   }, [currentTrip?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const selfId = isGuest ? "guest" : (user?.id ?? null);
+    if (!selfId) return;
+    const self = tripMembers.find((m) => m.user_id === selfId);
+    if (!self) return;
+    setTripPersonalTotal(self.total_budget_jpy?.toString() ?? "");
+    setTripPersonalDaily(self.daily_budget_jpy?.toString() ?? "");
+  }, [tripMembers, user?.id, isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMembers = async (tripId: string) => {
     try {
@@ -185,6 +195,16 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error(data.error || "更新失敗");
 
       setCurrentTrip(data.trip);
+      // Save personal budget for current user
+      await fetch("/api/trip-members", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trip_id: currentTrip.id,
+          total_budget_jpy: tripPersonalTotal ? Number(tripPersonalTotal) : null,
+          daily_budget_jpy: tripPersonalDaily ? Number(tripPersonalDaily) : null,
+        }),
+      });
       await refreshTrips();
       setEditingTrip(false);
       toast.success("旅程已更新");
@@ -321,6 +341,10 @@ export default function SettingsPage() {
     setCurrentTrip(updated);
     setEditingTrip(false);
     setSaving(false);
+    saveGuestMemberBudgets({
+      total_budget_jpy: tripPersonalTotal ? Number(tripPersonalTotal) : null,
+      daily_budget_jpy: tripPersonalDaily ? Number(tripPersonalDaily) : null,
+    });
     toast.success("旅程已更新");
   };
 
@@ -381,6 +405,10 @@ export default function SettingsPage() {
                 onChangeEndDate={setTripEnd}
                 onChangeBudget={setTripBudget}
                 onSubmit={handleSaveGuestTrip}
+                personalTotal={tripPersonalTotal}
+                personalDaily={tripPersonalDaily}
+                onChangePersonalTotal={setTripPersonalTotal}
+                onChangePersonalDaily={setTripPersonalDaily}
               />
             ) : (
               <div className="px-4 py-3">
@@ -394,18 +422,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Personal budget for guest */}
-            <div className="border-t border-border/60 px-4 py-4 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">個人預算（僅你看得到）</p>
-              <PersonalBudgetForm
-                tripId={currentTrip.id}
-                initialTotal={tripMembers[0]?.total_budget_jpy ?? null}
-                initialDaily={tripMembers[0]?.daily_budget_jpy ?? null}
-                onSave={async (total, daily) => {
-                  saveGuestMemberBudgets({ total_budget_jpy: total, daily_budget_jpy: daily });
-                }}
-              />
-            </div>
+
           </div>
         )}
 
@@ -528,6 +545,10 @@ export default function SettingsPage() {
               onChangeBudget={setTripBudget}
               onSubmit={handleSaveTrip}
               onDelete={isOwner ? () => setDeleteTripTarget(currentTrip) : undefined}
+              personalTotal={tripPersonalTotal}
+              personalDaily={tripPersonalDaily}
+              onChangePersonalTotal={setTripPersonalTotal}
+              onChangePersonalDaily={setTripPersonalDaily}
             />
           ) : (
             <div className="px-4 py-3">
@@ -540,22 +561,6 @@ export default function SettingsPage() {
               </p>
             </div>
           )}
-
-          {/* Personal budget for current user */}
-          {user && currentTrip && (() => {
-            const selfMember = tripMembers.find((m) => m.user_id === user.id);
-            return (
-              <div className="border-t border-border/60 px-4 py-4 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">個人預算（僅你看得到）</p>
-                <PersonalBudgetForm
-                  tripId={currentTrip.id}
-                  initialTotal={selfMember?.total_budget_jpy ?? null}
-                  initialDaily={selfMember?.daily_budget_jpy ?? null}
-                  onSaved={() => { refreshTrip(); }}
-                />
-              </div>
-            );
-          })()}
 
           {/* 成員列表 */}
           <div className="border-t border-border/60">
