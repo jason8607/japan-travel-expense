@@ -24,4 +24,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 `$impeccable` 系列指令(craft / shape / critique / polish ...)會自動讀取這三份檔案。手寫新介面也應比對這三份的 anti-references 與 Named Rules。
 
-回覆一率繁體中文
+## User Rule
+
+- 回覆一率繁體中文
+- 不要自動git commit

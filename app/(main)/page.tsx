@@ -28,6 +28,7 @@ export default function HomePage() {
     isGuest,
     enterGuestMode,
     loading: appLoading,
+    tripMembers,
   } = useApp();
   const { expenses, loading, todayTotal, totalJpy, totalTwd, refresh } = useExpenses();
   const { cards } = useCreditCards();
@@ -116,6 +117,14 @@ export default function HomePage() {
   const cashbackTotal = calculateTotalCashback(expenses, cards);
   const recent = expenses.slice(0, 3);
 
+  const selfMember = user ? tripMembers.find((m) => m.user_id === user.id) : null;
+  const personalBudgetJpy = selfMember?.total_budget_jpy ?? null;
+  const personalExpenses = isGuest
+    ? expenses
+    : expenses.filter((e) => (e.owner_id || e.paid_by) === user?.id);
+  const personalJpy = personalExpenses.reduce((s, e) => s + e.amount_jpy, 0);
+  const personalTwd = personalExpenses.reduce((s, e) => s + e.amount_twd, 0);
+
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto pb-6">
@@ -171,6 +180,10 @@ export default function HomePage() {
         totalTwd={totalTwd}
         count={expenses.length}
         budgetJpy={currentTrip.budget_jpy}
+        personalJpy={personalJpy}
+        personalTwd={personalTwd}
+        personalCount={personalExpenses.length}
+        personalBudgetJpy={personalBudgetJpy}
       />
 
       {/* 2 small cards: 今日 / 回饋 */}

@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LayoutGrid, Plus, Pencil, Trash2, X, GripVertical } from "lucide-react";
+import { ChevronDown, LayoutGrid, Plus, Pencil, Trash2, X, GripVertical } from "lucide-react";
 import { useCategories } from "@/hooks/use-categories";
 import type { CategoryItem } from "@/types";
 import {
@@ -49,6 +49,7 @@ const ICON_OPTIONS = [
 
 export function CategoryManager() {
   const { categories, addCategory, updateCategory, deleteCategory, reorderCategories } = useCategories();
+  const [isOpen, setIsOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<CategoryItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CategoryItem | null>(null);
@@ -147,24 +148,34 @@ export function CategoryManager() {
 
   return (
     <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
-        <h2 className="text-sm font-bold flex items-center gap-2">
-          <LayoutGrid className="h-4 w-4 text-primary" />
-          分類管理
-        </h2>
+      <div className={`px-4 py-3 flex items-center gap-2 ${isOpen ? "border-b border-border/60" : ""}`}>
         <button
-          onClick={() => {
-            resetForm();
-            setShowForm(true);
-          }}
-          className="text-xs text-primary flex items-center gap-1"
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex-1 flex items-center gap-2 text-left"
         >
-          <Plus className="h-3 w-3" />
-          新增
+          <span className="text-sm font-bold flex items-center gap-2">
+            <LayoutGrid className="h-4 w-4 text-primary" />
+            分類管理
+          </span>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
         </button>
+        {isOpen && (
+          <button
+            onClick={() => {
+              resetForm();
+              setShowForm(true);
+            }}
+            className="text-xs text-primary flex items-center gap-1 shrink-0"
+          >
+            <Plus className="h-3 w-3" />
+            新增
+          </button>
+        )}
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      {isOpen && (
+        <>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
           <ul className="divide-y divide-border/60">
             {categories.map((item) => (
@@ -262,6 +273,8 @@ export function CategoryManager() {
                 : "新增分類"}
           </Button>
         </div>
+      )}
+        </>
       )}
 
       <Dialog

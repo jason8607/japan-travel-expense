@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreditCards } from "@/hooks/use-credit-cards";
 import type { CreditCard } from "@/types";
-import { CreditCard as CreditCardIcon, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ChevronDown, CreditCard as CreditCardIcon, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -26,6 +26,7 @@ interface PlanDraft {
 
 export function CreditCardManager() {
   const { cards, addCard, updateCard, deleteCard } = useCreditCards();
+  const [isOpen, setIsOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CreditCard | null>(null);
@@ -167,24 +168,34 @@ export function CreditCardManager() {
 
   return (
     <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
-        <h2 className="text-sm font-bold flex items-center gap-2">
-          <CreditCardIcon className="h-4 w-4 text-primary" />
-          信用卡管理
-        </h2>
+      <div className={`px-4 py-3 flex items-center gap-2 ${isOpen ? "border-b border-border/60" : ""}`}>
         <button
-          onClick={() => {
-            resetForm();
-            setShowForm(true);
-          }}
-          className="text-xs text-primary flex items-center gap-1"
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex-1 flex items-center gap-2 text-left"
         >
-          <Plus className="h-3 w-3" />
-          新增
+          <span className="text-sm font-bold flex items-center gap-2">
+            <CreditCardIcon className="h-4 w-4 text-primary" />
+            信用卡管理
+          </span>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
         </button>
+        {isOpen && (
+          <button
+            onClick={() => {
+              resetForm();
+              setShowForm(true);
+            }}
+            className="text-xs text-primary flex items-center gap-1 shrink-0"
+          >
+            <Plus className="h-3 w-3" />
+            新增
+          </button>
+        )}
       </div>
 
-      {cards.length === 0 && !showForm ? (
+      {isOpen && (
+        <>
+          {cards.length === 0 && !showForm ? (
         <EmptyState
           icon={CreditCardIcon}
           title="尚未設定信用卡"
@@ -369,6 +380,8 @@ export function CreditCardManager() {
                 : "新增信用卡"}
           </Button>
         </div>
+      )}
+        </>
       )}
 
       <Dialog
