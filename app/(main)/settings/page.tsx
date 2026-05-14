@@ -85,6 +85,7 @@ export default function SettingsPage() {
   const [tripsOpen, setTripsOpen] = useState(true);
   const [tripSettingsOpen, setTripSettingsOpen] = useState(true);
   const [profileOpen, setProfileOpen] = useState(true);
+  const [editingProfile, setEditingProfile] = useState(false);
 
   // Member invite
   const [showInvite, setShowInvite] = useState(false);
@@ -200,6 +201,13 @@ export default function SettingsPage() {
     }
   };
 
+  const cancelEditProfile = () => {
+    setDisplayName(profile?.display_name || "");
+    setAvatarEmoji(profile?.avatar_emoji || "🧑");
+    setAvatarUrl(profile?.avatar_url || null);
+    setEditingProfile(false);
+  };
+
   const handleSaveProfile = async () => {
     if (!user) return;
     setSaving(true);
@@ -216,6 +224,7 @@ export default function SettingsPage() {
       toast.error("更新失敗");
     } else {
       toast.success("個人資料已更新");
+      setEditingProfile(false);
       await refreshProfile();
       await refreshTrip();
       if (currentTrip) loadMembers(currentTrip.id);
@@ -803,44 +812,83 @@ export default function SettingsPage() {
 
       {/* ===== 個人資料 ===== */}
       <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-        <button
-          onClick={() => setProfileOpen(!profileOpen)}
-          className={`w-full px-4 py-3 flex items-center justify-between ${profileOpen ? "border-b border-border/60" : ""}`}
-        >
-          <span className="text-sm font-semibold flex items-center gap-2">
-            <User className="h-4 w-4" />
-            個人資料
-          </span>
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
-        </button>
-        {profileOpen && <div className="p-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <AvatarPicker
-              avatarUrl={avatarUrl}
-              avatarEmoji={avatarEmoji}
-              onChangeEmoji={setAvatarEmoji}
-              onChangeUrl={setAvatarUrl}
-              onUpload={handleUploadAvatar}
-            />
-            <div className="flex-1 space-y-1.5">
-              <Label className="text-xs text-muted-foreground">暱稱</Label>
-              <Input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="你的暱稱"
-                maxLength={50}
-                className="h-10 rounded-lg text-sm"
-              />
-            </div>
-          </div>
-          <Button
-            onClick={handleSaveProfile}
-            className="w-full h-7 bg-primary hover:bg-primary/90 rounded-lg text-sm"
-            disabled={saving}
+        <div className={`px-4 py-3 flex items-center gap-2 ${profileOpen ? "border-b border-border/60" : ""}`}>
+          <button
+            type="button"
+            onClick={() => { setProfileOpen(!profileOpen); if (profileOpen) setEditingProfile(false); }}
+            className="flex-1 flex items-center gap-2 min-w-0 text-left"
           >
-            儲存個人資料
-          </Button>
-        </div>}
+            <User className="h-4 w-4 shrink-0" />
+            <span className="text-sm font-semibold">個人資料</span>
+          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {profileOpen && (!editingProfile ? (
+              <button
+                type="button"
+                onClick={() => setEditingProfile(true)}
+                className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
+              >
+                <Pencil className="h-3 w-3" />
+                編輯
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={cancelEditProfile}
+                disabled={saving}
+                className="text-xs text-muted-foreground flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px disabled:pointer-events-none disabled:opacity-50"
+              >
+                <X className="h-3 w-3" />
+                取消
+              </button>
+            ))}
+            <button type="button" onClick={() => { setProfileOpen(!profileOpen); if (profileOpen) setEditingProfile(false); }}>
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
+            </button>
+          </div>
+        </div>
+
+        {profileOpen && (
+          editingProfile ? (
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <AvatarPicker
+                  avatarUrl={avatarUrl}
+                  avatarEmoji={avatarEmoji}
+                  onChangeEmoji={setAvatarEmoji}
+                  onChangeUrl={setAvatarUrl}
+                  onUpload={handleUploadAvatar}
+                />
+                <div className="flex-1 space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">暱稱</Label>
+                  <Input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="你的暱稱"
+                    maxLength={50}
+                    className="h-10 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+              <Button
+                onClick={handleSaveProfile}
+                className="w-full h-10 bg-primary hover:bg-primary/90 rounded-lg text-sm"
+                disabled={saving}
+              >
+                {saving ? "儲存中..." : "儲存個人資料"}
+              </Button>
+            </div>
+          ) : (
+            <div className="px-4 py-3 flex items-center gap-3">
+              <UserAvatar
+                avatarUrl={profile?.avatar_url}
+                avatarEmoji={profile?.avatar_emoji}
+                size="md"
+              />
+              <p className="text-sm font-medium">{profile?.display_name || "未設定暱稱"}</p>
+            </div>
+          )
+        )}
       </div>
 
       <Separator />

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Camera, ImageIcon } from "lucide-react";
+import { ImageIcon, Pencil } from "lucide-react";
 import { UserAvatar } from "./user-avatar";
 import {
   Dialog,
@@ -69,8 +69,9 @@ export function AvatarPicker({
         className="relative w-14 h-14 rounded-full shrink-0 group"
       >
         <UserAvatar avatarUrl={avatarUrl} avatarEmoji={avatarEmoji} size="lg" />
-        <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
-          <Camera className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition" />
+        <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition" />
+        <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full bg-muted flex items-center justify-center ring-2 ring-background">
+          <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
         </div>
       </DialogTrigger>
       <DialogContent className="max-w-xs rounded-2xl">
