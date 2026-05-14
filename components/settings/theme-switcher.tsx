@@ -1,38 +1,48 @@
 "use client";
 
-import { Check, Palette } from "lucide-react";
+import { ChevronDown, Check, Palette } from "lucide-react";
 import { THEME_OPTIONS, useTheme, type Theme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
+  const [isOpen, setIsOpen] = useState(true);
 
   return (
     <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-border/60">
-        <h2 className="text-sm font-bold flex items-center gap-2">
-          <Palette className="h-4 w-4 text-primary" />
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full px-4 py-3 flex items-center justify-between ${isOpen ? "border-b border-border/60" : ""}`}
+      >
+        <span className="text-sm font-bold flex items-center gap-2">
+          <Palette className="h-4 w-4" />
           外觀主題
-        </h2>
-      </div>
-      <div className="p-3 grid grid-cols-2 gap-2">
-        {THEME_OPTIONS.map((opt) => {
-          const isActive = theme === opt.value;
-          return (
-            <ThemeOption
-              key={opt.value}
-              value={opt.value}
-              label={opt.label}
-              swatches={opt.swatches}
-              isActive={isActive}
-              onSelect={() => setTheme(opt.value)}
-            />
-          );
-        })}
-      </div>
-      <p className="px-4 pb-3 text-[11px] text-muted-foreground">
-        {THEME_OPTIONS.find((o) => o.value === theme)?.description}
-      </p>
+        </span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+      {isOpen && (
+        <>
+          <div className="p-3 grid grid-cols-2 gap-2">
+            {THEME_OPTIONS.map((opt) => {
+              const isActive = theme === opt.value;
+              return (
+                <ThemeOption
+                  key={opt.value}
+                  value={opt.value}
+                  label={opt.label}
+                  swatches={opt.swatches}
+                  isActive={isActive}
+                  onSelect={() => setTheme(opt.value)}
+                />
+              );
+            })}
+          </div>
+          <p className="px-4 pb-3 text-[11px] text-muted-foreground">
+            {THEME_OPTIONS.find((o) => o.value === theme)?.description}
+          </p>
+        </>
+      )}
     </div>
   );
 }

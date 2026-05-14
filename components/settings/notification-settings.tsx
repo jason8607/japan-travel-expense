@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellOff, CreditCard, Info, Loader2 } from "lucide-react";
+import { Bell, BellOff, ChevronDown, CreditCard, Info, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -46,6 +46,7 @@ function detectMode(): Mode {
 }
 
 export function NotificationSettings() {
+  const [isOpen, setIsOpen] = useState(true);
   const [mode, setMode] = useState<Mode>("unsupported");
   const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
   const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
@@ -258,14 +259,18 @@ export function NotificationSettings() {
 
   return (
     <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-      <div className="px-4 py-3 border-b border-border/60">
-        <h2 className="text-sm font-semibold flex items-center gap-2">
-          <Bell className="h-4 w-4 text-muted-foreground" />
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full px-4 py-3 flex items-center justify-between ${isOpen ? "border-b border-border/60" : ""}`}
+      >
+        <span className="text-sm font-semibold flex items-center gap-2">
+          <Bell className="h-4 w-4" />
           通知
-        </h2>
-      </div>
+        </span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
 
-      <div className="divide-y divide-border/60">
+      {isOpen && <div className="divide-y divide-border/60">
         {mode === "web" && webNotifPermission !== "granted" && (
           <div className="px-4 py-3 space-y-2 bg-muted/30">
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -425,9 +430,9 @@ export function NotificationSettings() {
             </span>
           </div>
         )}
-      </div>
+      </div>}
 
-      {busy && (
+      {isOpen && busy && (
         <div className="px-4 py-2 border-t border-border/60 flex items-center gap-2 text-xs text-muted-foreground">
           <Loader2 className="h-3 w-3 animate-spin" />
           處理中...

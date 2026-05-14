@@ -26,7 +26,7 @@ interface PlanDraft {
 
 export function CreditCardManager() {
   const { cards, addCard, updateCard, deleteCard } = useCreditCards();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CreditCard | null>(null);
@@ -171,26 +171,28 @@ export function CreditCardManager() {
       <div className={`px-4 py-3 flex items-center gap-2 ${isOpen ? "border-b border-border/60" : ""}`}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex-1 flex items-center gap-2 text-left"
+          className="flex-1 flex items-center gap-2 min-w-0 text-left"
         >
-          <span className="text-sm font-bold flex items-center gap-2">
-            <CreditCardIcon className="h-4 w-4 text-primary" />
-            信用卡管理
-          </span>
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+          <CreditCardIcon className="h-4 w-4 shrink-0" />
+          <span className="text-sm font-bold">信用卡管理</span>
         </button>
-        {isOpen && (
-          <button
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
-            className="text-xs text-primary flex items-center gap-1 shrink-0"
-          >
-            <Plus className="h-3 w-3" />
-            新增
+        <div className="flex items-center gap-2 shrink-0">
+          {isOpen && (
+            <button
+              onClick={() => {
+                resetForm();
+                setShowForm(true);
+              }}
+              className="text-xs text-primary flex items-center gap-1"
+            >
+              <Plus className="h-3 w-3" />
+              新增
+            </button>
+          )}
+          <button onClick={() => setIsOpen(!isOpen)}>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
           </button>
-        )}
+        </div>
       </div>
 
       {isOpen && (

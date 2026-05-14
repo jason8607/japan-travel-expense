@@ -23,18 +23,20 @@ import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { isNativeApp } from "@/lib/capacitor";
 import { useApp } from "@/lib/context";
+import { saveGuestMemberBudgets, updateGuestTrip } from "@/lib/guest-storage";
 import { widgetSync } from "@/lib/native/widget-sync";
-import { updateGuestTrip, saveGuestMemberBudgets } from "@/lib/guest-storage";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { Profile, Trip, TripMember } from "@/types";
 import {
   Check,
+  ChevronDown,
   Copy,
   LogOut,
   Pencil,
   Plane,
   Settings as SettingsIcon,
+  SlidersHorizontal,
   User,
   UserPlus,
   X,
@@ -76,6 +78,12 @@ export default function SettingsPage() {
   const [tripPersonalTotal, setTripPersonalTotal] = useState("");
   const [tripPersonalDaily, setTripPersonalDaily] = useState("");
 
+  // Section open/close state
+  const [guestTripOpen, setGuestTripOpen] = useState(true);
+  const [tripsOpen, setTripsOpen] = useState(true);
+  const [tripSettingsOpen, setTripSettingsOpen] = useState(true);
+  const [profileOpen, setProfileOpen] = useState(true);
+
   // Member invite
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -114,7 +122,7 @@ export default function SettingsPage() {
     if (!self) return;
     setTripPersonalTotal(self.total_budget_jpy?.toString() ?? "");
     setTripPersonalDaily(self.daily_budget_jpy?.toString() ?? "");
-  }, [tripMembers, user?.id, isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tripMembers, user?.id, isGuest]);  
 
   const loadMembers = async (tripId: string) => {
     try {
@@ -369,31 +377,39 @@ export default function SettingsPage() {
         {/* Guest trip editing */}
         {currentTrip && (
           <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-            <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
-              <h2 className="text-sm font-semibold flex items-center gap-2">
-                <Plane className="h-4 w-4 text-primary" />
-                試用旅程
-              </h2>
-              {!editingTrip ? (
-                <button
-                  onClick={() => setEditingTrip(true)}
-                  className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
-                >
-                  <Pencil className="h-3 w-3" />
-                  編輯
+            <div className={`px-4 py-3 flex items-center gap-2 ${guestTripOpen ? "border-b border-border/60" : ""}`}>
+              <button
+                onClick={() => setGuestTripOpen(!guestTripOpen)}
+                className="flex-1 flex items-center gap-2 min-w-0 text-left"
+              >
+                <Plane className="h-4 w-4 shrink-0" />
+                <span className="text-sm font-semibold">試用旅程</span>
+              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                {guestTripOpen && (!editingTrip ? (
+                  <button
+                    onClick={() => setEditingTrip(true)}
+                    className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    編輯
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setEditingTrip(false)}
+                    className="text-xs text-muted-foreground flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
+                  >
+                    <X className="h-3 w-3" />
+                    取消
+                  </button>
+                ))}
+                <button onClick={() => setGuestTripOpen(!guestTripOpen)}>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${guestTripOpen ? "rotate-180" : ""}`} />
                 </button>
-              ) : (
-                <button
-                  onClick={() => setEditingTrip(false)}
-                  className="text-xs text-muted-foreground flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
-                >
-                  <X className="h-3 w-3" />
-                  取消
-                </button>
-              )}
+              </div>
             </div>
 
-            {editingTrip ? (
+            {guestTripOpen && (editingTrip ? (
               <TripEditForm
                 name={tripName}
                 startDate={tripStart}
@@ -420,7 +436,7 @@ export default function SettingsPage() {
                   )}
                 </p>
               </div>
-            )}
+            ))}
 
 
           </div>
@@ -463,13 +479,19 @@ export default function SettingsPage() {
 
       {/* ===== 旅程切換 ===== */}
       <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-        <div className="px-4 py-3 border-b border-border/60">
-          <h2 className="text-sm font-semibold flex items-center gap-2">
-            <Plane className="h-4 w-4 text-muted-foreground" />
+        <button
+          onClick={() => setTripsOpen(!tripsOpen)}
+          className={`w-full px-4 py-3 flex items-center justify-between ${tripsOpen ? "border-b border-border/60" : ""}`}
+        >
+          <span className="text-sm font-semibold flex items-center gap-2">
+            <Plane className="h-4 w-4" />
             我的旅程
-          </h2>
-        </div>
-        <div className="divide-y divide-border/60">
+          </span>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${tripsOpen ? "rotate-180" : ""}`} />
+        </button>
+        {tripsOpen && (
+          <>
+          <div className="divide-y divide-border/60">
           {trips.map((trip) => {
             const isActive = trip.id === currentTrip?.id;
             return (
@@ -506,33 +528,46 @@ export default function SettingsPage() {
             </Button>
           </Link>
         </div>
+          </>
+        )}
       </div>
 
       {/* ===== 當前旅程編輯 + 成員 ===== */}
       {currentTrip && (
         <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-          <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">旅程設定</h2>
-            {isOwner && (!editingTrip ? (
-              <button
-                onClick={() => setEditingTrip(true)}
-                className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
-              >
-                <Pencil className="h-3 w-3" />
-                編輯
+          <div className={`px-4 py-3 flex items-center gap-2 ${tripSettingsOpen ? "border-b border-border/60" : ""}`}>
+            <button
+              onClick={() => setTripSettingsOpen(!tripSettingsOpen)}
+              className="flex-1 flex items-center gap-2 min-w-0 text-left"
+            >
+              <SlidersHorizontal className="h-4 w-4 shrink-0" />
+              <span className="text-sm font-semibold">旅程設定</span>
+            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {tripSettingsOpen && isOwner && (!editingTrip ? (
+                <button
+                  onClick={() => setEditingTrip(true)}
+                  className="text-xs text-primary flex items-center gap-1 rounded transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
+                >
+                  <Pencil className="h-3 w-3" />
+                  編輯
+                </button>
+              ) : (
+                <button
+                  onClick={() => setEditingTrip(false)}
+                  className="text-xs text-muted-foreground flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
+                >
+                  <X className="h-3 w-3" />
+                  取消
+                </button>
+              ))}
+              <button onClick={() => setTripSettingsOpen(!tripSettingsOpen)}>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${tripSettingsOpen ? "rotate-180" : ""}`} />
               </button>
-            ) : (
-              <button
-                onClick={() => setEditingTrip(false)}
-                className="text-xs text-muted-foreground flex items-center gap-1 rounded transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
-              >
-                <X className="h-3 w-3" />
-                取消
-              </button>
-            ))}
+            </div>
           </div>
 
-          {isOwner && editingTrip ? (
+          {tripSettingsOpen && (isOwner && editingTrip ? (
             <TripEditForm
               name={tripName}
               startDate={tripStart}
@@ -560,10 +595,9 @@ export default function SettingsPage() {
                 )}
               </p>
             </div>
-          )}
+          ))}
 
-          {/* 成員列表 */}
-          <div className="border-t border-border/60">
+          {tripSettingsOpen && <div className="border-t border-border/60">
             <div className="px-4 py-3 flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">
                 成員 ({members.length || tripMembers.length})
@@ -631,7 +665,7 @@ export default function SettingsPage() {
                 </Button>
               </div>
             )}
-          </div>
+          </div>}
         </div>
       )}
 
@@ -649,13 +683,17 @@ export default function SettingsPage() {
 
       {/* ===== 個人資料 ===== */}
       <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-        <div className="px-4 py-3 border-b border-border/60">
-          <h2 className="text-sm font-semibold flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
+        <button
+          onClick={() => setProfileOpen(!profileOpen)}
+          className={`w-full px-4 py-3 flex items-center justify-between ${profileOpen ? "border-b border-border/60" : ""}`}
+        >
+          <span className="text-sm font-semibold flex items-center gap-2">
+            <User className="h-4 w-4" />
             個人資料
-          </h2>
-        </div>
-        <div className="p-4 space-y-3">
+          </span>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
+        </button>
+        {profileOpen && <div className="p-4 space-y-3">
           <div className="flex items-center gap-3">
             <AvatarPicker
               avatarUrl={avatarUrl}
@@ -677,12 +715,12 @@ export default function SettingsPage() {
           </div>
           <Button
             onClick={handleSaveProfile}
-            className="w-full h-10 bg-primary hover:bg-primary/90 rounded-lg text-sm"
+            className="w-full h-7 bg-primary hover:bg-primary/90 rounded-lg text-sm"
             disabled={saving}
           >
             儲存個人資料
           </Button>
-        </div>
+        </div>}
       </div>
 
       <Separator />
