@@ -11,9 +11,11 @@ interface Props {
   initialTotal: number | null;
   initialDaily: number | null;
   onSaved?: (next: { total: number | null; daily: number | null }) => void;
+  // Optional override: if provided, called instead of the default PATCH API fetch
+  onSave?: (total: number | null, daily: number | null) => Promise<void>;
 }
 
-export function PersonalBudgetForm({ tripId, initialTotal, initialDaily, onSaved }: Props) {
+export function PersonalBudgetForm({ tripId, initialTotal, initialDaily, onSaved, onSave }: Props) {
   const [total, setTotal] = useState<string>(initialTotal == null ? "" : String(initialTotal));
   const [daily, setDaily] = useState<string>(initialDaily == null ? "" : String(initialDaily));
   const [saving, setSaving] = useState(false);
@@ -21,23 +23,26 @@ export function PersonalBudgetForm({ tripId, initialTotal, initialDaily, onSaved
   async function save() {
     setSaving(true);
     try {
-      const payload = {
-        trip_id: tripId,
-        total_budget_jpy: total === "" ? null : Number(total),
-        daily_budget_jpy: daily === "" ? null : Number(daily),
-      };
-      const res = await fetch("/api/trip-members", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        toast.error(json.error ?? "儲存失敗");
-        return;
+      const totalVal = total === "" ? null : Number(total);
+      const dailyVal = daily === "" ? null : Number(daily);
+
+      if (onSave) {
+        await onSave(totalVal, dailyVal);
+      } else {
+        const payload = { trip_id: tripId, total_budget_jpy: totalVal, daily_budget_jpy: dailyVal };
+        const res = await fetch("/api/trip-members", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          toast.error(json.error ?? "儲存失敗");
+          return;
+        }
       }
       toast.success("個人預算已更新");
-      onSaved?.({ total: payload.total_budget_jpy, daily: payload.daily_budget_jpy });
+      onSaved?.({ total: totalVal, daily: dailyVal });
     } catch {
       toast.error("儲存失敗");
     } finally {

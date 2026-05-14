@@ -7,6 +7,7 @@ import { CreditCardManager } from "@/components/settings/credit-card-manager";
 import { NotificationSettings } from "@/components/settings/notification-settings";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 import { TripEditForm } from "@/components/settings/trip-edit-form";
+import { PersonalBudgetForm } from "@/components/trip/personal-budget-form";
 import { AvatarPicker } from "@/components/ui/avatar-picker";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +25,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { isNativeApp } from "@/lib/capacitor";
 import { useApp } from "@/lib/context";
 import { widgetSync } from "@/lib/native/widget-sync";
-import { updateGuestTrip } from "@/lib/guest-storage";
+import { updateGuestTrip, saveGuestMemberBudgets } from "@/lib/guest-storage";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { Profile, Trip, TripMember } from "@/types";
@@ -392,6 +393,19 @@ export default function SettingsPage() {
                 </p>
               </div>
             )}
+
+            {/* Personal budget for guest */}
+            <div className="border-t border-border/60 px-4 py-4 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">個人預算（僅你看得到）</p>
+              <PersonalBudgetForm
+                tripId={currentTrip.id}
+                initialTotal={tripMembers[0]?.total_budget_jpy ?? null}
+                initialDaily={tripMembers[0]?.daily_budget_jpy ?? null}
+                onSave={async (total, daily) => {
+                  saveGuestMemberBudgets({ total_budget_jpy: total, daily_budget_jpy: daily });
+                }}
+              />
+            </div>
           </div>
         )}
 
@@ -526,6 +540,22 @@ export default function SettingsPage() {
               </p>
             </div>
           )}
+
+          {/* Personal budget for current user */}
+          {user && currentTrip && (() => {
+            const selfMember = tripMembers.find((m) => m.user_id === user.id);
+            return (
+              <div className="border-t border-border/60 px-4 py-4 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">個人預算（僅你看得到）</p>
+                <PersonalBudgetForm
+                  tripId={currentTrip.id}
+                  initialTotal={selfMember?.total_budget_jpy ?? null}
+                  initialDaily={selfMember?.daily_budget_jpy ?? null}
+                  onSaved={() => { refreshTrip(); }}
+                />
+              </div>
+            );
+          })()}
 
           {/* 成員列表 */}
           <div className="border-t border-border/60">
