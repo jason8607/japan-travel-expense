@@ -239,3 +239,70 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const user = await getRequestUser(req);
+    if (!user) {
+      return NextResponse.json({ error: "未登入" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { trip_id, total_budget_jpy, daily_budget_jpy } = body as {
+      trip_id?: string;
+      total_budget_jpy?: number | null;
+      daily_budget_jpy?: number | null;
+    };
+
+    if (!trip_id) {
+      return NextResponse.json({ error: "缺少 trip_id" }, { status: 400 });
+    }
+
+    const admin = getAdminClient();
+
+    const { data: membership } = await admin
+      .from("trip_members")
+      .select("user_id")
+      .eq("trip_id", trip_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!membership) {
+      return NextResponse.json({ error: "無權限" }, { status: 403 });
+    }
+
+    const updates: Record<string, number | null> = {};
+    if (total_budget_jpy !== undefined) {
+      if (total_budget_jpy !== null && (!Number.isFinite(total_budget_jpy) || total_budget_jpy < 0)) {
+        return NextResponse.json({ error: "total_budget_jpy 必須為非負整數或 null" }, { status: 400 });
+      }
+      updates.total_budget_jpy = total_budget_jpy === null ? null : Math.floor(total_budget_jpy);
+    }
+    if (daily_budget_jpy !== undefined) {
+      if (daily_budget_jpy !== null && (!Number.isFinite(daily_budget_jpy) || daily_budget_jpy < 0)) {
+        return NextResponse.json({ error: "daily_budget_jpy 必須為非負整數或 null" }, { status: 400 });
+      }
+      updates.daily_budget_jpy = daily_budget_jpy === null ? null : Math.floor(daily_budget_jpy);
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: "沒有可更新的欄位" }, { status: 400 });
+    }
+
+    const { error } = await admin
+      .from("trip_members")
+      .update(updates)
+      .eq("trip_id", trip_id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("trip-members PATCH error:", error.message);
+      return NextResponse.json({ error: "更新個人預算失敗" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("trip-members PATCH error:", err);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
+  }
+}
