@@ -18,6 +18,11 @@ interface TripFormProps {
   onChangeBudget: (v: string) => void;
   onSubmit: () => void;
   onDelete?: () => void;
+  // Optional personal budget fields — only rendered when handlers are provided
+  personalTotal?: string;
+  personalDaily?: string;
+  onChangePersonalTotal?: (v: string) => void;
+  onChangePersonalDaily?: (v: string) => void;
 }
 
 export function TripForm({
@@ -34,6 +39,10 @@ export function TripForm({
   onChangeBudget,
   onSubmit,
   onDelete,
+  personalTotal,
+  personalDaily,
+  onChangePersonalTotal,
+  onChangePersonalDaily,
 }: TripFormProps) {
   return (
     <div className="p-4 space-y-3">
@@ -84,6 +93,45 @@ export function TripForm({
           className="tabular-nums"
         />
       </div>
+
+      {onChangePersonalTotal && (
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">
+            個人總預算 (¥) <span className="font-normal">(選填，僅你看得到)</span>
+          </Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min="0"
+            step="1"
+            value={personalTotal ?? ""}
+            onChange={(e) => onChangePersonalTotal(e.target.value)}
+            placeholder="例：70000"
+            className="tabular-nums"
+          />
+        </div>
+      )}
+
+      {onChangePersonalDaily && (
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">
+            個人每日預算 (¥) <span className="font-normal">(選填，僅你看得到)</span>
+          </Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min="0"
+            step="1"
+            value={personalDaily ?? ""}
+            onChange={(e) => onChangePersonalDaily(e.target.value)}
+            placeholder="例：10000"
+            className="tabular-nums"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            未填時自動取「個人總預算 ÷ 天數」。
+          </p>
+        </div>
+      )}
 
       <Button
         type="button"
