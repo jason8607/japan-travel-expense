@@ -6,10 +6,13 @@ import { useCreditCards } from "@/hooks/use-credit-cards";
 import { useExpenses } from "@/hooks/use-expenses";
 import { isNativeApp } from "@/lib/capacitor";
 import { useApp } from "@/lib/context";
+import { effectiveDailyBudgetJpy, todayInJapan, todaySpentJpy } from "@/lib/budget";
 import { loadPrefs } from "@/lib/notification-prefs";
 import {
+  ensureNotificationPermission,
   ensurePermission,
   getPermissionStatus,
+  notifyDailyBudget,
   scheduleDailyReminder,
   sendCashbackWarning,
 } from "@/lib/notifications";
@@ -30,8 +33,24 @@ function markNotified(tripId: string, cardId: string, threshold: number): void {
   window.localStorage.setItem(cashbackNotifiedKey(tripId, cardId, threshold), "1");
 }
 
+const BUDGET_NOTIFIED_PREFIX = "ryocho.notif.budget";
+
+function budgetNotifiedKey(tripId: string, day: string, threshold: number): string {
+  return `${BUDGET_NOTIFIED_PREFIX}.${tripId}.${day}.${threshold}`;
+}
+
+function hasBudgetNotified(tripId: string, day: string, threshold: number): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(budgetNotifiedKey(tripId, day, threshold)) === "1";
+}
+
+function markBudgetNotified(tripId: string, day: string, threshold: number): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(budgetNotifiedKey(tripId, day, threshold), "1");
+}
+
 export function useNotificationScheduler(): void {
-  const { currentTrip } = useApp();
+  const { currentTrip, user, tripMembers, isGuest } = useApp();
   const { expenses } = useExpenses();
   const { cards } = useCreditCards();
   const lastDailyHourRef = useRef<number | null>(null);
@@ -100,4 +119,48 @@ export function useNotificationScheduler(): void {
       cancelled = true;
     };
   }, [currentTrip, expenses, cards]);
+
+  // Fire foreground notification when daily personal budget crosses configured threshold.
+  // Cross-platform: works on native (Capacitor) and web (Notification API).
+  // Dedupes per trip + per day + per threshold so it fires at most once per day.
+  useEffect(() => {
+    if (!currentTrip) return;
+
+    const currentUserId = isGuest ? "guest" : (user?.id ?? null);
+    if (!currentUserId) return;
+
+    const member = tripMembers.find((m) => m.user_id === currentUserId);
+    if (!member) return;
+
+    const dailyBudget = effectiveDailyBudgetJpy(member, currentTrip);
+    if (!dailyBudget) return;
+
+    const prefs = loadPrefs();
+    if (!prefs.dailyBudgetWarningEnabled) return;
+    const threshold = prefs.dailyBudgetWarningThreshold;
+
+    const allMemberIds = tripMembers.map((m) => m.user_id);
+    const day = todayInJapan();
+    const spent = todaySpentJpy(expenses, currentUserId, day, allMemberIds);
+    const percent = (spent / dailyBudget) * 100;
+    if (percent < threshold) return;
+    if (hasBudgetNotified(currentTrip.id, day, threshold)) return;
+
+    let cancelled = false;
+    (async () => {
+      const granted = await ensureNotificationPermission();
+      if (cancelled || !granted) return;
+      await notifyDailyBudget({
+        tripName: currentTrip.name,
+        spent,
+        budget: dailyBudget,
+        threshold,
+      });
+      markBudgetNotified(currentTrip.id, day, threshold);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentTrip, user, tripMembers, expenses, isGuest]);
 }
