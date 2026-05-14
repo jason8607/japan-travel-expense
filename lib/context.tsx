@@ -20,6 +20,17 @@ import {
   type ReactNode,
 } from "react";
 
+function createGuestMember(trip: Trip): TripMember {
+  const budgets = getGuestMemberBudgets();
+  return {
+    trip_id: trip.id,
+    user_id: "guest",
+    role: "member",
+    total_budget_jpy: budgets.total_budget_jpy,
+    daily_budget_jpy: budgets.daily_budget_jpy,
+  };
+}
+
 interface AppContextType {
   user: User | null;
   profile: Profile | null;
@@ -77,14 +88,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const enterGuestMode = useCallback(() => {
     const trip = initGuestTrip();
-    const budgets = getGuestMemberBudgets();
-    const guestMember: TripMember = {
-      trip_id: trip.id,
-      user_id: "guest",
-      role: "member",
-      total_budget_jpy: budgets.total_budget_jpy,
-      daily_budget_jpy: budgets.daily_budget_jpy,
-    };
+    const guestMember = createGuestMember(trip);
     setIsGuest(true);
     setCurrentTrip(trip);
     setTrips([trip]);
@@ -152,14 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (isGuestMode()) {
         const trip = getGuestTrip();
         if (trip) {
-          const budgets = getGuestMemberBudgets();
-          const guestMember: TripMember = {
-            trip_id: trip.id,
-            user_id: "guest",
-            role: "member",
-            total_budget_jpy: budgets.total_budget_jpy,
-            daily_budget_jpy: budgets.daily_budget_jpy,
-          };
+          const guestMember = createGuestMember(trip);
           setIsGuest(true);
           setCurrentTrip(trip);
           setTrips([trip]);
@@ -240,14 +237,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (isGuestMode()) {
             const trip = getGuestTrip();
             if (trip) {
-              const budgets = getGuestMemberBudgets();
-              const guestMember: TripMember = {
-                trip_id: trip.id,
-                user_id: "guest",
-                role: "member",
-                total_budget_jpy: budgets.total_budget_jpy,
-                daily_budget_jpy: budgets.daily_budget_jpy,
-              };
+              const guestMember = createGuestMember(trip);
               setIsGuest(true);
               setCurrentTrip(trip);
               setTrips([trip]);
