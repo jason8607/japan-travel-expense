@@ -2,6 +2,7 @@
 
 import {
   clearGuestData,
+  getGuestMemberBudgets,
   getGuestTrip,
   hasGuestData,
   initGuestTrip,
@@ -76,10 +77,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const enterGuestMode = useCallback(() => {
     const trip = initGuestTrip();
+    const budgets = getGuestMemberBudgets();
+    const guestMember: TripMember = {
+      trip_id: trip.id,
+      user_id: "guest",
+      role: "member",
+      total_budget_jpy: budgets.total_budget_jpy,
+      daily_budget_jpy: budgets.daily_budget_jpy,
+    };
     setIsGuest(true);
     setCurrentTrip(trip);
     setTrips([trip]);
-    setTripMembers([]);
+    setTripMembers([guestMember]);
     setUser(null);
     setProfile(null);
   }, []);
@@ -143,9 +152,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (isGuestMode()) {
         const trip = getGuestTrip();
         if (trip) {
+          const budgets = getGuestMemberBudgets();
+          const guestMember: TripMember = {
+            trip_id: trip.id,
+            user_id: "guest",
+            role: "member",
+            total_budget_jpy: budgets.total_budget_jpy,
+            daily_budget_jpy: budgets.daily_budget_jpy,
+          };
           setIsGuest(true);
           setCurrentTrip(trip);
           setTrips([trip]);
+          setTripMembers([guestMember]);
         }
       }
       setLoading(false);
@@ -222,9 +240,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (isGuestMode()) {
             const trip = getGuestTrip();
             if (trip) {
+              const budgets = getGuestMemberBudgets();
+              const guestMember: TripMember = {
+                trip_id: trip.id,
+                user_id: "guest",
+                role: "member",
+                total_budget_jpy: budgets.total_budget_jpy,
+                daily_budget_jpy: budgets.daily_budget_jpy,
+              };
               setIsGuest(true);
               setCurrentTrip(trip);
               setTrips([trip]);
+              setTripMembers([guestMember]);
             }
           }
         }

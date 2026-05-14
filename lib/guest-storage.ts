@@ -4,6 +4,32 @@ const GUEST_TRIP_KEY = "guest_trip";
 const GUEST_EXPENSES_KEY = "guest_expenses";
 const GUEST_MODE_KEY = "guest_mode";
 const GUEST_OCR_COUNT_KEY = "guest_ocr_count";
+const GUEST_MEMBER_BUDGETS_KEY = "ryocho.guest.member-budgets";
+
+interface GuestMemberBudgets {
+  total_budget_jpy: number | null;
+  daily_budget_jpy: number | null;
+}
+
+export function getGuestMemberBudgets(): GuestMemberBudgets {
+  if (typeof window === "undefined") return { total_budget_jpy: null, daily_budget_jpy: null };
+  try {
+    const raw = window.localStorage.getItem(GUEST_MEMBER_BUDGETS_KEY);
+    if (!raw) return { total_budget_jpy: null, daily_budget_jpy: null };
+    const parsed = JSON.parse(raw) as Partial<GuestMemberBudgets>;
+    return {
+      total_budget_jpy: parsed.total_budget_jpy ?? null,
+      daily_budget_jpy: parsed.daily_budget_jpy ?? null,
+    };
+  } catch {
+    return { total_budget_jpy: null, daily_budget_jpy: null };
+  }
+}
+
+export function saveGuestMemberBudgets(budgets: GuestMemberBudgets): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(GUEST_MEMBER_BUDGETS_KEY, JSON.stringify(budgets));
+}
 const GUEST_OCR_LIMIT = 10;
 
 function getLocalDateString(offset = 0): string {
@@ -178,4 +204,5 @@ export function clearGuestData() {
   localStorage.removeItem(GUEST_EXPENSES_KEY);
   localStorage.removeItem(GUEST_MODE_KEY);
   localStorage.removeItem(GUEST_OCR_COUNT_KEY);
+  localStorage.removeItem(GUEST_MEMBER_BUDGETS_KEY);
 }
