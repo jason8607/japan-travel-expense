@@ -5,6 +5,7 @@ import { useApp } from "@/lib/context";
 import { createClient } from "@/lib/supabase/client";
 import { EXPENSES_MUTATED_EVENT } from "@/lib/expenses-mutated";
 import { getGuestExpenses } from "@/lib/guest-storage";
+import { localCache, CACHE_KEYS } from "@/lib/local-cache";
 import type { Expense } from "@/types";
 
 function getLocalDateString() {
@@ -21,6 +22,13 @@ const expenseCache = new Map<string, Expense[]>();
 export function useExpenses() {
   const { currentTrip, isGuest } = useApp();
   const tripId = currentTrip?.id || "";
+
+  // Hydrate module cache from localStorage on page refresh (module cache is empty after reload)
+  if (tripId && !isGuest && !expenseCache.has(tripId)) {
+    const lsCached = localCache.get<Expense[]>(CACHE_KEYS.expenses(tripId));
+    if (lsCached) expenseCache.set(tripId, lsCached);
+  }
+
   const cached = tripId ? expenseCache.get(tripId) : undefined;
 
   const [expenses, setExpenses] = useState<Expense[]>(cached || []);
@@ -55,6 +63,7 @@ export function useExpenses() {
       const data = await res.json();
       const fetched = data.expenses || [];
       expenseCache.set(currentTrip.id, fetched);
+      localCache.set(CACHE_KEYS.expenses(currentTrip.id), fetched);
       if (mountedRef.current) {
         setExpenses(fetched);
       }
@@ -79,8 +88,10 @@ export function useExpenses() {
     if (tripId && expenseCache.has(tripId)) {
       setExpenses(expenseCache.get(tripId)!);
       setLoading(false);
-      // Background refresh
-      fetchExpenses();
+      // Only background-refresh when local cache is stale (> 30s old)
+      if (localCache.isStale(CACHE_KEYS.expenses(tripId), 30_000)) {
+        fetchExpenses();
+      }
     } else {
       setLoading(true);
       fetchExpenses();

@@ -8,6 +8,7 @@ import {
   initGuestTrip,
   isGuestMode,
 } from "@/lib/guest-storage";
+import { localCache, CACHE_KEYS } from "@/lib/local-cache";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Trip, TripMember } from "@/types";
 import type { User } from "@supabase/supabase-js";
@@ -122,7 +123,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`/api/trip-members?trip_id=${currentTrip.id}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.members) setTripMembers(data.members);
+        if (data.members) {
+          setTripMembers(data.members);
+          localCache.set(CACHE_KEYS.members(currentTrip.id), data.members);
+        }
       }
     } catch {
       // ignore
@@ -178,8 +182,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
           setIsGuest(false);
 
-          // Speculatively start members fetch if we have a saved trip ID
+          // Fast path: show cached data immediately while network fetches run
           const savedTripId = localStorage.getItem("current_trip_id");
+          const cachedTrips = localCache.get<Trip[]>(CACHE_KEYS.trips(u.id));
+          const cachedProfile = localCache.get<Profile>(CACHE_KEYS.profile(u.id));
+          if (cachedTrips && cachedTrips.length > 0) {
+            setTrips(cachedTrips);
+            const savedTrip = savedTripId
+              ? cachedTrips.find((t) => t.id === savedTripId)
+              : null;
+            const fastTrip = savedTrip || cachedTrips[0];
+            setCurrentTrip(fastTrip);
+            const cachedMembers = localCache.get<TripMember[]>(
+              CACHE_KEYS.members(fastTrip.id)
+            );
+            if (cachedMembers) setTripMembers(cachedMembers);
+            setLoading(false); // show UI immediately from cache
+          }
+          if (cachedProfile) setProfile(cachedProfile);
+
+          // Speculatively start members fetch if we have a saved trip ID
           const membersFetchPromise = savedTripId
             ? fetch(`/api/trip-members?trip_id=${savedTripId}`)
                 .then((res) => (res.ok ? res.json() : null))
@@ -196,10 +218,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
               .catch(() => null),
           ]);
 
-          if (profileResult?.profile) setProfile(profileResult.profile);
+          if (profileResult?.profile) {
+            setProfile(profileResult.profile);
+            localCache.set(CACHE_KEYS.profile(u.id), profileResult.profile);
+          }
 
           const fetchedTrips: Trip[] = tripsResult?.trips || [];
           setTrips(fetchedTrips);
+          if (fetchedTrips.length > 0) {
+            localCache.set(CACHE_KEYS.trips(u.id), fetchedTrips);
+          }
 
           let selectedTrip: Trip | null = null;
           if (fetchedTrips.length > 0) {
@@ -208,6 +236,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               : null;
             selectedTrip = saved || fetchedTrips[0];
             setCurrentTrip(selectedTrip);
+          } else {
+            setCurrentTrip(null);
           }
 
           // Use speculative fetch if trip matched, otherwise fetch fresh
@@ -222,7 +252,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 );
                 membersData = membersRes.ok ? await membersRes.json() : null;
               }
-              if (membersData?.members) setTripMembers(membersData.members);
+              if (membersData?.members) {
+                setTripMembers(membersData.members);
+                localCache.set(
+                  CACHE_KEYS.members(selectedTrip.id),
+                  membersData.members
+                );
+              }
             } catch {
               // ignore
             }
@@ -264,6 +300,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setCurrentTrip(null);
         setTrips([]);
         setTripMembers([]);
+        localCache.delByPrefix("cache_");
+        localStorage.removeItem("current_trip_id");
       }
     });
 
