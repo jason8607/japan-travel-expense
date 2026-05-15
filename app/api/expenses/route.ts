@@ -38,6 +38,25 @@ export async function GET(req: NextRequest) {
     const expenseId = req.nextUrl.searchParams.get("id");
 
     if (expenseId) {
+      // Fetch trip_id first (without joining sensitive data), then verify membership
+      // before returning any expense content. This prevents IDOR oracle attacks
+      // where 404 vs 403 reveals whether an expense UUID exists.
+      const { data: meta } = await admin
+        .from("expenses")
+        .select("trip_id")
+        .eq("id", expenseId)
+        .single();
+
+      if (!meta) {
+        return NextResponse.json({ error: "找不到消費" }, { status: 404 });
+      }
+
+      const hasAccess = await verifyTripAccess(admin, meta.trip_id, user.id);
+      if (!hasAccess) {
+        // Return 404 so unauthorized callers cannot enumerate expense UUIDs.
+        return NextResponse.json({ error: "找不到消費" }, { status: 404 });
+      }
+
       const { data: expense, error } = await admin
         .from("expenses")
         .select("*, expense_participants(user_id)")
@@ -46,11 +65,6 @@ export async function GET(req: NextRequest) {
 
       if (error || !expense) {
         return NextResponse.json({ error: "找不到消費" }, { status: 404 });
-      }
-
-      const hasAccess = await verifyTripAccess(admin, expense.trip_id, user.id);
-      if (!hasAccess) {
-        return NextResponse.json({ error: "無權限" }, { status: 403 });
       }
 
       return NextResponse.json({ expense: flattenParticipants(expense) });
@@ -66,7 +80,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "無權限" }, { status: 403 });
     }
 
-    const limit = Math.min(Number(req.nextUrl.searchParams.get("limit")) || 200, 500);
+    const limit = Math.min(Number(req.nextUrl.searchParams.get("limit")) || 5000, 5000);
     const offset = Number(req.nextUrl.searchParams.get("offset")) || 0;
 
     const { data: expenses, error } = await admin

@@ -119,9 +119,15 @@ export default function HomePage() {
 
   const selfMember = user ? tripMembers.find((m) => m.user_id === user.id) : null;
   const personalBudgetJpy = selfMember?.total_budget_jpy ?? null;
+  // Personal expenses: only expenses that belong to this user personally.
+  // For split expenses, only the owner's share counts — use personal expenses
+  // (split_type === "personal" && owner_id === user.id) to avoid double-counting
+  // shared bills paid by this user.
   const personalExpenses = isGuest
     ? expenses
-    : expenses.filter((e) => (e.owner_id || e.paid_by) === user?.id);
+    : expenses.filter(
+        (e) => e.split_type === "personal" && (e.owner_id ?? e.paid_by) === user?.id
+      );
   const personalJpy = personalExpenses.reduce((s, e) => s + e.amount_jpy, 0);
   const personalTwd = personalExpenses.reduce((s, e) => s + e.amount_twd, 0);
 

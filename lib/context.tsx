@@ -106,18 +106,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshProfile = async () => {
-    const supabase = getSupabase();
-    if (!supabase) return;
-    const {
-      data: { user: u },
-    } = await supabase.auth.getUser();
-    if (!u) return;
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", u.id)
-      .single();
-    if (data) setProfile(data);
+    try {
+      const res = await fetch("/api/profile");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.profile) setProfile(data.profile);
+    } catch {
+      // ignore
+    }
   };
 
   const refreshTrip = useCallback(async () => {
@@ -192,17 +188,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
           // Parallel: profile + trips (+ speculative members)
           const [profileResult, tripsResult] = await Promise.all([
-            supabase
-              .from("profiles")
-              .select("*")
-              .eq("id", u.id)
-              .single(),
+            fetch("/api/profile")
+              .then((res) => (res.ok ? res.json() : null))
+              .catch(() => null),
             fetch("/api/trips")
               .then((res) => (res.ok ? res.json() : null))
               .catch(() => null),
           ]);
 
-          if (profileResult.data) setProfile(profileResult.data);
+          if (profileResult?.profile) setProfile(profileResult.profile);
 
           const fetchedTrips: Trip[] = tripsResult?.trips || [];
           setTrips(fetchedTrips);

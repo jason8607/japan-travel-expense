@@ -36,21 +36,25 @@ export async function GET(req: NextRequest) {
   const goneIds: string[] = [];
 
   for (const sub of subs) {
-    const localHour = getHourInTimeZone(nowUtc, sub.timezone || "Asia/Tokyo");
-    if (localHour !== sub.daily_reminder_hour) {
-      skipped++;
-      continue;
-    }
-    const result = await sendPush(sub, {
-      title: "今日花費整理一下？",
-      body: "點開記下今天還沒登錄的消費，讓帳本不漏單。",
-      url: "/records/new",
-      tag: "daily-reminder",
-    });
-    if (result.ok) {
-      sent++;
-    } else if (result.gone) {
-      goneIds.push(sub.id);
+    try {
+      const localHour = getHourInTimeZone(nowUtc, sub.timezone || "Asia/Tokyo");
+      if (localHour !== sub.daily_reminder_hour) {
+        skipped++;
+        continue;
+      }
+      const result = await sendPush(sub, {
+        title: "今日花費整理一下？",
+        body: "點開記下今天還沒登錄的消費，讓帳本不漏單。",
+        url: "/records/new",
+        tag: "daily-reminder",
+      });
+      if (result.ok) {
+        sent++;
+      } else if (result.gone) {
+        goneIds.push(sub.id);
+      }
+    } catch (err) {
+      console.error("daily-reminder: skipping bad subscription", sub.id, err);
     }
   }
 

@@ -47,7 +47,7 @@ export function useExpenses() {
 
     try {
       setError(null);
-      const res = await fetch(`/api/expenses?trip_id=${currentTrip.id}`);
+      const res = await fetch(`/api/expenses?trip_id=${currentTrip.id}&limit=5000`);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "載入失敗");

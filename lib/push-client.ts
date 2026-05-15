@@ -1,4 +1,5 @@
 /** Browser-side helpers for Web Push subscription management. */
+import { loadPrefs } from "@/lib/notification-prefs";
 
 export function isPushSupported(): boolean {
   if (typeof window === "undefined") return false;
@@ -95,7 +96,7 @@ export async function subscribePush(
       auth: json.keys?.auth,
       daily_reminder_hour: opts.dailyReminderHour ?? null,
       timezone: tz,
-      cashback_alert_enabled: opts.cashbackAlertEnabled ?? true,
+      cashback_alert_enabled: opts.cashbackAlertEnabled ?? loadPrefs().cashbackWarningEnabled,
     }),
   });
   if (!res.ok) {
@@ -111,7 +112,8 @@ export async function unsubscribePush(): Promise<{ ok: true } | { ok: false; err
   const subscription = await reg.pushManager.getSubscription();
   if (!subscription) return { ok: true };
   const endpoint = subscription.endpoint;
-  await subscription.unsubscribe();
+
+  // Delete server record first; only unsubscribe browser if server succeeds.
   const res = await fetch("/api/push/unsubscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -121,6 +123,8 @@ export async function unsubscribePush(): Promise<{ ok: true } | { ok: false; err
     const { error } = await res.json().catch(() => ({ error: "取消訂閱失敗" }));
     return { ok: false, error };
   }
+
+  await subscription.unsubscribe();
   return { ok: true };
 }
 

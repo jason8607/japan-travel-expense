@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const hour = clampHour(body.daily_reminder_hour);
-    const tz = body.timezone || "Asia/Tokyo";
+    const tz = validateTimezone(body.timezone);
     const cashbackEnabled = body.cashback_alert_enabled ?? true;
 
     const admin = getAdminClient();
@@ -89,4 +89,14 @@ function clampHour(value: unknown): number | null {
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
   return Math.max(0, Math.min(23, Math.floor(n)));
+}
+
+function validateTimezone(tz: string | undefined): string {
+  const candidate = tz || "Asia/Tokyo";
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: candidate });
+    return candidate;
+  } catch {
+    return "Asia/Tokyo";
+  }
 }

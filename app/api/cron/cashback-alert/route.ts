@@ -17,8 +17,9 @@ interface ExpenseSumRecord {
   total_twd: number;
 }
 
-const THRESHOLDS = [80, 100] as const;
-type Threshold = (typeof THRESHOLDS)[number];
+// All possible thresholds users can configure (80 | 95) plus the max (100).
+const ALL_THRESHOLDS = [80, 95, 100] as const;
+type Threshold = (typeof ALL_THRESHOLDS)[number];
 
 /** Dedupe window: don't re-send the same (user, card, threshold) within this many hours. */
 const DEDUPE_HOURS = 25;
@@ -54,7 +55,15 @@ export async function GET(req: NextRequest) {
   let skipped = 0;
 
   for (const [userId, userSubs] of Object.entries(subsByUser)) {
-    // 2. Credit cards with a spending threshold for this user
+    // 2. Load user's configured warning threshold from their push subscription prefs.
+    // We take the threshold from the first subscription (all belong to same user).
+    const rawThreshold = (userSubs[0] as unknown as { cashback_warning_threshold?: number })
+      .cashback_warning_threshold;
+    // User threshold is 80 or 95; always also send at 100%.
+    const userThreshold: 80 | 95 = rawThreshold === 95 ? 95 : 80;
+    const thresholds: Threshold[] = [userThreshold, 100];
+
+    // 3. Credit cards with a spending threshold for this user
     const { data: cards } = await admin
       .from("credit_cards")
       .select("id, name, cashback_limit")
@@ -63,7 +72,7 @@ export async function GET(req: NextRequest) {
 
     if (!cards || cards.length === 0) continue;
 
-    // 3. Total spending per credit card (all expenses paid by this user)
+    // 4. Total spending per credit card (all expenses paid by this user)
     const cardIds = (cards as CreditCardRecord[]).map((c) => c.id);
     const { data: expRows } = await admin
       .from("expenses")
@@ -74,12 +83,12 @@ export async function GET(req: NextRequest) {
 
     const spendingByCard = sumByCard(expRows as { credit_card_id: string; amount_twd: number }[] | null);
 
-    // 4. For each card × threshold, check and optionally push
+    // 5. For each card × threshold, check and optionally push
     for (const card of cards as CreditCardRecord[]) {
       const totalTwd = spendingByCard[card.id] ?? 0;
       const progress = totalTwd / card.cashback_limit; // 0–1+
 
-      for (const threshold of THRESHOLDS) {
+      for (const threshold of thresholds) {
         if (progress * 100 < threshold) continue; // not reached
 
         const alreadySent = await wasRecentlySent(admin, userId, card.id, threshold);

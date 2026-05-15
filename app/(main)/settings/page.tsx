@@ -211,17 +211,19 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         display_name: displayName,
         avatar_emoji: avatarEmoji,
         avatar_url: avatarUrl,
-      })
-      .eq("id", user.id);
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
 
-    if (error) {
-      toast.error("更新失敗");
+    if (!res.ok) {
+      toast.error(data.error ?? "更新失敗");
     } else {
       toast.success("個人資料已更新");
       setEditingProfile(false);

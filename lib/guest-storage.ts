@@ -181,17 +181,33 @@ export function isGuestMode(): boolean {
   return localStorage.getItem(GUEST_MODE_KEY) === "true";
 }
 
+interface GuestOcrRecord {
+  date: string;
+  count: number;
+}
+
+function getTodayString(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function getGuestOcrCount(): number {
   try {
-    return parseInt(localStorage.getItem(GUEST_OCR_COUNT_KEY) || "0", 10);
+    const raw = localStorage.getItem(GUEST_OCR_COUNT_KEY);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw) as Partial<GuestOcrRecord>;
+    if (parsed.date !== getTodayString()) return 0;
+    return typeof parsed.count === "number" ? parsed.count : 0;
   } catch {
     return 0;
   }
 }
 
 export function incrementGuestOcrCount(): number {
+  const today = getTodayString();
   const count = getGuestOcrCount() + 1;
-  localStorage.setItem(GUEST_OCR_COUNT_KEY, String(count));
+  const record: GuestOcrRecord = { date: today, count };
+  localStorage.setItem(GUEST_OCR_COUNT_KEY, JSON.stringify(record));
   return count;
 }
 

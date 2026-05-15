@@ -34,12 +34,18 @@ export function calculateTotalCashback(
 
   return cards.reduce((total, card) => {
     const cardCashback = calculateCardCashback(creditExpenses, card);
-    // cashback_limit now stores spending threshold (NTD spent to max out).
-    // Max cashback = threshold × base rate.
-    const maxCashback =
-      card.cashback_limit > 0 && card.cashback_rate > 0
-        ? Math.round((card.cashback_limit * card.cashback_rate) / 100)
-        : Infinity;
+    // cashback_limit stores spending threshold (NTD spent to max out).
+    // For plan-based cards, card.cashback_rate === 0; use the highest plan rate instead.
+    let maxCashback = Infinity;
+    if (card.cashback_limit > 0) {
+      const hasPlans = card.plans && card.plans.length > 0;
+      const effectiveRate = hasPlans
+        ? Math.max(...card.plans!.map((p) => p.cashback_rate))
+        : card.cashback_rate;
+      if (effectiveRate > 0) {
+        maxCashback = Math.round((card.cashback_limit * effectiveRate) / 100);
+      }
+    }
     return total + Math.min(cardCashback, maxCashback);
   }, 0);
 }
