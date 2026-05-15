@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { isNativeApp } from "@/lib/capacitor";
 import { Download, Share, Smartphone, X } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
@@ -65,7 +66,7 @@ export function InstallPrompt() {
   // until hydration flips to true.
   const platform: Platform = hydrated ? detectPlatform() : "other";
   const showPrompt =
-    hydrated && !dismissed && !isStandalone() && !isRecentlyDismissed();
+    hydrated && !isNativeApp() && !dismissed && !isStandalone() && !isRecentlyDismissed();
 
   useEffect(() => {
     const handler = (e: Event) => {
