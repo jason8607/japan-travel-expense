@@ -147,7 +147,7 @@ export default function RecordsPage() {
               </TabsTrigger>
               {!isGuest && (
                 <TabsTrigger value="member" className="flex-1">
-                  成員花費
+                按成員
                 </TabsTrigger>
               )}
             </TabsList>
